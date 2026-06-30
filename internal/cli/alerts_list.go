@@ -48,7 +48,11 @@ func newAlertsListCmd() *cobra.Command {
 				return err
 			}
 			if jsonOutput {
-				return printJSON(conn)
+				var alerts []graphql.Alert
+				for _, edge := range conn.Edges {
+					alerts = append(alerts, edge.Node)
+				}
+				return printJSON(alerts)
 			}
 			var rows [][]string
 			for _, edge := range conn.Edges {

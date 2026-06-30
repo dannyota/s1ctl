@@ -11,11 +11,11 @@ import (
 func addThreatActions(parent *cobra.Command) {
 	parent.AddCommand(newThreatMitigateCmd())
 	parent.AddCommand(newThreatActionCmd("verdict", "Update analyst verdict on a threat",
-		"--verdict", "analyst verdict", func(c *mgmt.Client, cmd *cobra.Command, val string, f mgmt.ActionFilter) (int, error) {
+		"--verdict", "analyst verdict (true_positive, false_positive, suspicious, undefined)", func(c *mgmt.Client, cmd *cobra.Command, val string, f mgmt.ActionFilter) (int, error) {
 			return c.ThreatsUpdateVerdict(cmd.Context(), val, f)
 		}))
 	parent.AddCommand(newThreatActionCmd("status", "Update incident status on a threat",
-		"--status", "incident status", func(c *mgmt.Client, cmd *cobra.Command, val string, f mgmt.ActionFilter) (int, error) {
+		"--status", "incident status (unresolved, in_progress, resolved)", func(c *mgmt.Client, cmd *cobra.Command, val string, f mgmt.ActionFilter) (int, error) {
 			return c.ThreatsUpdateStatus(cmd.Context(), val, f)
 		}))
 }

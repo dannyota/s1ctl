@@ -71,8 +71,7 @@ func (p *SiteListParams) values() url.Values {
 }
 
 type sitesDataResponse struct {
-	Sites      []Site     `json:"sites"`
-	Pagination Pagination `json:"pagination"`
+	Sites []Site `json:"sites"`
 }
 
 type sitesResponse struct {
@@ -85,7 +84,7 @@ func (c *Client) SitesList(ctx context.Context, params *SiteListParams) ([]Site,
 	if err := c.get(ctx, "/sites", params.values(), &resp); err != nil {
 		return nil, nil, err
 	}
-	pag := resp.Data.Pagination
+	pag := Pagination{TotalItems: len(resp.Data.Sites)}
 	return resp.Data.Sites, &pag, nil
 }
 

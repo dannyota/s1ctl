@@ -119,7 +119,7 @@ func TestAgentsCount(t *testing.T) {
 			t.Fatal("expected countOnly=true")
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"data":       42,
+			"data":       []any{},
 			"pagination": map[string]any{"totalItems": 42},
 		})
 	})

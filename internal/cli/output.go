@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	headerStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
+	headerStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12")).PaddingRight(2)
+	cellStyle   = lipgloss.NewStyle().PaddingRight(2)
 	dimStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 )
 
@@ -28,7 +29,7 @@ func printTable(headers []string, rows [][]string) {
 			if row == table.HeaderRow {
 				return headerStyle
 			}
-			return lipgloss.NewStyle()
+			return cellStyle
 		}).
 		BorderTop(false).
 		BorderBottom(false).
@@ -65,6 +66,13 @@ func orDash(s string) string {
 func pluralize(n int, singular string) string {
 	if n == 1 {
 		return fmt.Sprintf("%d %s", n, singular)
+	}
+	last := singular[len(singular)-1]
+	if last == 'y' && len(singular) > 1 {
+		prev := singular[len(singular)-2]
+		if prev != 'a' && prev != 'e' && prev != 'i' && prev != 'o' && prev != 'u' {
+			return fmt.Sprintf("%d %sies", n, singular[:len(singular)-1])
+		}
 	}
 	return fmt.Sprintf("%d %ss", n, singular)
 }

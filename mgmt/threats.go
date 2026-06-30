@@ -26,6 +26,13 @@ type Threat struct {
 	Raw json.RawMessage `json:"-"`
 }
 
+func (t Threat) MarshalJSON() ([]byte, error) {
+	if t.Raw != nil {
+		return t.Raw, nil
+	}
+	return []byte("{}"), nil
+}
+
 func (t *Threat) UnmarshalJSON(b []byte) error {
 	t.Raw = append(t.Raw[:0:0], b...)
 	// Threats use nested objects (threatInfo, agentRealtimeInfo).

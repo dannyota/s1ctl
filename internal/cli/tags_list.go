@@ -20,18 +20,23 @@ func newTagsCmd() *cobra.Command {
 
 func newTagsListCmd() *cobra.Command {
 	var siteIDs []string
-	var query string
+	var tagType, query string
 	var limit int
 
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List tags",
+		Long:  "Types: endpoint, firewall, network-quarantine",
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if tagType == "" {
+				return fmt.Errorf("--type is required (endpoint, firewall, network-quarantine)")
+			}
 			c, err := mgmtClient()
 			if err != nil {
 				return err
 			}
 			tags, pag, err := c.TagsList(cmd.Context(), &mgmt.TagListParams{
+				Type:    tagType,
 				SiteIDs: siteIDs,
 				Query:   query,
 				Limit:   limit,
@@ -51,6 +56,7 @@ func newTagsListCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&tagType, "type", "", "tag type (endpoint, firewall, network-quarantine)")
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results")

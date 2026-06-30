@@ -31,6 +31,7 @@ func (t *Tag) UnmarshalJSON(b []byte) error {
 
 // TagListParams are query parameters for listing tags.
 type TagListParams struct {
+	Type       string
 	SiteIDs    []string
 	AccountIDs []string
 	Query      string
@@ -43,6 +44,7 @@ func (p *TagListParams) values() url.Values {
 	if p == nil {
 		return v
 	}
+	addString(v, "type", p.Type)
 	addCSV(v, "siteIds", p.SiteIDs)
 	addCSV(v, "accountIds", p.AccountIDs)
 	addString(v, "query", p.Query)

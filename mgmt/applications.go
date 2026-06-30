@@ -53,5 +53,5 @@ func (p *ApplicationListParams) values() url.Values {
 
 // ApplicationsList returns a paginated list of installed applications.
 func (c *Client) ApplicationsList(ctx context.Context, params *ApplicationListParams) ([]Application, *Pagination, error) {
-	return list[Application](c, ctx, "/agents/applications", params.values())
+	return list[Application](c, ctx, "/installed-applications", params.values())
 }

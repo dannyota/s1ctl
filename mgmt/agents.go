@@ -107,11 +107,6 @@ func (p *AgentListParams) values() url.Values {
 	return v
 }
 
-type countResponse struct {
-	Data       int        `json:"data"`
-	Pagination Pagination `json:"pagination"`
-}
-
 // AgentsList returns a paginated list of agents.
 func (c *Client) AgentsList(ctx context.Context, params *AgentListParams) ([]Agent, *Pagination, error) {
 	return list[Agent](c, ctx, "/agents", params.values())
@@ -123,11 +118,11 @@ func (c *Client) AgentsCount(ctx context.Context, params *AgentListParams) (int,
 		params = &AgentListParams{}
 	}
 	params.CountOnly = true
-	var resp countResponse
-	if err := c.get(ctx, "/agents", params.values(), &resp); err != nil {
+	_, pag, err := list[Agent](c, ctx, "/agents", params.values())
+	if err != nil {
 		return 0, err
 	}
-	return resp.Pagination.TotalItems, nil
+	return pag.TotalItems, nil
 }
 
 // AgentsGet returns a single agent by ID.
