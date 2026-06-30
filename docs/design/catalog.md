@@ -17,14 +17,14 @@ a surface forward.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| agents | list, get, count | actions (isolate, scan, ...) | -- | designed |
-| threats | list, get | mitigate, notes | -- | designed |
-| alerts | list (REST), query (GraphQL) | triage, notes | -- | designed |
-| sites | list, get | create, update, delete | -- | designed |
-| groups | list, get | create, update, delete | -- | designed |
-| accounts | list, get | -- | -- | designed |
-| policies | list, get | update | pull/push | designed |
-| exclusions | list, get | create, update, delete | pull/push | designed |
+| agents | list, get, count | isolate, connect, scan, decommission | -- | built |
+| threats | list, get | mitigate, verdict, status | -- | built |
+| alerts | list (GraphQL) | -- | -- | built |
+| sites | list, get | -- | -- | built |
+| groups | list, get | -- | -- | built |
+| accounts | list, get | -- | -- | built |
+| policies | get | -- | -- | built |
+| exclusions | list, get | create, delete | pull/push | built |
 
 ## Detection and response
 
@@ -32,15 +32,15 @@ a surface forward.
 |---------|------|-------|----------------|--------|
 | rules | list, get | create, update, delete | pull/push | designed |
 | visibility | query | -- | -- | designed |
-| remoteops | list scripts, results | run, upload | -- | designed |
+| remoteops | list | -- | -- | built |
 
 ## Application and device control
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| applications | list, get | -- | -- | -- |
-| devices | list, get | rules | -- | -- |
-| firewall | list, get | create, update, delete | pull/push | -- |
+| applications | list | -- | -- | built |
+| devices | list | -- | -- | built |
+| firewall | list | -- | -- | built |
 | network | list, get | quarantine | -- | -- |
 
 ## Cloud and vulnerability management
@@ -57,17 +57,17 @@ a surface forward.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| datalake | query, powerquery, files | addEvents, uploadLogs | -- | designed |
+| datalake | powerquery | -- | -- | built |
 
 ## Platform administration
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| users | list, get | create, update, delete | -- | -- |
+| users | list, get | -- | -- | built |
 | settings | list, get | update | pull/push | -- |
-| updates | list, get | upgrade | -- | -- |
-| tags | list, get | create, update, delete | -- | -- |
-| activities | list | -- | -- | -- |
+| updates | list | -- | -- | built |
+| tags | list | -- | -- | built |
+| activities | list | -- | -- | built |
 
 ## Automation and integration
 
