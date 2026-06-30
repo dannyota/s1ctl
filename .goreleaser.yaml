@@ -1,0 +1,60 @@
+version: 2
+
+project_name: s1ctl
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: s1ctl
+    main: ./cmd/s1ctl
+    binary: s1ctl
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+      - -X danny.vn/s1/internal/cli.version={{ .Version }}
+      - -X danny.vn/s1/internal/cli.commit={{ .FullCommit }}
+      - -X danny.vn/s1/internal/cli.date={{ .Date }}
+
+archives:
+  - id: s1ctl
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+
+signs:
+  - cmd: cosign
+    signature: ${artifact}.sig
+    certificate: ${artifact}.pem
+    args:
+      - sign-blob
+      - --output-signature=${signature}
+      - --output-certificate=${certificate}
+      - ${artifact}
+      - --yes
+    artifacts: checksum
+    output: true
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+
+release:
+  draft: false
+  prerelease: auto

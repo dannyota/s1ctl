@@ -1,0 +1,4 @@
+# One term per line — case-insensitive substring match against staged diffs.
+# Copy to denylist.local (gitignored) and add your tenant-specific terms.
+# your-org-name
+# your-real-domain.com

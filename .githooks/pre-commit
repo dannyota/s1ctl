@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -u
+
+added="$(git diff --cached --no-color --diff-filter=ACM -U0 -- . ':(exclude).githooks' \
+  | grep '^+' | grep -v '^+++')"
+[ -z "$added" ] && exit 0
+
+scan="$(printf '%s\n' "$added" \
+  | grep -viE 'your-[a-z0-9-]+|example\.(com|org)|your-tenant|placeholder|0{6,}|00000000-0000-0000-0000-000000000000')"
+
+hits=""
+check() {
+  if printf '%s\n' "$scan" | grep -qE ${3:-} -- "$1"; then hits="${hits}   - $2"$'\n'; fi
+}
+
+check '-----BEGIN ([A-Z ]+ )?PRIVATE KEY-----'                       'private key block'
+check '"type"[[:space:]]*:[[:space:]]*"service_account"|"private_key"[[:space:]]*:' 'service-account JSON'
+check '(gh[opsu]_[A-Za-z0-9]{20,}|ya29\.[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35})' 'API token / access key'
+
+dl="$(git rev-parse --show-toplevel)/.githooks/denylist.local"
+if [ -f "$dl" ]; then
+  while IFS= read -r term || [ -n "$term" ]; do
+    case "$term" in '' | \#*) continue ;; esac
+    if printf '%s\n' "$scan" | grep -qiF -- "$term"; then
+      hits="${hits}   - denylisted term: ${term}"$'\n'
+    fi
+  done < "$dl"
+fi
+
+if [ -n "$hits" ]; then
+  {
+    echo "commit blocked by leak guard (.githooks/pre-commit):"
+    printf '%s' "$hits"
+    echo
+    echo "This repo is PUBLIC and tenant-neutral. Remove the sensitive data."
+    echo "Override: git commit --no-verify"
+  } >&2
+  exit 1
+fi
+
+if [ -x scripts/check-lengths.sh ]; then
+  if ! out="$(bash scripts/check-lengths.sh 2>&1)"; then
+    {
+      echo "commit blocked by file-length budget (scripts/check-lengths.sh):"
+      printf '%s\n' "$out" | grep -E 'TOO LONG|FAIL'
+      echo "Override: git commit --no-verify"
+    } >&2
+    exit 1
+  fi
+fi
+exit 0
