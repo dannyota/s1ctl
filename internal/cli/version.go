@@ -20,7 +20,7 @@ func newVersionCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if outputFormat == "json" {
-				return printJSON(map[string]string{
+				return printJSON(cmd.OutOrStdout(), map[string]string{
 					"version": version,
 					"commit":  commit,
 					"date":    date,

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/spf13/cobra"
 )
@@ -24,14 +25,20 @@ func newRootCmd() *cobra.Command {
 		Long:          "Operate SentinelOne Singularity Platform as code — pull, diff, push.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		PersistentPreRun: func(_ *cobra.Command, _ []string) {
+		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			if jsonFlag {
 				outputFormat = "json"
 			}
+			validFormats := []string{"table", "json", "csv"}
+			if !slices.Contains(validFormats, outputFormat) {
+				return fmt.Errorf("invalid output format %q (valid: table, json, csv)", outputFormat)
+			}
+			return nil
 		},
 	}
 	cmd.PersistentFlags().StringVar(&outputFormat, "output", "table", "output format (table, json, csv)")
 	cmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "shorthand for --output json")
+	cmd.MarkFlagsMutuallyExclusive("output", "json")
 	cmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "show detailed error information")
 	cmd.PersistentFlags().BoolVar(&noProgress, "no-progress", false, "disable spinners and progress output")
 	cmd.PersistentFlags().StringVar(&configFile, "config", "", "config file (default ~/.s1ctl/config.yaml)")

@@ -100,7 +100,7 @@ func runPowerQueryREST(cmd *cobra.Command, query, startTime, endTime, priority s
 func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse) error {
 	if len(resp.Columns) == 0 {
 		if outputFormat == "json" {
-			return printJSON(resp)
+			return printJSON(cmd.OutOrStdout(), resp)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "No results.")
 		return nil

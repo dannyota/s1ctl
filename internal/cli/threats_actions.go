@@ -47,7 +47,7 @@ func newThreatActionCmd(verb, short, flagName, flagDesc string, fn threatActionF
 				return err
 			}
 			if outputFormat == "json" {
-				return printJSON(map[string]int{"affected": affected})
+				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", verb, pluralize(affected, "threat"))
 			return nil
@@ -84,7 +84,7 @@ func newThreatMitigateCmd() *cobra.Command {
 				return err
 			}
 			if outputFormat == "json" {
-				return printJSON(map[string]int{"affected": affected})
+				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", action, pluralize(affected, "threat"))
 			return nil

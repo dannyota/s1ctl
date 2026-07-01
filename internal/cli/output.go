@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
+	"unicode/utf8"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
@@ -21,24 +21,24 @@ var (
 	cellStyle   = lipgloss.NewStyle().PaddingRight(2)
 )
 
-func printJSON(v any) error {
-	enc := json.NewEncoder(os.Stdout)
+func printJSON(w io.Writer, v any) error {
+	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
 }
 
-func printCSV(headers []string, rows [][]string) error {
-	w := csv.NewWriter(os.Stdout)
-	if err := w.Write(headers); err != nil {
+func printCSV(w io.Writer, headers []string, rows [][]string) error {
+	cw := csv.NewWriter(w)
+	if err := cw.Write(headers); err != nil {
 		return err
 	}
 	for _, row := range rows {
-		if err := w.Write(row); err != nil {
+		if err := cw.Write(row); err != nil {
 			return err
 		}
 	}
-	w.Flush()
-	return w.Error()
+	cw.Flush()
+	return cw.Error()
 }
 
 func printTable(headers []string, rows [][]string) {
@@ -65,9 +65,9 @@ func printTable(headers []string, rows [][]string) {
 func printOutput(w io.Writer, headers []string, rows [][]string, items any, count, total int, resource string, all bool) error {
 	switch outputFormat {
 	case "json":
-		return printJSON(items)
+		return printJSON(w, items)
 	case "csv":
-		return printCSV(headers, rows)
+		return printCSV(w, headers, rows)
 	default:
 		printTable(headers, rows)
 		printFooter(w, count, total, resource, all)
@@ -80,16 +80,12 @@ func printFooter(w io.Writer, count, total int, resource string, all bool) {
 		fmt.Fprintf(w, "\n%s\n", pluralize(count, resource))
 		return
 	}
-	if total > 0 {
-		fmt.Fprintf(w, "\nShowing %d of %d %ss (use --all to fetch all)\n", count, total, resource)
-		return
-	}
-	fmt.Fprintf(w, "\n%s\n", pluralize(count, resource))
+	fmt.Fprintf(w, "\nShowing %d of %s (use --all to fetch all)\n", count, pluralize(total, resource))
 }
 
 func printError(w io.Writer, err error) {
 	if outputFormat == "json" {
-		printJSONError(err)
+		printJSONError(w, err)
 		return
 	}
 	if verbose {
@@ -99,7 +95,7 @@ func printError(w io.Writer, err error) {
 	fmt.Fprintln(w, "Error:", err)
 }
 
-func printJSONError(err error) {
+func printJSONError(w io.Writer, err error) {
 	out := map[string]any{"error": map[string]any{"message": err.Error()}}
 
 	var mgmtErr *mgmt.APIError
@@ -135,7 +131,7 @@ func printJSONError(err error) {
 		}
 	}
 
-	_ = printJSON(out)
+	_ = printJSON(w, out)
 }
 
 func printVerboseError(w io.Writer, err error) {
@@ -144,6 +140,7 @@ func printVerboseError(w io.Writer, err error) {
 	var mgmtErr *mgmt.APIError
 	var sdlErr *sdl.APIError
 	var gqlHTTP *graphql.HTTPError
+	var gqlQuery *graphql.QueryError
 
 	switch {
 	case errors.As(err, &mgmtErr):
@@ -164,14 +161,19 @@ func printVerboseError(w io.Writer, err error) {
 		if len(gqlHTTP.Body) > 0 {
 			fmt.Fprintf(w, "\n  Body: %s\n", gqlHTTP.Body)
 		}
+	case errors.As(err, &gqlQuery):
+		for _, e := range gqlQuery.Errors {
+			fmt.Fprintf(w, "\n  Error: %s\n", e.Message)
+		}
 	}
 }
 
 func truncate(s string, max int) string {
-	if len(s) <= max {
+	if utf8.RuneCountInString(s) <= max {
 		return s
 	}
-	return s[:max-1] + "…"
+	runes := []rune(s)
+	return string(runes[:max-1]) + "…"
 }
 
 func boolIcon(b bool) string {

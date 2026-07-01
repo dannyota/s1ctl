@@ -75,7 +75,7 @@ func newUsersListCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. fullName, email)")
-	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -94,7 +94,7 @@ func newUsersGetCmd() *cobra.Command {
 				return err
 			}
 			if outputFormat == "json" {
-				return printJSON(u)
+				return printJSON(cmd.OutOrStdout(), u)
 			}
 			rows := [][]string{
 				{"ID", u.ID},

@@ -44,7 +44,7 @@ func newDeviceControlListCmd() *cobra.Command {
 			var total int
 
 			if all {
-				rules, total, err = fetchAllREST("rule", func(cur string) ([]mgmt.DeviceRule, *mgmt.Pagination, error) {
+				rules, total, err = fetchAllREST("device rule", func(cur string) ([]mgmt.DeviceRule, *mgmt.Pagination, error) {
 					params.Cursor = cur
 					return c.DeviceRulesList(cmd.Context(), params)
 				})
@@ -67,7 +67,7 @@ func newDeviceControlListCmd() *cobra.Command {
 					r.Action, r.Status,
 				}
 			}
-			return printOutput(cmd.OutOrStdout(), headers, rows, rules, len(rules), total, "rule", all)
+			return printOutput(cmd.OutOrStdout(), headers, rows, rules, len(rules), total, "device rule", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")

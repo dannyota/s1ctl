@@ -17,7 +17,7 @@ func newAlertsCmd() *cobra.Command {
 }
 
 func newAlertsListCmd() *cobra.Command {
-	var severities, statuses []string
+	var severities, verdicts []string
 	var after string
 	var limit int
 	var all bool
@@ -40,10 +40,10 @@ func newAlertsListCmd() *cobra.Command {
 					StringIn: &graphql.InStr{Values: severities},
 				})
 			}
-			if len(statuses) > 0 {
+			if len(verdicts) > 0 {
 				params.Filters = append(params.Filters, graphql.Filter{
 					FieldID:  "analystVerdict",
-					StringIn: &graphql.InStr{Values: statuses},
+					StringIn: &graphql.InStr{Values: verdicts},
 				})
 			}
 
@@ -81,7 +81,7 @@ func newAlertsListCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
-	cmd.Flags().StringSliceVar(&statuses, "verdict", nil, "filter by analyst verdict")
+	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&after, "after", "", "pagination cursor")

@@ -87,7 +87,7 @@ func newAgentsListCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. computerName, lastActiveDate)")
-	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -106,7 +106,7 @@ func newAgentsGetCmd() *cobra.Command {
 				return err
 			}
 			if outputFormat == "json" {
-				return printJSON(agent)
+				return printJSON(cmd.OutOrStdout(), agent)
 			}
 			rows := [][]string{
 				{"ID", agent.ID},
@@ -144,7 +144,7 @@ func newAgentsCountCmd() *cobra.Command {
 				return err
 			}
 			if outputFormat == "json" {
-				return printJSON(map[string]int{"count": count})
+				return printJSON(cmd.OutOrStdout(), map[string]int{"count": count})
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), count)
 			return nil

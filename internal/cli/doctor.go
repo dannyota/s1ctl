@@ -34,18 +34,21 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("config: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(cmd.Context(), 30*time.Second)
 	defer cancel()
 
-	cfg, _ := loadConfig()
+	var sdlURL string
+	if cfg, loadErr := loadConfig(); loadErr == nil {
+		sdlURL = cfg.SDLURL
+	}
 	results := []checkResult{
 		checkMGMT(ctx, consoleURL, token),
 		checkGraphQL(ctx, consoleURL, token),
-		checkSDL(ctx, cfg.SDLURL, token),
+		checkSDL(ctx, sdlURL, token),
 	}
 
 	if outputFormat == "json" {
-		return printJSON(results)
+		return printJSON(cmd.OutOrStdout(), results)
 	}
 
 	allOK := true

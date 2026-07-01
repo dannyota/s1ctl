@@ -83,7 +83,7 @@ func newExclusionsListCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. type, osType)")
-	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -102,7 +102,7 @@ func newExclusionsGetCmd() *cobra.Command {
 				return err
 			}
 			if outputFormat == "json" {
-				return printJSON(e)
+				return printJSON(cmd.OutOrStdout(), e)
 			}
 			rows := [][]string{
 				{"ID", e.ID},

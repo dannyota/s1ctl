@@ -51,7 +51,7 @@ func newPoliciesGetCmd() *cobra.Command {
 			default:
 				return fmt.Errorf("specify --site-id, --account-id, or both --site-id and --group-id")
 			}
-			return printJSON(raw)
+			return printJSON(cmd.OutOrStdout(), raw)
 		},
 	}
 	cmd.Flags().StringVar(&siteID, "site-id", "", "site ID")

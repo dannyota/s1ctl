@@ -97,7 +97,7 @@ func newAccountsGetCmd() *cobra.Command {
 				return err
 			}
 			if outputFormat == "json" {
-				return printJSON(a)
+				return printJSON(cmd.OutOrStdout(), a)
 			}
 			rows := [][]string{
 				{"ID", a.ID},

@@ -81,7 +81,7 @@ func newGroupsListCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. name, type)")
-	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -100,7 +100,7 @@ func newGroupsGetCmd() *cobra.Command {
 				return err
 			}
 			if outputFormat == "json" {
-				return printJSON(g)
+				return printJSON(cmd.OutOrStdout(), g)
 			}
 			rows := [][]string{
 				{"ID", g.ID},

@@ -20,7 +20,7 @@ func runCommands(cmd *cobra.Command, _ []string) error {
 	entries := collectCommands(cmd.Root(), "")
 
 	if outputFormat == "json" {
-		return printJSON(entries)
+		return printJSON(cmd.OutOrStdout(), entries)
 	}
 
 	var rows [][]string

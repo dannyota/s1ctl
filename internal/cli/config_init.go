@@ -105,7 +105,7 @@ func runConfigShow(cmd *cobra.Command, _ []string) error {
 		if inst.SDLURL != "" {
 			out["sdl_url"] = inst.SDLURL
 		}
-		return printJSON(out)
+		return printJSON(cmd.OutOrStdout(), out)
 	}
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Console URL: %s\n", inst.ConsoleURL)

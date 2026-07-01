@@ -44,7 +44,7 @@ func newFirewallListCmd() *cobra.Command {
 			var total int
 
 			if all {
-				rules, total, err = fetchAllREST("rule", func(cur string) ([]mgmt.FirewallRule, *mgmt.Pagination, error) {
+				rules, total, err = fetchAllREST("firewall rule", func(cur string) ([]mgmt.FirewallRule, *mgmt.Pagination, error) {
 					params.Cursor = cur
 					return c.FirewallRulesList(cmd.Context(), params)
 				})
@@ -67,7 +67,7 @@ func newFirewallListCmd() *cobra.Command {
 					r.Protocol, r.Action, r.Status,
 				}
 			}
-			return printOutput(cmd.OutOrStdout(), headers, rows, rules, len(rules), total, "rule", all)
+			return printOutput(cmd.OutOrStdout(), headers, rows, rules, len(rules), total, "firewall rule", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
