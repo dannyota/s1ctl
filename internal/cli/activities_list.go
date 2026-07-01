@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/mgmt"
@@ -13,11 +15,16 @@ func newActivitiesCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newActivitiesListCmd())
+	cmd.AddCommand(newActivitiesCountCmd())
 	return cmd
 }
 
 func newActivitiesListCmd() *cobra.Command {
 	var siteIDs []string
+	var accountIDs []string
+	var activityTypes []int
+	var createdAfter string
+	var createdBefore string
 	var cursor string
 	var limit int
 	var all bool
@@ -31,9 +38,13 @@ func newActivitiesListCmd() *cobra.Command {
 				return err
 			}
 			params := &mgmt.ActivityListParams{
-				SiteIDs: siteIDs,
-				Limit:   limit,
-				Cursor:  cursor,
+				SiteIDs:       siteIDs,
+				AccountIDs:    accountIDs,
+				ActivityTypes: activityTypes,
+				CreatedAtGt:   createdAfter,
+				CreatedAtLt:   createdBefore,
+				Limit:         limit,
+				Cursor:        cursor,
 			}
 			if params.Limit == 0 {
 				params.Limit = defaultPageSize
@@ -69,8 +80,42 @@ func newActivitiesListCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
+	cmd.Flags().IntSliceVar(&activityTypes, "activity-type", nil, "filter by activity type ID")
+	cmd.Flags().StringVar(&createdAfter, "created-after", "", "filter activities after this date (ISO 8601)")
+	cmd.Flags().StringVar(&createdBefore, "created-before", "", "filter activities before this date (ISO 8601)")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
+	return cmd
+}
+
+func newActivitiesCountCmd() *cobra.Command {
+	var siteIDs, accountIDs []string
+
+	cmd := &cobra.Command{
+		Use:   "count",
+		Short: "Count activities",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			count, err := c.ActivitiesCount(cmd.Context(), &mgmt.ActivityListParams{
+				SiteIDs:    siteIDs,
+				AccountIDs: accountIDs,
+			})
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), map[string]int{"count": count})
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), count)
+			return nil
+		},
+	}
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	return cmd
 }

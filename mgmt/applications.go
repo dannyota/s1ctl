@@ -31,11 +31,13 @@ func (a *Application) UnmarshalJSON(b []byte) error {
 
 // ApplicationListParams are query parameters for listing applications.
 type ApplicationListParams struct {
-	AgentIDs []string
-	SiteIDs  []string
-	Query    string
-	Limit    int
-	Cursor   string
+	AgentIDs  []string
+	SiteIDs   []string
+	Name      string
+	Publisher string
+	Version   string
+	Limit     int
+	Cursor    string
 }
 
 func (p *ApplicationListParams) values() url.Values {
@@ -45,7 +47,9 @@ func (p *ApplicationListParams) values() url.Values {
 	}
 	addCSV(v, "agentIds", p.AgentIDs)
 	addCSV(v, "siteIds", p.SiteIDs)
-	addString(v, "query", p.Query)
+	addString(v, "name__contains", p.Name)
+	addString(v, "publisher__contains", p.Publisher)
+	addString(v, "version__contains", p.Version)
 	addInt(v, "limit", p.Limit)
 	addString(v, "cursor", p.Cursor)
 	return v

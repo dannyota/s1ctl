@@ -86,6 +86,19 @@ func (c *Client) SitesList(ctx context.Context, params *SiteListParams) ([]Site,
 	return resp.Data.Sites, &resp.Data.Pagination, nil
 }
 
+// SitesCount returns the count of sites matching the filter.
+func (c *Client) SitesCount(ctx context.Context, params *SiteListParams) (int, error) {
+	if params == nil {
+		params = &SiteListParams{}
+	}
+	params.CountOnly = true
+	var resp sitesResponse
+	if err := c.get(ctx, "/sites", params.values(), &resp); err != nil {
+		return 0, err
+	}
+	return resp.Data.Pagination.TotalItems, nil
+}
+
 // SitesGet returns a single site by ID.
 func (c *Client) SitesGet(ctx context.Context, id string) (*Site, error) {
 	params := url.Values{}

@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/graphql"
@@ -9,10 +11,14 @@ import (
 func newAlertsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "alerts",
-		Short: "Query unified alerts (GraphQL UAM)",
+		Short: "Manage unified alerts (GraphQL UAM)",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newAlertsListCmd())
+	cmd.AddCommand(newAlertsGetCmd())
+	cmd.AddCommand(newAlertsCountCmd())
+	cmd.AddCommand(newAlertsStatusCmd())
+	cmd.AddCommand(newAlertsVerdictCmd())
 	return cmd
 }
 
@@ -85,6 +91,164 @@ func newAlertsListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&after, "after", "", "pagination cursor")
+	return cmd
+}
+
+func newAlertsCountCmd() *cobra.Command {
+	var severities, statuses, verdicts []string
+
+	cmd := &cobra.Command{
+		Use:   "count",
+		Short: "Count alerts",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := gqlClient()
+			if err != nil {
+				return err
+			}
+			params := &graphql.ListParams{First: 1}
+			if len(severities) > 0 {
+				params.Filters = append(params.Filters, graphql.Filter{
+					FieldID:  "severity",
+					StringIn: &graphql.InStr{Values: severities},
+				})
+			}
+			if len(statuses) > 0 {
+				params.Filters = append(params.Filters, graphql.Filter{
+					FieldID:  "status",
+					StringIn: &graphql.InStr{Values: statuses},
+				})
+			}
+			if len(verdicts) > 0 {
+				params.Filters = append(params.Filters, graphql.Filter{
+					FieldID:  "analystVerdict",
+					StringIn: &graphql.InStr{Values: verdicts},
+				})
+			}
+			conn, err := c.AlertsList(cmd.Context(), params)
+			if err != nil {
+				return err
+			}
+			count := int(conn.TotalCount)
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), map[string]int{"count": count})
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), count)
+			return nil
+		},
+	}
+	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
+	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, RESOLVED, etc.)")
+	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
+	return cmd
+}
+
+func newAlertsGetCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "get <id>",
+		Short: "Get alert details",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c, err := gqlClient()
+			if err != nil {
+				return err
+			}
+			a, err := c.AlertsGet(cmd.Context(), args[0])
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), a)
+			}
+
+			analyticsUID := "-"
+			if a.Analytics != nil {
+				analyticsUID = orDash(a.Analytics.UID)
+			}
+
+			rows := [][]string{
+				{"ID", a.ID},
+				{"Name", orDash(a.Name)},
+				{"Description", orDash(a.Description)},
+				{"Severity", a.Severity},
+				{"Status", a.Status},
+				{"Classification", orDash(a.Classification)},
+				{"Confidence", orDash(a.ConfidenceLevel)},
+				{"Verdict", orDash(a.AnalystVerdict)},
+				{"Detected", orDash(a.DetectedAt)},
+				{"Created", orDash(a.CreatedAt)},
+				{"Updated", orDash(a.UpdatedAt)},
+				{"Storyline ID", orDash(a.StorylineID)},
+				{"Detection Product", orDash(a.DetectionSource.Product)},
+				{"Detection Vendor", orDash(a.DetectionSource.Vendor)},
+				{"Analytics UID", analyticsUID},
+				{"Account", orDash(a.RealTime.Scope.Account.Name)},
+				{"Site", orDash(a.RealTime.Scope.Site.Name)},
+			}
+			printTable([]string{"Field", "Value"}, rows)
+			return nil
+		},
+	}
+}
+
+func newAlertsStatusCmd() *cobra.Command {
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "status <id> <status>",
+		Short: "Update alert status",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			id, status := args[0], args[1]
+			if !yes {
+				fmt.Fprintf(cmd.OutOrStdout(), "Would set status=%s on alert %s. Pass --yes to apply.\n", status, id)
+				return nil
+			}
+			c, err := gqlClient()
+			if err != nil {
+				return err
+			}
+			if err := c.AlertsUpdateStatus(cmd.Context(), []string{id}, status); err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), map[string]string{"status": "updated", "id": id})
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "status: updated alert %s\n", id)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
+}
+
+func newAlertsVerdictCmd() *cobra.Command {
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "verdict <id> <verdict>",
+		Short: "Update alert analyst verdict",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			id, verdict := args[0], args[1]
+			if !yes {
+				fmt.Fprintf(cmd.OutOrStdout(), "Would set verdict=%s on alert %s. Pass --yes to apply.\n", verdict, id)
+				return nil
+			}
+			c, err := gqlClient()
+			if err != nil {
+				return err
+			}
+			if err := c.AlertsUpdateVerdict(cmd.Context(), []string{id}, verdict); err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), map[string]string{"verdict": "updated", "id": id})
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "verdict: updated alert %s\n", id)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
 	return cmd
 }
 

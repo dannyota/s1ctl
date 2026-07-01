@@ -70,6 +70,19 @@ func (c *Client) AccountsList(ctx context.Context, params *AccountListParams) ([
 	return list[Account](c, ctx, "/accounts", params.values())
 }
 
+// AccountsCount returns the count of accounts matching the filter.
+func (c *Client) AccountsCount(ctx context.Context, params *AccountListParams) (int, error) {
+	if params == nil {
+		params = &AccountListParams{}
+	}
+	params.CountOnly = true
+	_, pag, err := list[Account](c, ctx, "/accounts", params.values())
+	if err != nil {
+		return 0, err
+	}
+	return pag.TotalItems, nil
+}
+
 // AccountsGet returns a single account by ID (uses path param, not ?ids=).
 func (c *Client) AccountsGet(ctx context.Context, id string) (*Account, error) {
 	items, _, err := list[Account](c, ctx, fmt.Sprintf("/accounts/%s", id), nil)

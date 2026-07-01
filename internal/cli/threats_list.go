@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/mgmt"
@@ -13,7 +15,10 @@ func newThreatsCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newThreatsListCmd())
+	cmd.AddCommand(newThreatsCountCmd())
 	cmd.AddCommand(newThreatsGetCmd())
+	cmd.AddCommand(newThreatNotesCmd())
+	cmd.AddCommand(newThreatAddNoteCmd())
 	addThreatActions(cmd)
 	return cmd
 }
@@ -122,4 +127,30 @@ func newThreatsGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newThreatsCountCmd() *cobra.Command {
+	var siteIDs []string
+
+	cmd := &cobra.Command{
+		Use:   "count",
+		Short: "Count threats",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			count, err := c.ThreatsCount(cmd.Context(), &mgmt.ThreatListParams{SiteIDs: siteIDs})
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), map[string]int{"count": count})
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), count)
+			return nil
+		},
+	}
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	return cmd
 }

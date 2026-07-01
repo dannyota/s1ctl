@@ -15,6 +15,7 @@ func newSitesCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newSitesListCmd())
+	cmd.AddCommand(newSitesCountCmd())
 	cmd.AddCommand(newSitesGetCmd())
 	return cmd
 }
@@ -118,4 +119,30 @@ func newSitesGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newSitesCountCmd() *cobra.Command {
+	var accountIDs []string
+
+	cmd := &cobra.Command{
+		Use:   "count",
+		Short: "Count sites",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			count, err := c.SitesCount(cmd.Context(), &mgmt.SiteListParams{AccountIDs: accountIDs})
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), map[string]int{"count": count})
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), count)
+			return nil
+		},
+	}
+	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
+	return cmd
 }

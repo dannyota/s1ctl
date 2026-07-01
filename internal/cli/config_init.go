@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -91,30 +92,75 @@ func newConfigShowCmd() *cobra.Command {
 }
 
 func runConfigShow(cmd *cobra.Command, _ []string) error {
-	inst, err := loadConfig()
+	// Load without validation so show works as a diagnostic even with
+	// partial configuration (e.g. missing token).
+	inst, err := config.Load(configFile)
 	if err != nil {
 		return err
 	}
 
+	token := redactToken(inst.Token)
+	sdlDisplay := inst.SDLURL
+	if sdlDisplay == "" {
+		sdlDisplay = "not configured"
+	}
+	consoleDisplay := inst.ConsoleURL
+	if consoleDisplay == "" {
+		consoleDisplay = "not configured"
+	}
+
+	type envVar struct {
+		name string
+		set  bool
+	}
+	envVars := []envVar{
+		{"S1_CONSOLE_URL", os.Getenv("S1_CONSOLE_URL") != ""},
+		{"S1_TOKEN", os.Getenv("S1_TOKEN") != ""},
+		{"S1_SDL_URL", os.Getenv("S1_SDL_URL") != ""},
+	}
+
 	if outputFormat == "json" {
-		out := map[string]string{
-			"console_url": inst.ConsoleURL,
-			"token":       "(redacted)",
-			"source":      inst.Source(),
+		envMap := make(map[string]bool, len(envVars))
+		for _, v := range envVars {
+			envMap[v.name] = v.set
 		}
-		if inst.SDLURL != "" {
-			out["sdl_url"] = inst.SDLURL
+		out := map[string]any{
+			"console_url": inst.ConsoleURL,
+			"token":       token,
+			"sdl_url":     inst.SDLURL,
+			"config_file": inst.Source(),
+			"env_vars":    envMap,
 		}
 		return printJSON(cmd.OutOrStdout(), out)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Console URL: %s\n", inst.ConsoleURL)
-	fmt.Fprintf(cmd.OutOrStdout(), "Token:       %s\n", "(redacted)")
-	if inst.SDLURL != "" {
-		fmt.Fprintf(cmd.OutOrStdout(), "SDL URL:     %s\n", inst.SDLURL)
+	rows := [][]string{
+		{"Console URL", consoleDisplay},
+		{"API Token", token},
+		{"SDL URL", sdlDisplay},
+		{"Config File", inst.Source()},
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "Source:      %s\n", inst.Source())
+	for _, v := range envVars {
+		status := "not set"
+		if v.set {
+			status = "set"
+		}
+		rows = append(rows, []string{v.name, status})
+	}
+
+	printTable([]string{"Setting", "Value"}, rows)
 	return nil
+}
+
+// redactToken masks all but the last 4 characters of a token.
+func redactToken(token string) string {
+	if token == "" {
+		return "not configured"
+	}
+	if len(token) <= 4 {
+		return "****"
+	}
+	return "****" + token[len(token)-4:]
 }
 
 func loadConfig() (*config.Instance, error) {

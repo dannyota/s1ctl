@@ -83,3 +83,16 @@ func (p *ActivityListParams) values() url.Values {
 func (c *Client) ActivitiesList(ctx context.Context, params *ActivityListParams) ([]Activity, *Pagination, error) {
 	return list[Activity](c, ctx, "/activities", params.values())
 }
+
+// ActivitiesCount returns the count of activities matching the filter.
+func (c *Client) ActivitiesCount(ctx context.Context, params *ActivityListParams) (int, error) {
+	if params == nil {
+		params = &ActivityListParams{}
+	}
+	params.CountOnly = true
+	_, pag, err := list[Activity](c, ctx, "/activities", params.values())
+	if err != nil {
+		return 0, err
+	}
+	return pag.TotalItems, nil
+}

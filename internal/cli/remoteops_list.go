@@ -15,6 +15,8 @@ func newRemoteOpsCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newRemoteOpsListCmd())
+	cmd.AddCommand(newRemoteOpsRunCmd())
+	cmd.AddCommand(newRemoteOpsResultsCmd())
 	return cmd
 }
 

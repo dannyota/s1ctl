@@ -14,12 +14,16 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newAgentsCmd())
 	root.AddCommand(newThreatsCmd())
 	root.AddCommand(newAlertsCmd())
+	root.AddCommand(newMisconfigurationsCmd())
+	root.AddCommand(newVulnerabilitiesCmd())
 	root.AddCommand(newSitesCmd())
 	root.AddCommand(newGroupsCmd())
 	root.AddCommand(newAccountsCmd())
 	root.AddCommand(newPoliciesCmd())
 	root.AddCommand(newExclusionsCmd())
 	root.AddCommand(newActivitiesCmd())
+	root.AddCommand(newCloudPoliciesCmd())
+	root.AddCommand(newRulesCmd())
 
 	// Operations
 	root.AddCommand(newUsersCmd())
@@ -30,6 +34,7 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newFirewallCmd())
 	root.AddCommand(newUpdatesCmd())
 
-	// Data lake
+	// Hunting & data lake
+	root.AddCommand(newVisibilityCmd())
 	root.AddCommand(newDatalakeCmd())
 }

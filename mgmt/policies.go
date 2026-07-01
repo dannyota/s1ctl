@@ -8,10 +8,28 @@ import (
 
 // Policy is a SentinelOne endpoint policy (at site, group, or account scope).
 type Policy struct {
+	MitigationMode           string `json:"mitigationMode"`
+	MitigationModeSuspicious string `json:"mitigationModeSuspicious"`
+	AntiTamperingOn          bool   `json:"antiTamperingOn"`
+	NetworkQuarantineOn      bool   `json:"networkQuarantineOn"`
+	SnapshotsOn              bool   `json:"snapshotsOn"`
+	Ioc                      bool   `json:"ioc"`
+	InheritedFrom            string `json:"inheritedFrom"`
+	AllowRemoteShell         bool   `json:"allowRemoteShell"`
+	ScanNewAgents            bool   `json:"scanNewAgents"`
+	AutoDecommissionOn       bool   `json:"autoDecommissionOn"`
+	AutoDecommissionDays     int    `json:"autoDecommissionDays"`
+	CreatedAt                string `json:"createdAt"`
+	UpdatedAt                string `json:"updatedAt"`
+
 	Raw json.RawMessage `json:"-"`
 }
 
 func (p *Policy) UnmarshalJSON(b []byte) error {
+	type alias Policy
+	if err := json.Unmarshal(b, (*alias)(p)); err != nil {
+		return err
+	}
 	p.Raw = append(p.Raw[:0:0], b...)
 	return nil
 }
@@ -25,7 +43,11 @@ func (c *Client) getPolicy(ctx context.Context, path string) (*Policy, error) {
 	if err := c.get(ctx, path, nil, &resp); err != nil {
 		return nil, err
 	}
-	return &Policy{Raw: resp.Data}, nil
+	var p Policy
+	if err := json.Unmarshal(resp.Data, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal policy: %w", err)
+	}
+	return &p, nil
 }
 
 func (c *Client) putPolicy(ctx context.Context, path string, policy json.RawMessage) (*Policy, error) {
@@ -34,7 +56,11 @@ func (c *Client) putPolicy(ctx context.Context, path string, policy json.RawMess
 	if err := c.put(ctx, path, req, &resp); err != nil {
 		return nil, err
 	}
-	return &Policy{Raw: resp.Data}, nil
+	var p Policy
+	if err := json.Unmarshal(resp.Data, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal policy: %w", err)
+	}
+	return &p, nil
 }
 
 // PolicyGetSite returns the policy for a site.

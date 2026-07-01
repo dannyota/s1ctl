@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -15,6 +16,7 @@ func newGroupsCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newGroupsListCmd())
+	cmd.AddCommand(newGroupsCountCmd())
 	cmd.AddCommand(newGroupsGetCmd())
 	return cmd
 }
@@ -115,4 +117,30 @@ func newGroupsGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newGroupsCountCmd() *cobra.Command {
+	var siteIDs []string
+
+	cmd := &cobra.Command{
+		Use:   "count",
+		Short: "Count groups",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			count, err := c.GroupsCount(cmd.Context(), &mgmt.GroupListParams{SiteIDs: siteIDs})
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), map[string]int{"count": count})
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), count)
+			return nil
+		},
+	}
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	return cmd
 }

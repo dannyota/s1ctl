@@ -3,22 +3,126 @@ package mgmt
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 )
 
+// FirewallDirection is the traffic direction of a firewall rule.
+type FirewallDirection string
+
+const (
+	FirewallDirectionAny      FirewallDirection = "any"
+	FirewallDirectionInbound  FirewallDirection = "inbound"
+	FirewallDirectionOutbound FirewallDirection = "outbound"
+)
+
+// FirewallAction is the action taken by a firewall rule.
+type FirewallAction string
+
+const (
+	FirewallActionAllow FirewallAction = "Allow"
+	FirewallActionBlock FirewallAction = "Block"
+)
+
+// FirewallStatus is the status of a firewall rule.
+type FirewallStatus string
+
+const (
+	FirewallStatusEnabled  FirewallStatus = "Enabled"
+	FirewallStatusDisabled FirewallStatus = "Disabled"
+)
+
+// FirewallHostType is the type of a host matcher in a firewall rule.
+type FirewallHostType string
+
+const (
+	FirewallHostAny       FirewallHostType = "any"
+	FirewallHostCIDR      FirewallHostType = "cidr"
+	FirewallHostRange     FirewallHostType = "range"
+	FirewallHostAddresses FirewallHostType = "addresses"
+	FirewallHostFQDN      FirewallHostType = "fqdn"
+)
+
+// FirewallPortType is the type of a port matcher in a firewall rule.
+type FirewallPortType string
+
+const (
+	FirewallPortAny   FirewallPortType = "any"
+	FirewallPortPorts FirewallPortType = "ports"
+	FirewallPortRange FirewallPortType = "range"
+)
+
+// FirewallLocationType is the type of a location matcher in a firewall rule.
+type FirewallLocationType string
+
+const (
+	FirewallLocationAll      FirewallLocationType = "all"
+	FirewallLocationSpecific FirewallLocationType = "specific"
+	FirewallLocationFallback FirewallLocationType = "fallback"
+)
+
+// FirewallAppType is the type of an application matcher in a firewall rule.
+type FirewallAppType string
+
+const (
+	FirewallAppAny    FirewallAppType = "any"
+	FirewallAppPath   FirewallAppType = "path"
+	FirewallAppSHA1   FirewallAppType = "sha1"
+	FirewallAppSystem FirewallAppType = "system"
+)
+
+// FirewallHost describes a host matcher (local or remote).
+type FirewallHost struct {
+	Type   FirewallHostType `json:"type"`
+	Values []string         `json:"values,omitempty"`
+}
+
+// FirewallPort describes a port matcher (local or remote).
+type FirewallPort struct {
+	Type   FirewallPortType `json:"type"`
+	Values []string         `json:"values,omitempty"`
+}
+
+// FirewallLocation describes a location matcher.
+type FirewallLocation struct {
+	Type   FirewallLocationType `json:"type"`
+	Values []string             `json:"values,omitempty"`
+}
+
+// FirewallApplication describes an application matcher.
+type FirewallApplication struct {
+	Type   FirewallAppType `json:"type"`
+	Values []string        `json:"values,omitempty"`
+}
+
 // FirewallRule is a SentinelOne firewall rule.
 type FirewallRule struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Status    string `json:"status"`
-	Action    string `json:"action"`
-	Direction string `json:"direction"`
-	Protocol  string `json:"protocol"`
-	OSType    string `json:"osType"`
-	ScopeID   string `json:"scopeId"`
-	ScopeName string `json:"scopeName"`
-	CreatedAt string `json:"createdAt"`
-	UpdatedAt string `json:"updatedAt"`
+	ID           string               `json:"id"`
+	Name         string               `json:"name"`
+	Description  string               `json:"description"`
+	Status       FirewallStatus       `json:"status"`
+	Action       FirewallAction       `json:"action"`
+	Direction    FirewallDirection    `json:"direction"`
+	Protocol     string               `json:"protocol"`
+	OSType       string               `json:"osType"`
+	OSTypes      []string             `json:"osTypes"`
+	Order        int                  `json:"order"`
+	Application  *FirewallApplication `json:"application,omitempty"`
+	LocalHost    *FirewallHost        `json:"localHost,omitempty"`
+	LocalPort    *FirewallPort        `json:"localPort,omitempty"`
+	RemoteHosts  []FirewallHost       `json:"remoteHosts,omitempty"`
+	RemotePort   *FirewallPort        `json:"remotePort,omitempty"`
+	Location     *FirewallLocation    `json:"location,omitempty"`
+	Scope        string               `json:"scope"`
+	ScopeID      string               `json:"scopeId"`
+	Editable     bool                 `json:"editable"`
+	RuleCategory string               `json:"ruleCategory"`
+	TagIDs       []string             `json:"tagIds"`
+	TagNames     []string             `json:"tagNames"`
+	Creator      string               `json:"creator"`
+	CreatorID    string               `json:"creatorId"`
+	CreatedAt    string               `json:"createdAt"`
+	UpdatedAt    string               `json:"updatedAt"`
 
 	Raw json.RawMessage `json:"-"`
 }
@@ -36,6 +140,7 @@ func (f *FirewallRule) UnmarshalJSON(b []byte) error {
 type FirewallRuleListParams struct {
 	SiteIDs    []string
 	AccountIDs []string
+	GroupIDs   []string
 	Query      string
 	Limit      int
 	Cursor     string
@@ -48,6 +153,7 @@ func (p *FirewallRuleListParams) values() url.Values {
 	}
 	addCSV(v, "siteIds", p.SiteIDs)
 	addCSV(v, "accountIds", p.AccountIDs)
+	addCSV(v, "groupIds", p.GroupIDs)
 	addString(v, "query", p.Query)
 	addInt(v, "limit", p.Limit)
 	addString(v, "cursor", p.Cursor)
@@ -62,4 +168,56 @@ func (c *Client) FirewallRulesList(ctx context.Context, params *FirewallRuleList
 // FirewallRulesGet returns a single firewall rule by ID.
 func (c *Client) FirewallRulesGet(ctx context.Context, id string) (*FirewallRule, error) {
 	return getByID[FirewallRule](c, ctx, "/firewall-control", "firewall rule", id)
+}
+
+// FirewallRuleCreate is the request body for creating or updating a firewall rule.
+type FirewallRuleCreate struct {
+	Name        string               `json:"name"`
+	Description string               `json:"description,omitempty"`
+	Direction   FirewallDirection    `json:"direction"`
+	Protocol    string               `json:"protocol,omitempty"`
+	OSTypes     []string             `json:"osTypes,omitempty"`
+	Action      FirewallAction       `json:"action"`
+	Status      FirewallStatus       `json:"status"`
+	Application *FirewallApplication `json:"application,omitempty"`
+	LocalHost   *FirewallHost        `json:"localHost,omitempty"`
+	LocalPort   *FirewallPort        `json:"localPort,omitempty"`
+	RemoteHosts []FirewallHost       `json:"remoteHosts,omitempty"`
+	RemotePort  *FirewallPort        `json:"remotePort,omitempty"`
+	Location    *FirewallLocation    `json:"location,omitempty"`
+	TagIDs      []string             `json:"tagIds,omitempty"`
+}
+
+type firewallCreateRequest struct {
+	Filter struct {
+		SiteIDs    []string `json:"siteIds,omitempty"`
+		AccountIDs []string `json:"accountIds,omitempty"`
+		GroupIDs   []string `json:"groupIds,omitempty"`
+	} `json:"filter"`
+	Data FirewallRuleCreate `json:"data"`
+}
+
+// FirewallRulesCreate creates a firewall rule.
+func (c *Client) FirewallRulesCreate(ctx context.Context, scope FirewallRuleScope, data FirewallRuleCreate) (*FirewallRule, error) {
+	req := firewallCreateRequest{Data: data}
+	req.Filter.SiteIDs = scope.SiteIDs
+	req.Filter.AccountIDs = scope.AccountIDs
+	req.Filter.GroupIDs = scope.GroupIDs
+	var resp singleResponse[FirewallRule]
+	if err := c.post(ctx, "/firewall-control", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// FirewallRulesUpdate updates a firewall rule by ID.
+func (c *Client) FirewallRulesUpdate(ctx context.Context, id string, data FirewallRuleCreate) (*FirewallRule, error) {
+	return update[FirewallRule](c, ctx, fmt.Sprintf("/firewall-control/%s", id), data)
+}
+
+// FirewallRuleScope identifies the scope for creating a firewall rule.
+type FirewallRuleScope struct {
+	SiteIDs    []string
+	AccountIDs []string
+	GroupIDs   []string
 }

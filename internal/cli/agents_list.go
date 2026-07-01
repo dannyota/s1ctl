@@ -22,10 +22,10 @@ func newAgentsCmd() *cobra.Command {
 }
 
 func newAgentsListCmd() *cobra.Command {
-	var siteIDs, groupIDs, osTypes []string
+	var siteIDs, groupIDs, osTypes, networkStatuses, machineTypes []string
 	var query, cursor, sortBy, sortOrder string
 	var limit int
-	var all bool
+	var all, infected, active bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -36,14 +36,22 @@ func newAgentsListCmd() *cobra.Command {
 				return err
 			}
 			params := &mgmt.AgentListParams{
-				SiteIDs:   siteIDs,
-				GroupIDs:  groupIDs,
-				OSTypes:   osTypes,
-				Query:     query,
-				Limit:     limit,
-				Cursor:    cursor,
-				SortBy:    sortBy,
-				SortOrder: sortOrder,
+				SiteIDs:         siteIDs,
+				GroupIDs:        groupIDs,
+				OSTypes:         osTypes,
+				NetworkStatuses: networkStatuses,
+				MachineTypes:    machineTypes,
+				Query:           query,
+				Limit:           limit,
+				Cursor:          cursor,
+				SortBy:          sortBy,
+				SortOrder:       sortOrder,
+			}
+			if cmd.Flags().Changed("infected") {
+				params.Infected = &infected
+			}
+			if cmd.Flags().Changed("active") {
+				params.IsActive = &active
 			}
 			if params.Limit == 0 {
 				params.Limit = defaultPageSize
@@ -82,6 +90,10 @@ func newAgentsListCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "filter by group ID")
 	cmd.Flags().StringSliceVar(&osTypes, "os-type", nil, "filter by OS type")
+	cmd.Flags().StringSliceVar(&networkStatuses, "network-status", nil, "filter by network status (connected, disconnected)")
+	cmd.Flags().StringSliceVar(&machineTypes, "machine-type", nil, "filter by machine type (server, desktop, laptop)")
+	cmd.Flags().BoolVar(&infected, "infected", false, "filter by infection status")
+	cmd.Flags().BoolVar(&active, "active", false, "filter by active status")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")

@@ -13,6 +13,7 @@ func newDeviceControlCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newDeviceControlListCmd())
+	addDeviceControlSyncCmds(cmd)
 	return cmd
 }
 
@@ -64,7 +65,7 @@ func newDeviceControlListCmd() *cobra.Command {
 			for i, r := range rules {
 				rows[i] = []string{
 					r.ID, r.RuleName, r.DeviceClass,
-					r.Action, r.Status,
+					string(r.Action), string(r.Status),
 				}
 			}
 			return printOutput(cmd.OutOrStdout(), headers, rows, rules, len(rules), total, "device rule", all)

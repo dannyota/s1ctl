@@ -19,7 +19,7 @@ func newApplicationsCmd() *cobra.Command {
 
 func newApplicationsListCmd() *cobra.Command {
 	var siteIDs, agentIDs []string
-	var query, cursor string
+	var name, publisher, version, cursor string
 	var limit int
 	var all bool
 
@@ -32,11 +32,13 @@ func newApplicationsListCmd() *cobra.Command {
 				return err
 			}
 			params := &mgmt.ApplicationListParams{
-				AgentIDs: agentIDs,
-				SiteIDs:  siteIDs,
-				Query:    query,
-				Limit:    limit,
-				Cursor:   cursor,
+				AgentIDs:  agentIDs,
+				SiteIDs:   siteIDs,
+				Name:      name,
+				Publisher: publisher,
+				Version:   version,
+				Limit:     limit,
+				Cursor:    cursor,
 			}
 			if params.Limit == 0 {
 				params.Limit = defaultPageSize
@@ -74,7 +76,9 @@ func newApplicationsListCmd() *cobra.Command {
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&agentIDs, "agent-id", nil, "filter by agent ID")
-	cmd.Flags().StringVar(&query, "query", "", "free text search")
+	cmd.Flags().StringVar(&name, "name", "", "filter by application name (contains)")
+	cmd.Flags().StringVar(&publisher, "publisher", "", "filter by publisher (contains)")
+	cmd.Flags().StringVar(&version, "version", "", "filter by version (contains)")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")

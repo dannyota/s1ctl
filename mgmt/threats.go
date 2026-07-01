@@ -132,6 +132,19 @@ func (c *Client) ThreatsList(ctx context.Context, params *ThreatListParams) ([]T
 	return list[Threat](c, ctx, "/threats", params.values())
 }
 
+// ThreatsCount returns the count of threats matching the filter.
+func (c *Client) ThreatsCount(ctx context.Context, params *ThreatListParams) (int, error) {
+	if params == nil {
+		params = &ThreatListParams{}
+	}
+	params.CountOnly = true
+	_, pag, err := list[Threat](c, ctx, "/threats", params.values())
+	if err != nil {
+		return 0, err
+	}
+	return pag.TotalItems, nil
+}
+
 // ThreatsGet returns a single threat by ID.
 func (c *Client) ThreatsGet(ctx context.Context, id string) (*Threat, error) {
 	return getByID[Threat](c, ctx, "/threats", "threat", id)

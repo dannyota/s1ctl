@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"danny.vn/s1/auth"
 )
 
@@ -33,6 +35,7 @@ const (
 type Client struct {
 	baseURL string
 	http    *http.Client
+	limiter *rate.Limiter
 }
 
 // Option customizes a Client.
@@ -40,6 +43,12 @@ type Option func(*Client)
 
 // WithHTTPClient overrides the underlying *http.Client.
 func WithHTTPClient(h *http.Client) Option { return func(c *Client) { c.http = h } }
+
+// WithRateLimit overrides the default rate limiter. rps is the sustained
+// requests-per-second rate; burst is the maximum burst size.
+func WithRateLimit(rps float64, burst int) Option {
+	return func(c *Client) { c.limiter = rate.NewLimiter(rate.Limit(rps), burst) }
+}
 
 // NewClient builds a GraphQL client.
 //
@@ -52,6 +61,7 @@ func NewClient(consoleURL, token string, opts ...Option) *Client {
 			Timeout:   60 * time.Second,
 			Transport: auth.RoundTripper(auth.NewBearer(token), nil),
 		},
+		limiter: rate.NewLimiter(rate.Limit(10), 20),
 	}
 	for _, o := range opts {
 		o(c)
@@ -83,6 +93,10 @@ func (c *Client) Do(ctx context.Context, endpoint Endpoint, query string, vars m
 	body, err := json.Marshal(gqlRequest{Query: query, Variables: vars})
 	if err != nil {
 		return fmt.Errorf("graphql: marshal: %w", err)
+	}
+
+	if err := c.limiter.Wait(ctx); err != nil {
+		return fmt.Errorf("graphql: rate limit: %w", err)
 	}
 
 	u := c.baseURL + string(endpoint)

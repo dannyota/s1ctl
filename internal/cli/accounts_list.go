@@ -15,6 +15,7 @@ func newAccountsCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newAccountsListCmd())
+	cmd.AddCommand(newAccountsCountCmd())
 	cmd.AddCommand(newAccountsGetCmd())
 	return cmd
 }
@@ -113,4 +114,27 @@ func newAccountsGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newAccountsCountCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "count",
+		Short: "Count accounts",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			count, err := c.AccountsCount(cmd.Context(), &mgmt.AccountListParams{})
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), map[string]int{"count": count})
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), count)
+			return nil
+		},
+	}
+	return cmd
 }

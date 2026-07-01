@@ -11,7 +11,7 @@ import (
 func newTagsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tags",
-		Short: "Manage endpoint tags",
+		Short: "Manage tags",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newTagsListCmd())
@@ -27,10 +27,10 @@ func newTagsListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List tags",
-		Long:  "Types: endpoint, firewall, network-quarantine",
+		Long:  "List tags by type: firewall, network-quarantine, device-inventory.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if tagType == "" {
-				return fmt.Errorf("--type is required (endpoint, firewall, network-quarantine)")
+				return fmt.Errorf("--type is required (firewall, network-quarantine, device-inventory)")
 			}
 			c, err := mgmtClient()
 			if err != nil {
@@ -74,7 +74,7 @@ func newTagsListCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, tags, len(tags), total, "tag", all)
 		},
 	}
-	cmd.Flags().StringVar(&tagType, "type", "", "tag type (endpoint, firewall, network-quarantine)")
+	cmd.Flags().StringVar(&tagType, "type", "", "tag type (firewall, network-quarantine, device-inventory)")
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")

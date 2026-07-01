@@ -15,6 +15,7 @@ func newDatalakeCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newDatalakePowerQueryCmd())
+	cmd.AddCommand(newDatalakeQueryCmd())
 	return cmd
 }
 
@@ -118,6 +119,80 @@ func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse) err
 		rows[i] = cells
 	}
 	return printOutput(cmd.OutOrStdout(), headers, rows, resp, len(resp.Values), len(resp.Values), "row", true)
+}
+
+func newDatalakeQueryCmd() *cobra.Command {
+	var query, startTime, endTime, protocol string
+	var maxCount int
+
+	cmd := &cobra.Command{
+		Use:   "query",
+		Short: "Execute a basic log query",
+		Long: `Execute a basic log query against the Singularity Data Lake.
+
+Uses the SDL REST API (/api/query) to search log events. Requires
+S1_SDL_URL to be configured.`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if query == "" {
+				return fmt.Errorf("--query is required")
+			}
+			if protocol != "rest" {
+				return fmt.Errorf("unsupported protocol: %s (basic query supports rest only)", protocol)
+			}
+			return runDatalakeQuery(cmd, query, startTime, endTime, maxCount)
+		},
+	}
+	cmd.Flags().StringVar(&query, "query", "", "query expression (required)")
+	cmd.Flags().StringVar(&startTime, "start", "24h", "start time (e.g. 24h, 7d)")
+	cmd.Flags().StringVar(&endTime, "end", "", "end time")
+	cmd.Flags().IntVar(&maxCount, "max-count", 0, "max events to return")
+	cmd.Flags().StringVar(&protocol, "protocol", "rest", "API protocol (rest)")
+	return cmd
+}
+
+func runDatalakeQuery(cmd *cobra.Command, query, startTime, endTime string, maxCount int) error {
+	c, err := sdlClient()
+	if err != nil {
+		return err
+	}
+	req := &sdl.LogQueryRequest{
+		Filter:    query,
+		StartTime: startTime,
+		EndTime:   endTime,
+	}
+	if maxCount > 0 {
+		req.MaxCount = maxCount
+	}
+	var resp *sdl.LogQueryResponse
+	err = runWithSpinner("Running query...", func() error {
+		var queryErr error
+		resp, queryErr = c.Query(cmd.Context(), req)
+		return queryErr
+	})
+	if err != nil {
+		return err
+	}
+	return printLogQueryResult(cmd, resp)
+}
+
+func printLogQueryResult(cmd *cobra.Command, resp *sdl.LogQueryResponse) error {
+	if len(resp.Matches) == 0 {
+		if outputFormat == "json" {
+			return printJSON(cmd.OutOrStdout(), resp)
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "No results.")
+		return nil
+	}
+	headers := []string{"Timestamp", "Severity", "Message"}
+	rows := make([][]string, len(resp.Matches))
+	for i, m := range resp.Matches {
+		rows[i] = []string{
+			m.Timestamp,
+			fmt.Sprint(m.Severity),
+			truncate(m.Message, 80),
+		}
+	}
+	return printOutput(cmd.OutOrStdout(), headers, rows, resp, len(resp.Matches), len(resp.Matches), "event", true)
 }
 
 func sdlClient() (*sdl.Client, error) {

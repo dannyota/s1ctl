@@ -176,15 +176,33 @@ func (c *Client) PowerQueryGraphQL(ctx context.Context, req *PowerQueryRequest) 
 	defer func() { _ = c.RemoveQuery(context.Background(), result.Token) }()
 
 	if result.Status == QueryStatusError {
+		var errs []string
 		for _, r := range result.Results {
 			if r.Error != "" {
-				return nil, fmt.Errorf("sdl graphql: query error: %s", r.Error)
+				errs = append(errs, r.Error)
 			}
+		}
+		if len(errs) > 0 {
+			detail := strings.Join(errs, "; ")
+			if result.TotalSteps > 1 {
+				return nil, fmt.Errorf("sdl graphql: query failed at step %d/%d: %s (try --protocol rest for complex queries)", result.StepsCompleted, result.TotalSteps, detail)
+			}
+			return nil, fmt.Errorf("sdl graphql: query error: %s", detail)
+		}
+		if result.TotalSteps > 1 {
+			return nil, fmt.Errorf("sdl graphql: query failed at step %d/%d (try --protocol rest for complex queries)", result.StepsCompleted, result.TotalSteps)
 		}
 		return nil, fmt.Errorf("sdl graphql: query failed")
 	}
 
-	return convertPQResult(result, queryID)
+	resp, err := convertPQResult(result, queryID)
+	if err != nil {
+		if result.TotalSteps > 1 {
+			return nil, fmt.Errorf("%w (multi-step query, try --protocol rest)", err)
+		}
+		return nil, err
+	}
+	return resp, nil
 }
 
 // convertPQResult converts a GraphQL QueriesResult into the REST-compatible

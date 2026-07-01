@@ -70,6 +70,19 @@ func (c *Client) GroupsList(ctx context.Context, params *GroupListParams) ([]Gro
 	return list[Group](c, ctx, "/groups", params.values())
 }
 
+// GroupsCount returns the count of groups matching the filter.
+func (c *Client) GroupsCount(ctx context.Context, params *GroupListParams) (int, error) {
+	if params == nil {
+		params = &GroupListParams{}
+	}
+	params.CountOnly = true
+	_, pag, err := list[Group](c, ctx, "/groups", params.values())
+	if err != nil {
+		return 0, err
+	}
+	return pag.TotalItems, nil
+}
+
 // GroupsGet returns a single group by ID.
 func (c *Client) GroupsGet(ctx context.Context, id string) (*Group, error) {
 	return getByID[Group](c, ctx, "/groups", "group", id)

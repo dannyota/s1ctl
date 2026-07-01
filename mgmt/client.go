@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"danny.vn/s1/auth"
 )
 
@@ -22,6 +24,7 @@ import (
 type Client struct {
 	baseURL string
 	http    *http.Client
+	limiter *rate.Limiter
 }
 
 // Option customizes a Client.
@@ -29,6 +32,12 @@ type Option func(*Client)
 
 // WithHTTPClient overrides the underlying *http.Client.
 func WithHTTPClient(h *http.Client) Option { return func(c *Client) { c.http = h } }
+
+// WithRateLimit overrides the default rate limiter. rps is the sustained
+// requests-per-second rate; burst is the maximum burst size.
+func WithRateLimit(rps float64, burst int) Option {
+	return func(c *Client) { c.limiter = rate.NewLimiter(rate.Limit(rps), burst) }
+}
 
 // NewClient builds a MGMT API client.
 //
@@ -41,6 +50,7 @@ func NewClient(consoleURL, token string, opts ...Option) *Client {
 			Timeout:   60 * time.Second,
 			Transport: auth.RoundTripper(auth.NewApiToken(token), nil),
 		},
+		limiter: rate.NewLimiter(rate.Limit(10), 20),
 	}
 	for _, o := range opts {
 		o(c)
@@ -101,6 +111,9 @@ func (c *Client) jsonRequest(ctx context.Context, method, path string, body, dst
 }
 
 func (c *Client) do(req *http.Request, dst any) error {
+	if err := c.limiter.Wait(req.Context()); err != nil {
+		return fmt.Errorf("mgmt: rate limit: %w", err)
+	}
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return fmt.Errorf("mgmt: %w", err)

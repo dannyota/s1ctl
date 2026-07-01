@@ -13,6 +13,7 @@ func newFirewallCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newFirewallListCmd())
+	addFirewallSyncCmds(cmd)
 	return cmd
 }
 
@@ -63,8 +64,8 @@ func newFirewallListCmd() *cobra.Command {
 			rows := make([][]string, len(rules))
 			for i, r := range rules {
 				rows[i] = []string{
-					r.ID, r.Name, r.Direction,
-					r.Protocol, r.Action, r.Status,
+					r.ID, r.Name, string(r.Direction),
+					r.Protocol, string(r.Action), string(r.Status),
 				}
 			}
 			return printOutput(cmd.OutOrStdout(), headers, rows, rules, len(rules), total, "firewall rule", all)

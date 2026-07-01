@@ -1,6 +1,9 @@
 package mgmt
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // AgentsDisconnect network-disconnects (isolates) agents.
 func (c *Client) AgentsDisconnect(ctx context.Context, filter ActionFilter) (int, error) {
@@ -103,4 +106,22 @@ func (c *Client) AgentsRandomizeUUID(ctx context.Context, filter ActionFilter) (
 func (c *Client) AgentsFirewallLogging(ctx context.Context, enable bool, filter ActionFilter) (int, error) {
 	data := map[string]bool{"reportLog": enable}
 	return doAction(c, ctx, "/agents/actions/firewall-logging", filter, data)
+}
+
+// AgentsMoveToGroup moves agents to a different group within the same site.
+// The group ID is the target group; the filter selects which agents to move.
+func (c *Client) AgentsMoveToGroup(ctx context.Context, groupID string, filter ActionFilter) (int, error) {
+	if len(filter.IDs) == 0 && len(filter.SiteIDs) == 0 && filter.Query == "" {
+		return 0, fmt.Errorf("mgmt: action requires at least one filter (ids, siteIds, or query)")
+	}
+	req := actionRequest{Filter: filter}
+	var resp struct {
+		Data struct {
+			AgentsMoved int `json:"agentsMoved"`
+		} `json:"data"`
+	}
+	if err := c.put(ctx, fmt.Sprintf("/groups/%s/move-agents", groupID), req, &resp); err != nil {
+		return 0, err
+	}
+	return resp.Data.AgentsMoved, nil
 }
