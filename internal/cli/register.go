@@ -5,6 +5,7 @@ import "github.com/spf13/cobra"
 func registerCommands(root *cobra.Command) {
 	// Foundation
 	root.AddCommand(newVersionCmd())
+	root.AddCommand(newStatusCmd())
 	root.AddCommand(newDoctorCmd())
 	root.AddCommand(newConfigCmd())
 	root.AddCommand(newCommandsCmd())

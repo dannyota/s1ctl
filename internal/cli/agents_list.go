@@ -17,6 +17,9 @@ func newAgentsCmd() *cobra.Command {
 	cmd.AddCommand(newAgentsListCmd())
 	cmd.AddCommand(newAgentsGetCmd())
 	cmd.AddCommand(newAgentsCountCmd())
+	cmd.AddCommand(newAgentsUpgradeCmd())
+	cmd.AddCommand(newAgentsOutdatedCmd())
+	cmd.AddCommand(newAgentsVersionsCmd())
 	addAgentActions(cmd)
 	return cmd
 }

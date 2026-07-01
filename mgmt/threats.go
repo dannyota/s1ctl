@@ -12,6 +12,7 @@ import (
 type Threat struct {
 	ID                   string `json:"-"`
 	AgentID              string `json:"-"`
+	AgentComputerName    string `json:"-"`
 	Classification       string `json:"-"`
 	ClassificationSource string `json:"-"`
 	ConfidenceLevel      string `json:"-"`
@@ -74,10 +75,12 @@ func (t *Threat) UnmarshalJSON(b []byte) error {
 	}
 	if ari, ok := flat["agentRealtimeInfo"]; ok {
 		var info struct {
-			AgentID string `json:"agentId"`
+			AgentID           string `json:"agentId"`
+			AgentComputerName string `json:"agentComputerName"`
 		}
 		if err := json.Unmarshal(ari, &info); err == nil {
 			t.AgentID = info.AgentID
+			t.AgentComputerName = info.AgentComputerName
 		}
 	}
 	return nil

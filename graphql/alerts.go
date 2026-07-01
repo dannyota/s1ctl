@@ -51,8 +51,8 @@ func (a *Alert) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-const alertsQuery = `query Alerts($first: Int, $after: String, $filters: [FilterInput!], $scope: ScopeSelectorInput) {
-  alerts(first: $first, after: $after, filters: $filters, scope: $scope) {
+const alertsQuery = `query Alerts($first: Int, $after: String, $filters: [FilterInput!], $scope: ScopeSelectorInput, $sort: SortInput) {
+  alerts(first: $first, after: $after, filters: $filters, scope: $scope, sort: $sort) {
     edges {
       cursor
       node {

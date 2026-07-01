@@ -13,25 +13,35 @@ a surface forward.
 | **blocked** | API limitation or missing access |
 | **--** | Not yet scoped |
 
+## Foundation
+
+| Surface | Commands | Status |
+|---------|----------|--------|
+| status | health summary dashboard | built |
+| version | version info | built |
+| doctor | config diagnostics | built |
+| config | init wizard | built |
+| commands | list all commands | built |
+
 ## Endpoint security
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| agents | list, get, count | isolate, connect, scan, decommission, update-software, move-to-site, fetch-logs, restart, enable, disable, reset-config, approve/reject-uninstall, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging | -- | built |
-| threats | list, get | mitigate, verdict, status, add-to-blacklist, fetch-file | -- | built |
-| alerts | list, get (GraphQL) | status, verdict | -- | built |
+| agents | list, get, count, outdated, versions | isolate, connect, scan, decommission, upgrade, move-to-site, fetch-logs, restart, enable, disable, reset-config, approve/reject-uninstall, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging | -- | built |
+| threats | list, get, count | mitigate, verdict, status, resolve, add-to-blacklist, fetch-file | -- | built |
+| alerts | list, get, count (GraphQL) | status, verdict, resolve | -- | built |
 | sites | list, get | create, update, delete | -- | built |
-| groups | list, get | create, update, delete | -- | built |
+| groups | list, get, count | create, update, delete | -- | built |
 | accounts | list, get | -- | -- | built |
-| policies | get (site, account, group) | update (site, account, group) | -- | built |
+| policies | list, get, diff (site, account, group) | update (site, account, group) | pull/push | built |
 | exclusions | list, get | create, update, delete | pull/push | built |
 
 ## Detection and response
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| rules | list, get | create, update, delete | pull/push | designed |
-| visibility | query | -- | -- | designed |
+| rules | list, get, diff | create, update, delete | pull/push | built |
+| visibility | query | -- | -- | built |
 | remoteops | list, get | -- | -- | built |
 
 ## Application and device control
@@ -39,8 +49,8 @@ a surface forward.
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | applications | list | -- | -- | built |
-| devices | list, get | -- | -- | built |
-| firewall | list, get | -- | -- | built |
+| devicecontrol | list, get | -- | pull/push | built |
+| firewall | list, get | -- | pull/push | built |
 | network | list, get | quarantine | -- | -- |
 
 ## Cloud and vulnerability management
@@ -57,7 +67,7 @@ a surface forward.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| datalake | powerquery (GraphQL + REST), query, facet, timeseries | addEvents, uploadLogs | -- | built |
+| datalake | powerquery (GraphQL + REST), query, facet, timeseries, saved-queries | addEvents, uploadLogs | -- | built |
 | files | getFile, listFiles | putFile | -- | built |
 
 ## Platform administration

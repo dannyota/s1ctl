@@ -17,6 +17,7 @@ func newPoliciesCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newPoliciesListCmd())
 	cmd.AddCommand(newPoliciesGetCmd())
+	cmd.AddCommand(newPoliciesDiffCmd())
 	addPolicySyncCmds(cmd)
 	return cmd
 }

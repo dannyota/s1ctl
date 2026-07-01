@@ -16,6 +16,7 @@ func newRulesCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newRulesListCmd())
 	cmd.AddCommand(newRulesGetCmd())
+	cmd.AddCommand(newRulesDiffCmd())
 	addRuleSyncCmds(cmd)
 	return cmd
 }

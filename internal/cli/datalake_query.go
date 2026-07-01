@@ -16,8 +16,11 @@ func newDatalakeCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newDatalakePowerQueryCmd())
 	cmd.AddCommand(newDatalakeQueryCmd())
+	cmd.AddCommand(newDatalakeSavedQueriesCmd())
 	return cmd
 }
+
+var pqColWidth int
 
 func newDatalakePowerQueryCmd() *cobra.Command {
 	var query, startTime, endTime, priority, protocol string
@@ -49,6 +52,7 @@ the REST API, which requires S1_SDL_URL to be configured.`,
 	cmd.Flags().StringVar(&endTime, "end", "", "end time")
 	cmd.Flags().StringVar(&priority, "priority", "low", "query priority (low, high) [REST only]")
 	cmd.Flags().StringVar(&protocol, "protocol", "graphql", "API protocol (graphql, rest)")
+	cmd.Flags().IntVar(&pqColWidth, "col-width", 80, "max column width in table output")
 	return cmd
 }
 
@@ -72,7 +76,7 @@ func runPowerQueryGraphQL(cmd *cobra.Command, query, startTime, endTime string) 
 	if err != nil {
 		return err
 	}
-	return printPowerQueryResult(cmd, resp)
+	return printPowerQueryResult(cmd, resp, pqColWidth)
 }
 
 func runPowerQueryREST(cmd *cobra.Command, query, startTime, endTime, priority string) error {
@@ -95,10 +99,10 @@ func runPowerQueryREST(cmd *cobra.Command, query, startTime, endTime, priority s
 	if err != nil {
 		return err
 	}
-	return printPowerQueryResult(cmd, resp)
+	return printPowerQueryResult(cmd, resp, pqColWidth)
 }
 
-func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse) error {
+func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse, colWidth int) error {
 	if len(resp.Columns) == 0 {
 		if outputFormat == "json" {
 			return printJSON(cmd.OutOrStdout(), resp)
@@ -114,7 +118,7 @@ func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse) err
 	for i, row := range resp.Values {
 		cells := make([]string, len(row))
 		for j, v := range row {
-			cells[j] = truncate(fmt.Sprint(v), 60)
+			cells[j] = truncate(fmt.Sprint(v), colWidth)
 		}
 		rows[i] = cells
 	}
@@ -124,6 +128,7 @@ func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse) err
 func newDatalakeQueryCmd() *cobra.Command {
 	var query, startTime, endTime, protocol string
 	var maxCount int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "query",
@@ -139,18 +144,19 @@ S1_SDL_URL to be configured.`,
 			if protocol != "rest" {
 				return fmt.Errorf("unsupported protocol: %s (basic query supports rest only)", protocol)
 			}
-			return runDatalakeQuery(cmd, query, startTime, endTime, maxCount)
+			return runDatalakeQuery(cmd, query, startTime, endTime, maxCount, all)
 		},
 	}
 	cmd.Flags().StringVar(&query, "query", "", "query expression (required)")
 	cmd.Flags().StringVar(&startTime, "start", "24h", "start time (e.g. 24h, 7d)")
 	cmd.Flags().StringVar(&endTime, "end", "", "end time")
 	cmd.Flags().IntVar(&maxCount, "max-count", 0, "max events to return")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages via continuation token")
 	cmd.Flags().StringVar(&protocol, "protocol", "rest", "API protocol (rest)")
 	return cmd
 }
 
-func runDatalakeQuery(cmd *cobra.Command, query, startTime, endTime string, maxCount int) error {
+func runDatalakeQuery(cmd *cobra.Command, query, startTime, endTime string, maxCount int, all bool) error {
 	c, err := sdlClient()
 	if err != nil {
 		return err
@@ -171,6 +177,22 @@ func runDatalakeQuery(cmd *cobra.Command, query, startTime, endTime string, maxC
 	})
 	if err != nil {
 		return err
+	}
+	if all && resp.ContinuationToken != "" {
+		for resp.ContinuationToken != "" {
+			req.ContinuationToken = resp.ContinuationToken
+			var next *sdl.LogQueryResponse
+			err = runWithSpinner(fmt.Sprintf("Fetching more (%d so far)...", len(resp.Matches)), func() error {
+				var queryErr error
+				next, queryErr = c.Query(cmd.Context(), req)
+				return queryErr
+			})
+			if err != nil {
+				return err
+			}
+			resp.Matches = append(resp.Matches, next.Matches...)
+			resp.ContinuationToken = next.ContinuationToken
+		}
 	}
 	return printLogQueryResult(cmd, resp)
 }

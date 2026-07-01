@@ -294,6 +294,30 @@ func nanoStr(t time.Time) string {
 	return strconv.FormatInt(t.UnixNano(), 10)
 }
 
+const savedSearchesGQL = `query savedSearches {
+  privateSearches: savedSearches(type: PRIVATE) {
+    name url index type
+  }
+  sharedSearches: savedSearches(type: SHARED) {
+    name url index type
+  }
+}`
+
+// SavedSearches returns all saved searches (private + shared).
+func (c *Client) SavedSearches(ctx context.Context) ([]SavedSearch, error) {
+	var data struct {
+		Private []SavedSearch `json:"privateSearches"`
+		Shared  []SavedSearch `json:"sharedSearches"`
+	}
+	if err := c.graphql(ctx, savedSearchesGQL, nil, &data); err != nil {
+		return nil, err
+	}
+	all := make([]SavedSearch, 0, len(data.Private)+len(data.Shared))
+	all = append(all, data.Private...)
+	all = append(all, data.Shared...)
+	return all, nil
+}
+
 func newQueryID() string {
 	var b [16]byte
 	_, _ = rand.Read(b[:])

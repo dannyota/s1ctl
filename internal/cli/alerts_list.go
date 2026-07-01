@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -17,14 +18,15 @@ func newAlertsCmd() *cobra.Command {
 	cmd.AddCommand(newAlertsListCmd())
 	cmd.AddCommand(newAlertsGetCmd())
 	cmd.AddCommand(newAlertsCountCmd())
+	cmd.AddCommand(newAlertsResolveCmd())
 	cmd.AddCommand(newAlertsStatusCmd())
 	cmd.AddCommand(newAlertsVerdictCmd())
 	return cmd
 }
 
 func newAlertsListCmd() *cobra.Command {
-	var severities, verdicts []string
-	var after string
+	var severities, statuses, verdicts []string
+	var after, sortBy, sortOrder string
 	var limit int
 	var all bool
 
@@ -46,11 +48,24 @@ func newAlertsListCmd() *cobra.Command {
 					StringIn: &graphql.InStr{Values: severities},
 				})
 			}
+			if len(statuses) > 0 {
+				params.Filters = append(params.Filters, graphql.Filter{
+					FieldID:  "status",
+					StringIn: &graphql.InStr{Values: statuses},
+				})
+			}
 			if len(verdicts) > 0 {
 				params.Filters = append(params.Filters, graphql.Filter{
 					FieldID:  "analystVerdict",
 					StringIn: &graphql.InStr{Values: verdicts},
 				})
+			}
+			if sortBy != "" {
+				order := "DESC"
+				if sortOrder != "" {
+					order = strings.ToUpper(sortOrder)
+				}
+				params.Sort = &graphql.SortInput{By: sortBy, Order: order}
 			}
 
 			var alerts []graphql.Alert
@@ -87,10 +102,13 @@ func newAlertsListCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
+	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, RESOLVED, etc.)")
 	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&after, "after", "", "pagination cursor")
+	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. detectedAt, severity)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (ASC, DESC)")
 	return cmd
 }
 

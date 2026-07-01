@@ -17,6 +17,7 @@ func newThreatsCmd() *cobra.Command {
 	cmd.AddCommand(newThreatsListCmd())
 	cmd.AddCommand(newThreatsCountCmd())
 	cmd.AddCommand(newThreatsGetCmd())
+	cmd.AddCommand(newThreatsResolveCmd())
 	cmd.AddCommand(newThreatNotesCmd())
 	cmd.AddCommand(newThreatAddNoteCmd())
 	addThreatActions(cmd)
@@ -24,7 +25,7 @@ func newThreatsCmd() *cobra.Command {
 }
 
 func newThreatsListCmd() *cobra.Command {
-	var siteIDs, classifications, statuses, verdicts []string
+	var siteIDs, classifications, statuses, verdicts, mitigationStatuses []string
 	var query, cursor, sortBy, sortOrder string
 	var limit int
 	var all bool
@@ -38,15 +39,16 @@ func newThreatsListCmd() *cobra.Command {
 				return err
 			}
 			params := &mgmt.ThreatListParams{
-				SiteIDs:          siteIDs,
-				Classifications:  classifications,
-				IncidentStatuses: statuses,
-				AnalystVerdicts:  verdicts,
-				Query:            query,
-				Limit:            limit,
-				Cursor:           cursor,
-				SortBy:           sortBy,
-				SortOrder:        sortOrder,
+				SiteIDs:            siteIDs,
+				Classifications:    classifications,
+				IncidentStatuses:   statuses,
+				AnalystVerdicts:    verdicts,
+				MitigationStatuses: mitigationStatuses,
+				Query:              query,
+				Limit:              limit,
+				Cursor:             cursor,
+				SortBy:             sortBy,
+				SortOrder:          sortOrder,
 			}
 			if params.Limit == 0 {
 				params.Limit = defaultPageSize
@@ -71,12 +73,13 @@ func newThreatsListCmd() *cobra.Command {
 				return err
 			}
 
-			headers := []string{"ID", "Name", "Class", "Mitigation", "Verdict", "Status"}
+			headers := []string{"ID", "Name", "Agent", "Class", "Mitigation", "Verdict", "Status", "Created"}
 			rows := make([][]string, len(threats))
 			for i, t := range threats {
 				rows[i] = []string{
-					t.ID, truncate(t.ThreatName, 40), t.Classification,
-					t.MitigationStatus, t.AnalystVerdict, t.IncidentStatus,
+					t.ID, truncate(t.ThreatName, 40), truncate(orDash(t.AgentComputerName), 20),
+					t.Classification, t.MitigationStatus, t.AnalystVerdict,
+					t.IncidentStatus, orDash(t.CreatedAt),
 				}
 			}
 			return printOutput(cmd.OutOrStdout(), headers, rows, threats, len(threats), total, "threat", all)
@@ -86,6 +89,7 @@ func newThreatsListCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&classifications, "classification", nil, "filter by classification")
 	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by incident status")
 	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
+	cmd.Flags().StringSliceVar(&mitigationStatuses, "mitigation-status", nil, "filter by mitigation status (not_mitigated, mitigated, etc.)")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
@@ -120,7 +124,7 @@ func newThreatsGetCmd() *cobra.Command {
 				{"Mitigation", t.MitigationStatus},
 				{"Verdict", t.AnalystVerdict},
 				{"Status", t.IncidentStatus},
-				{"Agent", t.AgentID},
+				{"Agent", fmt.Sprintf("%s (%s)", orDash(t.AgentComputerName), t.AgentID)},
 				{"Created", t.CreatedAt},
 			}
 			printTable([]string{"Field", "Value"}, rows)

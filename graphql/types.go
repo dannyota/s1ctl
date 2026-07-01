@@ -78,12 +78,19 @@ type Connection[T any] struct {
 	TotalCount int64     `json:"totalCount"`
 }
 
+// SortInput specifies sort order for GraphQL queries.
+type SortInput struct {
+	By    string `json:"by"`
+	Order string `json:"order,omitempty"`
+}
+
 // ListParams are parameters for paginated GraphQL list queries.
 type ListParams struct {
-	First   int      `json:"first,omitempty"`
-	After   string   `json:"after,omitempty"`
-	Filters []Filter `json:"filters,omitempty"`
-	Scope   *Scope   `json:"scope,omitempty"`
+	First   int        `json:"first,omitempty"`
+	After   string     `json:"after,omitempty"`
+	Filters []Filter   `json:"filters,omitempty"`
+	Scope   *Scope     `json:"scope,omitempty"`
+	Sort    *SortInput `json:"sort,omitempty"`
 }
 
 // listVars builds the GraphQL variables map from list parameters.
@@ -103,6 +110,9 @@ func listVars(p *ListParams) map[string]any {
 	}
 	if p.Scope != nil {
 		vars["scope"] = p.Scope
+	}
+	if p.Sort != nil {
+		vars["sort"] = p.Sort
 	}
 	return vars
 }

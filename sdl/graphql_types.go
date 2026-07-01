@@ -152,3 +152,11 @@ type launchQueryData struct {
 type pingQueryData struct {
 	PingQuery QueriesResult `json:"pingQuery"`
 }
+
+// SavedSearch is a saved query from the SDL console.
+type SavedSearch struct {
+	Name  string `json:"name"`
+	URL   string `json:"url"`
+	Index int    `json:"index"`
+	Type  string `json:"type"`
+}

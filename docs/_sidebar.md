@@ -11,6 +11,8 @@
   - [Exclusions](guides/exclusions.md)
   - [Alerts](guides/alerts.md)
   - [Data lake](guides/datalake.md)
+  - [Config-as-code](guides/config-as-code.md)
+  - [Examples](guides/examples.md)
   - [Go SDK](guides/sdk.md)
 
 - **Design**
