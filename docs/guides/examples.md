@@ -105,10 +105,43 @@ s1ctl policies pull --out policies/
 s1ctl policies push --dir policies/ --yes
 ```
 
-Review rule effectiveness:
+## Detection rules
+
+Classify rules by operational state:
 
 ```bash
-s1ctl rules diff
+s1ctl rules health
+```
+
+Find the noisiest rules for tuning:
+
+```bash
+s1ctl rules trends --top 10
+```
+
+See what a specific rule is catching:
+
+```bash
+s1ctl rules detections "Suspicious SSH Login"
+```
+
+Validate rule YAML files before deploying:
+
+```bash
+s1ctl rules validate --dir rules/
+```
+
+Compare local rule files against live state:
+
+```bash
+s1ctl rules diff --dir rules/
+```
+
+Enable or disable a rule:
+
+```bash
+s1ctl rules enable <rule-id> --yes
+s1ctl rules disable <rule-id> --yes
 ```
 
 ## Data lake queries

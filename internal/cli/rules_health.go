@@ -1,0 +1,134 @@
+package cli
+
+import (
+	"fmt"
+	"sort"
+
+	"github.com/spf13/cobra"
+
+	"danny.vn/s1/mgmt"
+)
+
+func newRulesHealthCmd() *cobra.Command {
+	var siteIDs []string
+
+	cmd := &cobra.Command{
+		Use:   "health",
+		Short: "Classify rules by operational state",
+		Long: `Fetch all custom detection rules and classify them as firing (active
+with alerts), silent (active with zero alerts), disabled, or erroring
+(reached alert limit). Helps identify rules that need attention.`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+
+			params := &mgmt.RuleListParams{SiteIDs: siteIDs, Limit: 1000}
+			rules, _, err := fetchAllREST("rule", func(cur string) ([]mgmt.Rule, *mgmt.Pagination, error) {
+				params.Cursor = cur
+				return c.RulesList(cmd.Context(), params)
+			})
+			if err != nil {
+				return err
+			}
+
+			type classified struct {
+				Rule  mgmt.Rule
+				State string
+			}
+
+			var items []classified
+			var firing, silent, disabled, erroring, other int
+
+			for _, r := range rules {
+				var state string
+				switch {
+				case r.ReachedLimit:
+					state = "erroring"
+					erroring++
+				case r.Status == mgmt.RuleStatusDisabled:
+					state = "disabled"
+					disabled++
+				case r.Status == mgmt.RuleStatusActive && r.GeneratedAlerts > 0:
+					state = "firing"
+					firing++
+				case r.Status == mgmt.RuleStatusActive && r.GeneratedAlerts == 0:
+					state = "silent"
+					silent++
+				default:
+					state = string(r.Status)
+					other++
+				}
+				items = append(items, classified{Rule: r, State: state})
+			}
+
+			sort.Slice(items, func(i, j int) bool {
+				order := map[string]int{"erroring": 0, "silent": 1, "firing": 2, "disabled": 3}
+				oi, oki := order[items[i].State]
+				oj, okj := order[items[j].State]
+				if !oki {
+					oi = 4
+				}
+				if !okj {
+					oj = 4
+				}
+				if oi != oj {
+					return oi < oj
+				}
+				return items[i].Rule.GeneratedAlerts > items[j].Rule.GeneratedAlerts
+			})
+
+			if outputFormat == "json" {
+				type jsonItem struct {
+					ID     string `json:"id"`
+					Name   string `json:"name"`
+					State  string `json:"state"`
+					Alerts int    `json:"alerts"`
+					Status string `json:"status"`
+					Scope  string `json:"scope"`
+				}
+				out := make([]jsonItem, len(items))
+				for i, it := range items {
+					out[i] = jsonItem{
+						ID:     it.Rule.ID,
+						Name:   it.Rule.Name,
+						State:  it.State,
+						Alerts: it.Rule.GeneratedAlerts,
+						Status: string(it.Rule.Status),
+						Scope:  string(it.Rule.Scope),
+					}
+				}
+				return printJSON(cmd.OutOrStdout(), out)
+			}
+
+			headers := []string{"Name", "State", "Alerts", "Severity", "Scope", "Response"}
+			rows := make([][]string, len(items))
+			for i, it := range items {
+				response := "-"
+				if it.Rule.TreatAsThreat != "" && it.Rule.TreatAsThreat != mgmt.RuleTreatUndefined {
+					response = string(it.Rule.TreatAsThreat)
+				}
+				rows[i] = []string{
+					truncate(it.Rule.Name, 40),
+					it.State,
+					fmt.Sprintf("%d", it.Rule.GeneratedAlerts),
+					string(it.Rule.Severity),
+					string(it.Rule.Scope),
+					response,
+				}
+			}
+			printTable(headers, rows)
+
+			fmt.Fprintf(cmd.OutOrStdout(), "\n%s: %d firing, %d silent, %d disabled, %d erroring",
+				pluralize(len(rules), "rule"), firing, silent, disabled, erroring)
+			if other > 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), ", %d other", other)
+			}
+			fmt.Fprintln(cmd.OutOrStdout())
+			return nil
+		},
+	}
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	return cmd
+}

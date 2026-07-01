@@ -184,3 +184,140 @@ func (c *Client) RulesCreate(ctx context.Context, data RuleCreate) (*Rule, error
 func (c *Client) RulesUpdate(ctx context.Context, id string, data RuleCreate) (*Rule, error) {
 	return update[Rule](c, ctx, fmt.Sprintf("/cloud-detection/rules/%s", id), data)
 }
+
+// RuleActionFilter selects which rules to enable or disable.
+type RuleActionFilter struct {
+	IDs        []string `json:"ids,omitempty"`
+	SiteIDs    []string `json:"siteIds,omitempty"`
+	AccountIDs []string `json:"accountIds,omitempty"`
+}
+
+// RulesEnable activates custom detection rules matching the filter.
+func (c *Client) RulesEnable(ctx context.Context, filter RuleActionFilter) (int, error) {
+	return rulesAction(c, ctx, "/cloud-detection/rules/enable", filter)
+}
+
+// RulesDisable deactivates custom detection rules matching the filter.
+func (c *Client) RulesDisable(ctx context.Context, filter RuleActionFilter) (int, error) {
+	return rulesAction(c, ctx, "/cloud-detection/rules/disable", filter)
+}
+
+func rulesAction(c *Client, ctx context.Context, path string, filter RuleActionFilter) (int, error) {
+	if len(filter.IDs) == 0 && len(filter.SiteIDs) == 0 && len(filter.AccountIDs) == 0 {
+		return 0, fmt.Errorf("mgmt: rule action requires at least one filter (ids, siteIds, or accountIds)")
+	}
+	req := struct {
+		Filter RuleActionFilter `json:"filter"`
+	}{Filter: filter}
+	var resp affectedResponse
+	if err := c.put(ctx, path, req, &resp); err != nil {
+		return 0, err
+	}
+	return resp.Data.Affected, nil
+}
+
+// CloudDetectionAlert is a STAR custom detection alert from the REST API.
+type CloudDetectionAlert struct {
+	AlertInfo          CDAlertInfo `json:"alertInfo"`
+	RuleInfo           CDRuleInfo  `json:"ruleInfo"`
+	AgentDetectionInfo CDAgentInfo `json:"agentDetectionInfo"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (a *CloudDetectionAlert) UnmarshalJSON(b []byte) error {
+	type alias CloudDetectionAlert
+	if err := json.Unmarshal(b, (*alias)(a)); err != nil {
+		return err
+	}
+	a.Raw = append(a.Raw[:0:0], b...)
+	return nil
+}
+
+// CDAlertInfo contains the alert-level fields of a cloud detection alert.
+type CDAlertInfo struct {
+	AlertID        string `json:"alertId"`
+	IncidentStatus string `json:"incidentStatus"`
+	AnalystVerdict string `json:"analystVerdict"`
+	Severity       string `json:"severity"`
+	EventType      string `json:"eventType"`
+	HitType        string `json:"hitType"`
+	Source         string `json:"source"`
+	CreatedAt      string `json:"createdAt"`
+	ReportedAt     string `json:"reportedAt"`
+	UpdatedAt      string `json:"updatedAt"`
+	DstIP          string `json:"dstIp"`
+	DstPort        string `json:"dstPort"`
+	SrcIP          string `json:"srcIp"`
+	SrcPort        string `json:"srcPort"`
+}
+
+// CDRuleInfo contains the rule-level fields of a cloud detection alert.
+type CDRuleInfo struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Severity      string `json:"severity"`
+	QueryType     string `json:"queryType"`
+	ScopeLevel    string `json:"scopeLevel"`
+	TreatAsThreat string `json:"treatAsThreat"`
+}
+
+// CDAgentInfo contains the agent-level fields of a cloud detection alert.
+type CDAgentInfo struct {
+	AccountID   string `json:"accountId"`
+	SiteID      string `json:"siteId"`
+	Name        string `json:"name"`
+	MachineType string `json:"machineType"`
+	OSFamily    string `json:"osFamily"`
+	OSName      string `json:"osName"`
+	Version     string `json:"version"`
+	UUID        string `json:"uuid"`
+}
+
+// CDAlertListParams are query parameters for listing cloud detection alerts.
+type CDAlertListParams struct {
+	SiteIDs          []string
+	AccountIDs       []string
+	RuleNameContains []string
+	Severity         []string
+	IncidentStatus   []string
+	AnalystVerdict   []string
+	CreatedAtGt      string
+	CreatedAtLt      string
+	ReportedAtGt     string
+	ReportedAtLt     string
+	Query            string
+	Limit            int
+	Cursor           string
+	SortBy           string
+	SortOrder        string
+}
+
+func (p *CDAlertListParams) values() url.Values {
+	v := url.Values{}
+	if p == nil {
+		return v
+	}
+	addCSV(v, "siteIds", p.SiteIDs)
+	addCSV(v, "accountIds", p.AccountIDs)
+	addCSV(v, "ruleName__contains", p.RuleNameContains)
+	addCSV(v, "severity", p.Severity)
+	addCSV(v, "incidentStatus", p.IncidentStatus)
+	addCSV(v, "analystVerdict", p.AnalystVerdict)
+	addString(v, "createdAt__gt", p.CreatedAtGt)
+	addString(v, "createdAt__lt", p.CreatedAtLt)
+	addString(v, "reportedAt__gt", p.ReportedAtGt)
+	addString(v, "reportedAt__lt", p.ReportedAtLt)
+	addString(v, "query", p.Query)
+	addInt(v, "limit", p.Limit)
+	addString(v, "cursor", p.Cursor)
+	addString(v, "sortBy", p.SortBy)
+	addString(v, "sortOrder", p.SortOrder)
+	return v
+}
+
+// CloudDetectionAlertsList returns a paginated list of STAR cloud detection alerts.
+func (c *Client) CloudDetectionAlertsList(ctx context.Context, params *CDAlertListParams) ([]CloudDetectionAlert, *Pagination, error) {
+	return list[CloudDetectionAlert](c, ctx, "/cloud-detection/alerts", params.values())
+}

@@ -40,7 +40,7 @@ a surface forward.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| rules | list, get, diff | create, update, delete | pull/push | built |
+| rules | list, get, health, trends, detections, diff, validate | create, update, delete, enable, disable | pull/push | built |
 | visibility | query | -- | -- | built |
 | remoteops | list, get | -- | -- | built |
 

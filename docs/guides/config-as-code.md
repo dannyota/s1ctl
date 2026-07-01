@@ -86,16 +86,29 @@ expirationMode: Permanent
 treatAsThreat: UNDEFINED
 ```
 
+Validate rule files before pushing:
+
+```bash
+s1ctl rules validate --dir rules/
+```
+
+Compare local files against live rules to see what changed:
+
+```bash
+s1ctl rules diff --dir rules/
+```
+
 Push syncs rules by name — existing rules are updated, new ones created:
 
 ```bash
 s1ctl rules push --dir rules/ --yes
 ```
 
-Review which rules have fired vs dormant:
+Check operational health of deployed rules:
 
 ```bash
-s1ctl rules diff
+s1ctl rules health
+s1ctl rules trends --top 10
 ```
 
 ## Device control and firewall
