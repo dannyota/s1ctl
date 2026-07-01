@@ -6,9 +6,9 @@ is a thin consumer. Both ship together.
 ## SDK packages
 
 ```text
-danny.vn/s1/mgmt      REST MGMT client (generated from swagger v2.1)
-danny.vn/s1/sdl       SDL Data Lake client (hand-written, 12 endpoints)
-danny.vn/s1/graphql   GraphQL client (generated via genqlient)
+danny.vn/s1/mgmt      REST MGMT client (72 methods across 15 resources)
+danny.vn/s1/sdl       SDL Data Lake client (13 methods: REST + GraphQL)
+danny.vn/s1/graphql   GraphQL client (15 methods across 4 domains)
 danny.vn/s1/auth      Token management (shared by all three)
 danny.vn/s1/config    Instance config resolution
 ```
@@ -18,8 +18,8 @@ Each package is independently importable:
 ```go
 import "danny.vn/s1/mgmt"
 
-client := mgmt.NewClient(mgmt.WithToken(token), mgmt.WithConsole(url))
-agents, err := client.Agents.List(ctx, &mgmt.AgentListParams{})
+client := mgmt.NewClient("https://your-console.sentinelone.net", token)
+agents, _, err := client.AgentsList(ctx, nil)
 ```
 
 The SDK packages are **pure** — HTTP calls and typed structs, no disk I/O. All
@@ -35,9 +35,9 @@ flowchart LR
   CLI["s1ctl CLI"]
 
   subgraph SDK["Go SDK packages"]
-    MGMT["mgmt/<br/>REST MGMT v2.1<br/>680 endpoints"]
-    SDL["sdl/<br/>Singularity Data Lake<br/>12 endpoints"]
-    GQL["graphql/<br/>GraphQL<br/>6 domains"]
+    MGMT["mgmt/<br/>REST MGMT v2.1<br/>72 methods"]
+    SDL["sdl/<br/>Singularity Data Lake<br/>13 methods"]
+    GQL["graphql/<br/>GraphQL<br/>15 methods"]
   end
 
   subgraph S1["SentinelOne Console"]
@@ -79,19 +79,20 @@ Control plane is narrow — most of SentinelOne is operational. Config-as-code
 surfaces use the same reconcile model as secopsctl: identity by server ID,
 canonical diff, dry-run by default, `--yes` to apply.
 
-## Codegen strategy
+## SDK strategy
 
-The REST MGMT API has 680 endpoints across 119 tags — hand-writing is not
-viable. The GraphQL API spans 6 schema domains with ~236 operations.
+The SDK is currently hand-written, covering all high-priority operations (100
+public methods across 3 packages). Codegen from specs is planned for broader
+coverage:
 
-| Surface | Generator | Source | Output |
-|---------|-----------|--------|--------|
-| REST MGMT | `oapi-codegen` | `references/swagger_2_1.json` | `mgmt/` |
-| GraphQL | `genqlient` | `references/graphql/*.graphql` | `graphql/` |
-| SDL | Hand-written | `references/sdl-api/*.md` | `sdl/` |
+| Surface | Current | Planned generator | Source |
+|---------|---------|-------------------|--------|
+| REST MGMT | Hand-written (72 methods) | `oapi-codegen` | `references/rest/swagger_2_1.json` |
+| GraphQL | Hand-written (15 methods) | `genqlient` | `references/graphql/*.graphql` |
+| SDL | Hand-written (13 methods) | — | `references/sdl/*.md` |
 
-Generated code is never edited directly. Hand-written wrappers live alongside
-in separate files, providing ergonomic service-oriented access.
+When codegen is wired, generated code is never edited directly. Hand-written
+wrappers live alongside in separate files.
 
 ## CLI structure
 

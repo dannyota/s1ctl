@@ -17,7 +17,7 @@ Building it? **[Architecture](design/architecture.md).**
 | Surface | Protocol | Scope |
 |---------|----------|-------|
 | **REST MGMT** (v2.1) | REST | Agents, threats, sites, groups, exclusions, policies, remote ops |
-| **SDL** | REST | PowerQuery, log ingest/query, file ops |
+| **SDL** | REST + GraphQL | PowerQuery, log ingest/query, file ops |
 | **GraphQL** | GraphQL | UAM alerts, xSPM vulnerabilities/misconfigurations, cloud security |
 
 ## Quick start

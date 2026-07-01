@@ -47,7 +47,7 @@ the mapping from SentinelOne's official API taxonomy to s1ctl's command tree.
 
 | CLI group | API | Protocol | Plane |
 |-----------|-----|----------|-------|
-| `datalake` | SDL (query, powerQuery, addEvents, files) | SDL | Operational |
+| `datalake` | SDL (query, powerQuery, addEvents, files) | SDL (REST + GraphQL) | Operational |
 
 ### Platform administration
 
@@ -90,7 +90,8 @@ command that supports multiple protocols.
 | `s1ctl alerts query` | GraphQL UAM | Richer filtering, grouping | Yes (`--protocol rest`) |
 | `s1ctl alerts list` | REST | Simpler, lower latency for basic lists | Yes (`--protocol graphql`) |
 | `s1ctl vulnerabilities list` | GraphQL xSPM | Only available via GraphQL | No |
-| `s1ctl datalake query` | SDL | Only available via SDL | No |
+| `s1ctl datalake query` | SDL REST | Only available via SDL REST | No |
+| `s1ctl datalake powerquery` | GraphQL | Lower latency, no separate SDL URL needed | Yes (`--protocol rest`) |
 | `s1ctl cloud policies list` | GraphQL | Only available via GraphQL | No |
 
 ## Config-as-code surfaces

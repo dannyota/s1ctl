@@ -55,12 +55,23 @@ git diff samples/exclusions.json
 s1ctl exclusions push --site-id 000000 --yes
 ```
 
+## Cloud and vulnerability management
+
+Query xSPM findings and cloud policies:
+
+```bash
+s1ctl vulnerabilities list --limit 10
+s1ctl misconfigurations list --limit 10
+s1ctl cloud-policies list --limit 10
+```
+
 ## Data lake
 
 Run a powerquery against the Singularity Data Lake:
 
 ```bash
 s1ctl datalake powerquery --query "endpoint.name contains 'srv'"
+s1ctl datalake powerquery --query "endpoint.name contains 'srv'" --protocol rest
 ```
 
 ## Shell completion
@@ -78,4 +89,32 @@ Every read command supports `--json` for machine-readable output:
 ```bash
 s1ctl sites list --json | jq '.[] | {id, name, state}'
 s1ctl agents list --json | jq 'length'
+```
+
+## Go SDK
+
+The SDK packages are independently importable:
+
+```go
+import "danny.vn/s1/mgmt"
+
+client := mgmt.NewClient("https://your-console.sentinelone.net", token)
+agents, _, err := client.AgentsList(ctx, nil)
+```
+
+```go
+import "danny.vn/s1/graphql"
+
+client := graphql.NewClient("https://your-console.sentinelone.net", token)
+alerts, err := client.AlertsList(ctx, &graphql.ListParams{First: 10})
+```
+
+```go
+import "danny.vn/s1/sdl"
+
+client := sdl.NewClient("https://your-console.sentinelone.net", token)
+resp, err := client.PowerQueryGraphQL(ctx, &sdl.PowerQueryRequest{
+    Query:     "endpoint.name contains 'srv'",
+    StartTime: "24h",
+})
 ```
