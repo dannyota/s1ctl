@@ -27,6 +27,26 @@ func list[T any](c *Client, ctx context.Context, path string, params url.Values)
 	return resp.Data, &resp.Pagination, nil
 }
 
+// create posts a resource creation wrapped in {"data": ...} and returns the created resource.
+func create[T any](c *Client, ctx context.Context, path string, data any) (*T, error) {
+	req := map[string]any{"data": data}
+	var resp singleResponse[T]
+	if err := c.post(ctx, path, req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// update puts a resource update wrapped in {"data": ...} and returns the updated resource.
+func update[T any](c *Client, ctx context.Context, path string, data any) (*T, error) {
+	req := map[string]any{"data": data}
+	var resp singleResponse[T]
+	if err := c.put(ctx, path, req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
 // getByID fetches a single resource by ID using the ?ids= query param.
 func getByID[T any](c *Client, ctx context.Context, path, entity, id string) (*T, error) {
 	params := url.Values{}

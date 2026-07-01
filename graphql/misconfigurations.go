@@ -5,47 +5,27 @@ import (
 	"encoding/json"
 )
 
-// MisconfigurationCloudInfo holds cloud details for a misconfiguration asset.
-type MisconfigurationCloudInfo struct {
-	AccountID    string `json:"accountId"`
-	AccountName  string `json:"accountName"`
-	ProviderName string `json:"providerName"`
-	Region       string `json:"region"`
-	ResourceID   string `json:"resourceId"`
-}
-
-// MisconfigurationAsset is the asset associated with a misconfiguration.
-type MisconfigurationAsset struct {
-	ID          string                     `json:"id"`
-	Name        string                     `json:"name"`
-	Category    string                     `json:"category"`
-	Subcategory string                     `json:"subcategory"`
-	Type        string                     `json:"type"`
-	OsType      string                     `json:"osType"`
-	CloudInfo   *MisconfigurationCloudInfo `json:"cloudInfo"`
-}
-
 // Misconfiguration is an xSPM misconfiguration finding.
 type Misconfiguration struct {
-	ID                   string                `json:"id"`
-	ExternalID           string                `json:"externalId"`
-	Name                 string                `json:"name"`
-	Description          string                `json:"description"`
-	Severity             string                `json:"severity"`
-	Status               string                `json:"status"`
-	AnalystVerdict       string                `json:"analystVerdict"`
-	Product              string                `json:"product"`
-	Vendor               string                `json:"vendor"`
-	Environment          string                `json:"environment"`
-	DetectedAt           string                `json:"detectedAt"`
-	LastSeenAt           string                `json:"lastSeenAt"`
-	EventTime            string                `json:"eventTime"`
-	ResourceUID          string                `json:"resourceUid"`
-	MisconfigurationType string                `json:"misconfigurationType"`
-	Organization         string                `json:"organization"`
-	ComplianceStandards  []string              `json:"complianceStandards"`
-	Asset                MisconfigurationAsset `json:"asset"`
-	Scope                ScopeInfo             `json:"scope"`
+	ID                   string    `json:"id"`
+	ExternalID           string    `json:"externalId"`
+	Name                 string    `json:"name"`
+	Description          string    `json:"description"`
+	Severity             string    `json:"severity"`
+	Status               string    `json:"status"`
+	AnalystVerdict       string    `json:"analystVerdict"`
+	Product              string    `json:"product"`
+	Vendor               string    `json:"vendor"`
+	Environment          string    `json:"environment"`
+	DetectedAt           string    `json:"detectedAt"`
+	LastSeenAt           string    `json:"lastSeenAt"`
+	EventTime            string    `json:"eventTime"`
+	ResourceUID          string    `json:"resourceUid"`
+	MisconfigurationType string    `json:"misconfigurationType"`
+	Organization         string    `json:"organization"`
+	ComplianceStandards  []string  `json:"complianceStandards"`
+	Asset                Asset     `json:"asset"`
+	Scope                ScopeInfo `json:"scope"`
 
 	Raw json.RawMessage `json:"-"`
 }
@@ -57,27 +37,6 @@ func (m *Misconfiguration) UnmarshalJSON(b []byte) error {
 	}
 	m.Raw = append(m.Raw[:0:0], b...)
 	return nil
-}
-
-// MisconfigurationEdge is a single edge in a Relay connection.
-type MisconfigurationEdge struct {
-	Cursor string           `json:"cursor"`
-	Node   Misconfiguration `json:"node"`
-}
-
-// MisconfigurationConnection is the Relay connection response for misconfigurations.
-type MisconfigurationConnection struct {
-	Edges      []MisconfigurationEdge `json:"edges"`
-	PageInfo   PageInfo               `json:"pageInfo"`
-	TotalCount int64                  `json:"totalCount"`
-}
-
-// MisconfigurationListParams are parameters for querying misconfigurations.
-type MisconfigurationListParams struct {
-	First   int      `json:"first,omitempty"`
-	After   string   `json:"after,omitempty"`
-	Filters []Filter `json:"filters,omitempty"`
-	Scope   *Scope   `json:"scope,omitempty"`
 }
 
 const misconfigurationsQuery = `query Misconfigurations($first: Int, $after: String, $filters: [FilterInput!], $scope: ScopeSelectorInput) {
@@ -114,26 +73,11 @@ const misconfigurationsQuery = `query Misconfigurations($first: Int, $after: Str
 }`
 
 // MisconfigurationsList queries xSPM misconfigurations.
-func (c *Client) MisconfigurationsList(ctx context.Context, params *MisconfigurationListParams) (*MisconfigurationConnection, error) {
-	vars := map[string]any{}
-	if params != nil {
-		if params.First > 0 {
-			vars["first"] = params.First
-		}
-		if params.After != "" {
-			vars["after"] = params.After
-		}
-		if len(params.Filters) > 0 {
-			vars["filters"] = params.Filters
-		}
-		if params.Scope != nil {
-			vars["scope"] = params.Scope
-		}
-	}
+func (c *Client) MisconfigurationsList(ctx context.Context, params *ListParams) (*Connection[Misconfiguration], error) {
 	var resp struct {
-		Misconfigurations MisconfigurationConnection `json:"misconfigurations"`
+		Misconfigurations Connection[Misconfiguration] `json:"misconfigurations"`
 	}
-	if err := c.Do(ctx, EndpointMisconfigurations, misconfigurationsQuery, vars, &resp); err != nil {
+	if err := c.Do(ctx, EndpointMisconfigurations, misconfigurationsQuery, listVars(params), &resp); err != nil {
 		return nil, err
 	}
 	return &resp.Misconfigurations, nil

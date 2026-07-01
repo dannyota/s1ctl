@@ -40,12 +40,7 @@ func (c *Client) ExclusionsCreate(ctx context.Context, siteIDs []string, excl Ex
 
 // ExclusionsUpdate updates an exclusion.
 func (c *Client) ExclusionsUpdate(ctx context.Context, id string, data ExclusionCreate) (*Exclusion, error) {
-	req := map[string]any{"data": data}
-	var resp singleResponse[Exclusion]
-	if err := c.put(ctx, fmt.Sprintf("/exclusions/%s", id), req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp.Data, nil
+	return update[Exclusion](c, ctx, fmt.Sprintf("/exclusions/%s", id), data)
 }
 
 // ExclusionsDelete deletes exclusions by ID.

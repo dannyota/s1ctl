@@ -52,63 +52,50 @@ func NewClient(consoleURL, token string, opts ...Option) *Client {
 func (c *Client) BaseURL() string { return c.baseURL }
 
 func (c *Client) get(ctx context.Context, path string, params url.Values, dst any) error {
-	u := c.baseURL + path
-	if len(params) > 0 {
-		u += "?" + params.Encode()
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return fmt.Errorf("mgmt: %w", err)
-	}
-	return c.do(req, dst)
+	return c.queryRequest(ctx, http.MethodGet, path, params, dst)
 }
 
 func (c *Client) post(ctx context.Context, path string, body, dst any) error {
-	var reader io.Reader
-	if body != nil {
-		data, err := json.Marshal(body)
-		if err != nil {
-			return fmt.Errorf("mgmt: marshal: %w", err)
-		}
-		reader = bytes.NewReader(data)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+path, reader)
-	if err != nil {
-		return fmt.Errorf("mgmt: %w", err)
-	}
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	return c.do(req, dst)
+	return c.jsonRequest(ctx, http.MethodPost, path, body, dst)
 }
 
 func (c *Client) put(ctx context.Context, path string, body, dst any) error {
-	var reader io.Reader
-	if body != nil {
-		data, err := json.Marshal(body)
-		if err != nil {
-			return fmt.Errorf("mgmt: marshal: %w", err)
-		}
-		reader = bytes.NewReader(data)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.baseURL+path, reader)
-	if err != nil {
-		return fmt.Errorf("mgmt: %w", err)
-	}
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	return c.do(req, dst)
+	return c.jsonRequest(ctx, http.MethodPut, path, body, dst)
 }
 
 func (c *Client) delete(ctx context.Context, path string, params url.Values, dst any) error {
+	return c.queryRequest(ctx, http.MethodDelete, path, params, dst)
+}
+
+// queryRequest sends a request with query parameters and no body (GET, DELETE).
+func (c *Client) queryRequest(ctx context.Context, method, path string, params url.Values, dst any) error {
 	u := c.baseURL + path
 	if len(params) > 0 {
 		u += "?" + params.Encode()
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u, nil)
+	req, err := http.NewRequestWithContext(ctx, method, u, nil)
 	if err != nil {
 		return fmt.Errorf("mgmt: %w", err)
+	}
+	return c.do(req, dst)
+}
+
+// jsonRequest sends a request with a JSON body (POST, PUT).
+func (c *Client) jsonRequest(ctx context.Context, method, path string, body, dst any) error {
+	var reader io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("mgmt: marshal: %w", err)
+		}
+		reader = bytes.NewReader(data)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, reader)
+	if err != nil {
+		return fmt.Errorf("mgmt: %w", err)
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
 	}
 	return c.do(req, dst)
 }

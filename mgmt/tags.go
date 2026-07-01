@@ -82,22 +82,12 @@ type TagUpdate struct {
 
 // TagsCreate creates a tag.
 func (c *Client) TagsCreate(ctx context.Context, data TagCreate) (*Tag, error) {
-	req := map[string]any{"data": data}
-	var resp singleResponse[Tag]
-	if err := c.post(ctx, "/tags", req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp.Data, nil
+	return create[Tag](c, ctx, "/tags", data)
 }
 
 // TagsUpdate updates a tag.
 func (c *Client) TagsUpdate(ctx context.Context, id string, data TagUpdate) (*Tag, error) {
-	req := map[string]any{"data": data}
-	var resp singleResponse[Tag]
-	if err := c.put(ctx, fmt.Sprintf("/tags/%s", id), req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp.Data, nil
+	return update[Tag](c, ctx, fmt.Sprintf("/tags/%s", id), data)
 }
 
 // TagsDelete deletes a tag.

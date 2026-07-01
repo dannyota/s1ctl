@@ -46,18 +46,8 @@ func NewClient(consoleURL, token string, opts ...Option) *Client {
 	return c
 }
 
-func (c *Client) post(ctx context.Context, path string, body, dst any) error {
-	data, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("sdl: marshal: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+path, bytes.NewReader(data))
-	if err != nil {
-		return fmt.Errorf("sdl: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
+// do executes req and decodes the JSON response body into dst.
+func (c *Client) do(req *http.Request, dst any) error {
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return fmt.Errorf("sdl: %w", err)
@@ -81,6 +71,21 @@ func (c *Client) post(ctx context.Context, path string, body, dst any) error {
 	return nil
 }
 
+func (c *Client) post(ctx context.Context, path string, body, dst any) error {
+	data, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("sdl: marshal: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+path, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("sdl: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	return c.do(req, dst)
+}
+
 func (c *Client) postText(ctx context.Context, path, contentType string, headers map[string]string, body io.Reader, dst any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+path, body)
 	if err != nil {
@@ -91,27 +96,7 @@ func (c *Client) postText(ctx context.Context, path, contentType string, headers
 		req.Header.Set(k, v)
 	}
 
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return fmt.Errorf("sdl: %w", err)
-	}
-	defer resp.Body.Close() //nolint:errcheck
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("sdl: read body: %w", err)
-	}
-
-	if resp.StatusCode >= 400 {
-		return &APIError{Status: resp.StatusCode, Body: respBody}
-	}
-
-	if dst != nil {
-		if err := json.Unmarshal(respBody, dst); err != nil {
-			return fmt.Errorf("sdl: unmarshal: %w", err)
-		}
-	}
-	return nil
+	return c.do(req, dst)
 }
 
 // APIError is a non-2xx response from the SDL API.

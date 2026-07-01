@@ -26,17 +26,6 @@ type VulnerabilitySoftware struct {
 	Vendor         string `json:"vendor"`
 }
 
-// VulnerabilityAsset is the asset associated with a vulnerability.
-type VulnerabilityAsset struct {
-	ID          string                     `json:"id"`
-	Name        string                     `json:"name"`
-	Category    string                     `json:"category"`
-	Subcategory string                     `json:"subcategory"`
-	Type        string                     `json:"type"`
-	OsType      string                     `json:"osType"`
-	CloudInfo   *MisconfigurationCloudInfo `json:"cloudInfo"`
-}
-
 // Vulnerability is an xSPM vulnerability finding.
 type Vulnerability struct {
 	ID             string                `json:"id"`
@@ -53,7 +42,7 @@ type Vulnerability struct {
 	ResolvedAt     string                `json:"resolvedAt"`
 	CVE            VulnerabilityCVE      `json:"cve"`
 	Software       VulnerabilitySoftware `json:"software"`
-	Asset          VulnerabilityAsset    `json:"asset"`
+	Asset          Asset                 `json:"asset"`
 	Scope          ScopeInfo             `json:"scope"`
 
 	Raw json.RawMessage `json:"-"`
@@ -66,27 +55,6 @@ func (v *Vulnerability) UnmarshalJSON(b []byte) error {
 	}
 	v.Raw = append(v.Raw[:0:0], b...)
 	return nil
-}
-
-// VulnerabilityEdge is a single edge in a Relay connection.
-type VulnerabilityEdge struct {
-	Cursor string        `json:"cursor"`
-	Node   Vulnerability `json:"node"`
-}
-
-// VulnerabilityConnection is the Relay connection response for vulnerabilities.
-type VulnerabilityConnection struct {
-	Edges      []VulnerabilityEdge `json:"edges"`
-	PageInfo   PageInfo            `json:"pageInfo"`
-	TotalCount int64               `json:"totalCount"`
-}
-
-// VulnerabilityListParams are parameters for querying vulnerabilities.
-type VulnerabilityListParams struct {
-	First   int      `json:"first,omitempty"`
-	After   string   `json:"after,omitempty"`
-	Filters []Filter `json:"filters,omitempty"`
-	Scope   *Scope   `json:"scope,omitempty"`
 }
 
 const vulnerabilitiesQuery = `query Vulnerabilities($first: Int, $after: String, $filters: [FilterInput!], $scope: ScopeSelectorInput) {
@@ -124,26 +92,11 @@ const vulnerabilitiesQuery = `query Vulnerabilities($first: Int, $after: String,
 }`
 
 // VulnerabilitiesList queries xSPM vulnerabilities.
-func (c *Client) VulnerabilitiesList(ctx context.Context, params *VulnerabilityListParams) (*VulnerabilityConnection, error) {
-	vars := map[string]any{}
-	if params != nil {
-		if params.First > 0 {
-			vars["first"] = params.First
-		}
-		if params.After != "" {
-			vars["after"] = params.After
-		}
-		if len(params.Filters) > 0 {
-			vars["filters"] = params.Filters
-		}
-		if params.Scope != nil {
-			vars["scope"] = params.Scope
-		}
-	}
+func (c *Client) VulnerabilitiesList(ctx context.Context, params *ListParams) (*Connection[Vulnerability], error) {
 	var resp struct {
-		Vulnerabilities VulnerabilityConnection `json:"vulnerabilities"`
+		Vulnerabilities Connection[Vulnerability] `json:"vulnerabilities"`
 	}
-	if err := c.Do(ctx, EndpointVulnerabilities, vulnerabilitiesQuery, vars, &resp); err != nil {
+	if err := c.Do(ctx, EndpointVulnerabilities, vulnerabilitiesQuery, listVars(params), &resp); err != nil {
 		return nil, err
 	}
 	return &resp.Vulnerabilities, nil

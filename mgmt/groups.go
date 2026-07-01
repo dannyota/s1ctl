@@ -91,22 +91,12 @@ type GroupUpdate struct {
 // GroupsCreate creates a group.
 func (c *Client) GroupsCreate(ctx context.Context, siteID string, data GroupCreate) (*Group, error) {
 	data.SiteID = siteID
-	req := map[string]any{"data": data}
-	var resp singleResponse[Group]
-	if err := c.post(ctx, "/groups", req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp.Data, nil
+	return create[Group](c, ctx, "/groups", data)
 }
 
 // GroupsUpdate updates a group.
 func (c *Client) GroupsUpdate(ctx context.Context, id string, data GroupUpdate) (*Group, error) {
-	req := map[string]any{"data": data}
-	var resp singleResponse[Group]
-	if err := c.put(ctx, fmt.Sprintf("/groups/%s", id), req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp.Data, nil
+	return update[Group](c, ctx, fmt.Sprintf("/groups/%s", id), data)
 }
 
 // GroupsDelete deletes a group.

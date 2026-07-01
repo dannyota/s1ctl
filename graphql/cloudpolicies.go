@@ -48,27 +48,6 @@ func (p *CloudPolicy) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// CloudPolicyEdge is a single edge in a Relay connection.
-type CloudPolicyEdge struct {
-	Cursor string      `json:"cursor"`
-	Node   CloudPolicy `json:"node"`
-}
-
-// CloudPolicyConnection is the Relay connection response for cloud policies.
-type CloudPolicyConnection struct {
-	Edges      []CloudPolicyEdge `json:"edges"`
-	PageInfo   PageInfo          `json:"pageInfo"`
-	TotalCount int64             `json:"totalCount"`
-}
-
-// CloudPolicyListParams are parameters for querying cloud policies (CNS rules).
-type CloudPolicyListParams struct {
-	First   int      `json:"first,omitempty"`
-	After   string   `json:"after,omitempty"`
-	Filters []Filter `json:"filters,omitempty"`
-	Scope   *Scope   `json:"scope,omitempty"`
-}
-
 const cloudPoliciesQuery = `query CloudPolicies($first: Int, $after: String, $filters: [CloudCommonFilterInput!], $scope: CloudCommonScopeSelector) {
   cnsRules(first: $first, after: $after, filters: $filters, scope: $scope) {
     edges {
@@ -103,26 +82,11 @@ const cloudPoliciesQuery = `query CloudPolicies($first: Int, $after: String, $fi
 }`
 
 // CloudPoliciesList queries CNS rules (cloud security policies).
-func (c *Client) CloudPoliciesList(ctx context.Context, params *CloudPolicyListParams) (*CloudPolicyConnection, error) {
-	vars := map[string]any{}
-	if params != nil {
-		if params.First > 0 {
-			vars["first"] = params.First
-		}
-		if params.After != "" {
-			vars["after"] = params.After
-		}
-		if len(params.Filters) > 0 {
-			vars["filters"] = params.Filters
-		}
-		if params.Scope != nil {
-			vars["scope"] = params.Scope
-		}
-	}
+func (c *Client) CloudPoliciesList(ctx context.Context, params *ListParams) (*Connection[CloudPolicy], error) {
 	var resp struct {
-		CnsRules CloudPolicyConnection `json:"cnsRules"`
+		CnsRules Connection[CloudPolicy] `json:"cnsRules"`
 	}
-	if err := c.Do(ctx, EndpointCloudPolicies, cloudPoliciesQuery, vars, &resp); err != nil {
+	if err := c.Do(ctx, EndpointCloudPolicies, cloudPoliciesQuery, listVars(params), &resp); err != nil {
 		return nil, err
 	}
 	return &resp.CnsRules, nil

@@ -20,73 +20,49 @@ type policyResponse struct {
 	Data json.RawMessage `json:"data"`
 }
 
-// PolicyGet returns the policy for a site.
-func (c *Client) PolicyGetSite(ctx context.Context, siteID string) (*Policy, error) {
+func (c *Client) getPolicy(ctx context.Context, path string) (*Policy, error) {
 	var resp policyResponse
-	if err := c.get(ctx, fmt.Sprintf("/sites/%s/policy", siteID), nil, &resp); err != nil {
+	if err := c.get(ctx, path, nil, &resp); err != nil {
 		return nil, err
 	}
-	p := &Policy{}
-	p.Raw = append(p.Raw[:0:0], resp.Data...)
-	return p, nil
+	return &Policy{Raw: resp.Data}, nil
+}
+
+func (c *Client) putPolicy(ctx context.Context, path string, policy json.RawMessage) (*Policy, error) {
+	req := map[string]any{"data": policy}
+	var resp policyResponse
+	if err := c.put(ctx, path, req, &resp); err != nil {
+		return nil, err
+	}
+	return &Policy{Raw: resp.Data}, nil
+}
+
+// PolicyGetSite returns the policy for a site.
+func (c *Client) PolicyGetSite(ctx context.Context, siteID string) (*Policy, error) {
+	return c.getPolicy(ctx, fmt.Sprintf("/sites/%s/policy", siteID))
 }
 
 // PolicyGetAccount returns the policy for an account.
 func (c *Client) PolicyGetAccount(ctx context.Context, accountID string) (*Policy, error) {
-	var resp policyResponse
-	if err := c.get(ctx, fmt.Sprintf("/accounts/%s/policy", accountID), nil, &resp); err != nil {
-		return nil, err
-	}
-	p := &Policy{}
-	p.Raw = append(p.Raw[:0:0], resp.Data...)
-	return p, nil
+	return c.getPolicy(ctx, fmt.Sprintf("/accounts/%s/policy", accountID))
 }
 
 // PolicyGetGroup returns the policy for a group.
 func (c *Client) PolicyGetGroup(ctx context.Context, siteID, groupID string) (*Policy, error) {
-	var resp policyResponse
-	path := fmt.Sprintf("/sites/%s/groups/%s/policy", siteID, groupID)
-	if err := c.get(ctx, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	p := &Policy{}
-	p.Raw = append(p.Raw[:0:0], resp.Data...)
-	return p, nil
+	return c.getPolicy(ctx, fmt.Sprintf("/sites/%s/groups/%s/policy", siteID, groupID))
 }
 
 // PolicyUpdateSite updates the policy for a site.
 func (c *Client) PolicyUpdateSite(ctx context.Context, siteID string, policy json.RawMessage) (*Policy, error) {
-	req := map[string]any{"data": policy}
-	var resp policyResponse
-	if err := c.put(ctx, fmt.Sprintf("/sites/%s/policy", siteID), req, &resp); err != nil {
-		return nil, err
-	}
-	p := &Policy{}
-	p.Raw = append(p.Raw[:0:0], resp.Data...)
-	return p, nil
+	return c.putPolicy(ctx, fmt.Sprintf("/sites/%s/policy", siteID), policy)
 }
 
 // PolicyUpdateAccount updates the policy for an account.
 func (c *Client) PolicyUpdateAccount(ctx context.Context, accountID string, policy json.RawMessage) (*Policy, error) {
-	req := map[string]any{"data": policy}
-	var resp policyResponse
-	if err := c.put(ctx, fmt.Sprintf("/accounts/%s/policy", accountID), req, &resp); err != nil {
-		return nil, err
-	}
-	p := &Policy{}
-	p.Raw = append(p.Raw[:0:0], resp.Data...)
-	return p, nil
+	return c.putPolicy(ctx, fmt.Sprintf("/accounts/%s/policy", accountID), policy)
 }
 
 // PolicyUpdateGroup updates the policy for a group.
 func (c *Client) PolicyUpdateGroup(ctx context.Context, siteID, groupID string, policy json.RawMessage) (*Policy, error) {
-	req := map[string]any{"data": policy}
-	var resp policyResponse
-	path := fmt.Sprintf("/sites/%s/groups/%s/policy", siteID, groupID)
-	if err := c.put(ctx, path, req, &resp); err != nil {
-		return nil, err
-	}
-	p := &Policy{}
-	p.Raw = append(p.Raw[:0:0], resp.Data...)
-	return p, nil
+	return c.putPolicy(ctx, fmt.Sprintf("/sites/%s/groups/%s/policy", siteID, groupID), policy)
 }

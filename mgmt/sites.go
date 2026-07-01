@@ -70,12 +70,11 @@ func (p *SiteListParams) values() url.Values {
 	return v
 }
 
-type sitesDataResponse struct {
-	Sites []Site `json:"sites"`
-}
-
 type sitesResponse struct {
-	Data sitesDataResponse `json:"data"`
+	Data struct {
+		Sites      []Site     `json:"sites"`
+		Pagination Pagination `json:"pagination"`
+	} `json:"data"`
 }
 
 // SitesList returns a paginated list of sites.
@@ -84,8 +83,7 @@ func (c *Client) SitesList(ctx context.Context, params *SiteListParams) ([]Site,
 	if err := c.get(ctx, "/sites", params.values(), &resp); err != nil {
 		return nil, nil, err
 	}
-	pag := Pagination{TotalItems: len(resp.Data.Sites)}
-	return resp.Data.Sites, &pag, nil
+	return resp.Data.Sites, &resp.Data.Pagination, nil
 }
 
 // SitesGet returns a single site by ID.
@@ -124,22 +122,12 @@ type SiteUpdate struct {
 
 // SitesCreate creates a site.
 func (c *Client) SitesCreate(ctx context.Context, data SiteCreate) (*Site, error) {
-	req := map[string]any{"data": data}
-	var resp singleResponse[Site]
-	if err := c.post(ctx, "/sites", req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp.Data, nil
+	return create[Site](c, ctx, "/sites", data)
 }
 
 // SitesUpdate updates a site.
 func (c *Client) SitesUpdate(ctx context.Context, id string, data SiteUpdate) (*Site, error) {
-	req := map[string]any{"data": data}
-	var resp singleResponse[Site]
-	if err := c.put(ctx, fmt.Sprintf("/sites/%s", id), req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp.Data, nil
+	return update[Site](c, ctx, fmt.Sprintf("/sites/%s", id), data)
 }
 
 // SitesDelete deletes a site.

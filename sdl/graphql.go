@@ -114,6 +114,25 @@ func (c *Client) RemoveQuery(ctx context.Context, token string) error {
 	return c.graphql(ctx, removeQueryGQL, vars, nil)
 }
 
+// pollUntilDone polls a running query until it reaches a terminal state.
+// On context cancellation, it removes the query token before returning.
+func (c *Client) pollUntilDone(ctx context.Context, result *QueriesResult) (*QueriesResult, error) {
+	for result.Status == QueryStatusRunning {
+		select {
+		case <-ctx.Done():
+			_ = c.RemoveQuery(context.Background(), result.Token)
+			return nil, ctx.Err()
+		case <-time.After(500 * time.Millisecond):
+		}
+		var err error
+		result, err = c.PingQuery(ctx, result.IDs, result.StepsCompleted, result.Token)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 // PowerQueryGraphQL executes a PowerQuery via the SDL GraphQL API.
 //
 // This endpoint lives on the management console ({consoleURL}/sdl/v2/graphql)
@@ -150,19 +169,10 @@ func (c *Client) PowerQueryGraphQL(ctx context.Context, req *PowerQueryRequest) 
 		return nil, err
 	}
 
-	for result.Status == QueryStatusRunning {
-		select {
-		case <-ctx.Done():
-			_ = c.RemoveQuery(context.Background(), result.Token)
-			return nil, ctx.Err()
-		case <-time.After(500 * time.Millisecond):
-		}
-		result, err = c.PingQuery(ctx, result.IDs, result.StepsCompleted, result.Token)
-		if err != nil {
-			return nil, err
-		}
+	result, err = c.pollUntilDone(ctx, result)
+	if err != nil {
+		return nil, err
 	}
-
 	defer func() { _ = c.RemoveQuery(context.Background(), result.Token) }()
 
 	if result.Status == QueryStatusError {
@@ -191,18 +201,20 @@ func convertPQResult(result *QueriesResult, queryID string) (*PowerQueryResponse
 		resp := &PowerQueryResponse{
 			Status: string(result.Status),
 		}
-		for _, col := range pq.Columns {
-			resp.Columns = append(resp.Columns, PowerQueryColumn{
+		resp.Columns = make([]PowerQueryColumn, len(pq.Columns))
+		for i, col := range pq.Columns {
+			resp.Columns[i] = PowerQueryColumn{
 				Name: col.Name,
 				Type: col.Type,
-			})
+			}
 		}
-		for _, row := range pq.Cells {
+		resp.Values = make([][]any, len(pq.Cells))
+		for i, row := range pq.Cells {
 			vals := make([]any, len(row))
 			for j, cell := range row {
 				vals[j] = cell.Value
 			}
-			resp.Values = append(resp.Values, vals)
+			resp.Values[i] = vals
 		}
 		return resp, nil
 	}
