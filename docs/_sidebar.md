@@ -11,6 +11,7 @@
   - [Surfaces](design/surfaces.md)
   - [Catalog](design/catalog.md)
   - [CLI naming](design/cli-naming.md)
+  - [CLI v1](design/cli-v1.md)
   - [Doc style](STYLE.md)
 
 - [Roadmap](https://github.com/dannyota/s1ctl/blob/main/ROADMAP.md)
