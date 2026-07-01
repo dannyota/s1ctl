@@ -10,18 +10,51 @@ import (
 type AlertDetectionSource struct {
 	Product string `json:"product"`
 	Vendor  string `json:"vendor"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (a *AlertDetectionSource) UnmarshalJSON(b []byte) error {
+	type alias AlertDetectionSource
+	if err := json.Unmarshal(b, (*alias)(a)); err != nil {
+		return err
+	}
+	a.Raw = append(a.Raw[:0:0], b...)
+	return nil
 }
 
 // AlertAnalytics holds the rule/analytic that triggered an alert.
 type AlertAnalytics struct {
 	UID  string `json:"uid"`
 	Name string `json:"name"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (a *AlertAnalytics) UnmarshalJSON(b []byte) error {
+	type alias AlertAnalytics
+	if err := json.Unmarshal(b, (*alias)(a)); err != nil {
+		return err
+	}
+	a.Raw = append(a.Raw[:0:0], b...)
+	return nil
 }
 
 // AlertAsset identifies the endpoint associated with an alert.
 type AlertAsset struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (a *AlertAsset) UnmarshalJSON(b []byte) error {
+	type alias AlertAsset
+	if err := json.Unmarshal(b, (*alias)(a)); err != nil {
+		return err
+	}
+	a.Raw = append(a.Raw[:0:0], b...)
+	return nil
 }
 
 // Alert is a UAM unified alert.
@@ -270,16 +303,49 @@ func (h *AlertHistoryItem) ActorName() string {
 type AlertHistoryCreator struct {
 	UserID   string `json:"userId"`
 	UserType string `json:"userType"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (a *AlertHistoryCreator) UnmarshalJSON(b []byte) error {
+	type alias AlertHistoryCreator
+	if err := json.Unmarshal(b, (*alias)(a)); err != nil {
+		return err
+	}
+	a.Raw = append(a.Raw[:0:0], b...)
+	return nil
 }
 
 type AlertHistoryData struct {
 	Message     *AlertHistoryText `json:"message"`
 	Description *AlertHistoryText `json:"description"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (a *AlertHistoryData) UnmarshalJSON(b []byte) error {
+	type alias AlertHistoryData
+	if err := json.Unmarshal(b, (*alias)(a)); err != nil {
+		return err
+	}
+	a.Raw = append(a.Raw[:0:0], b...)
+	return nil
 }
 
 type AlertHistoryText struct {
 	Content string `json:"content"`
 	Type    string `json:"type"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (a *AlertHistoryText) UnmarshalJSON(b []byte) error {
+	type alias AlertHistoryText
+	if err := json.Unmarshal(b, (*alias)(a)); err != nil {
+		return err
+	}
+	a.Raw = append(a.Raw[:0:0], b...)
+	return nil
 }
 
 const alertHistoryQuery = `query AlertHistory($alertId: ID!, $first: Int, $after: String, $filter: AlertHistoryFilterInput) {

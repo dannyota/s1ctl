@@ -282,6 +282,9 @@ as a JSON array via --insight-types.`,
 				if err := c.ReportTasksCreate(cmd.Context(), siteIDs, accountIDs, scope, task); err != nil {
 					return err
 				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]any{"success": true, "name": name})
+				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Created report task %q\n", name)
 				return nil
 			})

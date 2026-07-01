@@ -250,6 +250,17 @@ type CDAlertInfo struct {
 	DstPort        string `json:"dstPort"`
 	SrcIP          string `json:"srcIp"`
 	SrcPort        string `json:"srcPort"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (c *CDAlertInfo) UnmarshalJSON(b []byte) error {
+	type alias CDAlertInfo
+	if err := json.Unmarshal(b, (*alias)(c)); err != nil {
+		return err
+	}
+	c.Raw = append(c.Raw[:0:0], b...)
+	return nil
 }
 
 // CDRuleInfo contains the rule-level fields of a cloud detection alert.
@@ -261,6 +272,17 @@ type CDRuleInfo struct {
 	QueryType     string `json:"queryType"`
 	ScopeLevel    string `json:"scopeLevel"`
 	TreatAsThreat string `json:"treatAsThreat"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (c *CDRuleInfo) UnmarshalJSON(b []byte) error {
+	type alias CDRuleInfo
+	if err := json.Unmarshal(b, (*alias)(c)); err != nil {
+		return err
+	}
+	c.Raw = append(c.Raw[:0:0], b...)
+	return nil
 }
 
 // CDAgentInfo contains the agent-level fields of a cloud detection alert.
@@ -273,6 +295,17 @@ type CDAgentInfo struct {
 	OSName      string `json:"osName"`
 	Version     string `json:"version"`
 	UUID        string `json:"uuid"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (c *CDAgentInfo) UnmarshalJSON(b []byte) error {
+	type alias CDAgentInfo
+	if err := json.Unmarshal(b, (*alias)(c)); err != nil {
+		return err
+	}
+	c.Raw = append(c.Raw[:0:0], b...)
+	return nil
 }
 
 // CDAlertListParams are query parameters for listing cloud detection alerts.

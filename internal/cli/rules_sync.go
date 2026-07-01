@@ -226,6 +226,9 @@ Dry-run by default — pass --yes to apply changes.`,
 					}
 					updated++
 				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"created": created, "updated": updated})
+				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
 					pluralize(created, "rule"),
 					pluralize(updated, "rule"))

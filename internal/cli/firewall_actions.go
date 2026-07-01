@@ -30,6 +30,9 @@ Dry-run by default — pass --yes to apply.`,
 					if err != nil {
 						return err
 					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "firewall rule"))
 					return nil
 				})
@@ -59,6 +62,9 @@ Dry-run by default — pass --yes to apply.`,
 					affected, err := c.FirewallRulesSetStatus(cmd.Context(), args, mgmt.FirewallStatusDisabled)
 					if err != nil {
 						return err
+					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
 					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "firewall rule"))
 					return nil
@@ -109,6 +115,9 @@ Dry-run by default — pass --yes to apply.`,
 					}
 					if err := c.FirewallRulesReorder(cmd.Context(), orders, filter); err != nil {
 						return err
+					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": len(orders)})
 					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Reordered %s\n", pluralize(len(orders), "firewall rule"))
 					return nil
@@ -164,6 +173,9 @@ Dry-run by default — pass --yes to apply.`,
 					affected, err := c.FirewallRulesCopy(cmd.Context(), filter, []mgmt.FirewallRuleCopyTarget{target})
 					if err != nil {
 						return err
+					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
 					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Copied %s\n", pluralize(affected, "firewall rule"))
 					return nil

@@ -14,6 +14,17 @@ type VulnerabilityCVE struct {
 	ExploitMaturity string  `json:"exploitMaturity"`
 	ExploitedInWild bool    `json:"exploitedInTheWild"`
 	PublishedDate   string  `json:"publishedDate"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (v *VulnerabilityCVE) UnmarshalJSON(b []byte) error {
+	type alias VulnerabilityCVE
+	if err := json.Unmarshal(b, (*alias)(v)); err != nil {
+		return err
+	}
+	v.Raw = append(v.Raw[:0:0], b...)
+	return nil
 }
 
 // VulnerabilitySoftware holds the affected software for a vulnerability.
@@ -24,6 +35,17 @@ type VulnerabilitySoftware struct {
 	PackageManager string `json:"packageManager"`
 	Type           string `json:"type"`
 	Vendor         string `json:"vendor"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (v *VulnerabilitySoftware) UnmarshalJSON(b []byte) error {
+	type alias VulnerabilitySoftware
+	if err := json.Unmarshal(b, (*alias)(v)); err != nil {
+		return err
+	}
+	v.Raw = append(v.Raw[:0:0], b...)
+	return nil
 }
 
 // Vulnerability is an xSPM vulnerability finding.

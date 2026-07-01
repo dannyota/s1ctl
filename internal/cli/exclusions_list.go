@@ -143,6 +143,9 @@ func newExclusionsDeleteCmd() *cobra.Command {
 					if err != nil {
 						return err
 					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Deleted %s\n", pluralize(affected, "exclusion"))
 					return nil
 				})

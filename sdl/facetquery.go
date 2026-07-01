@@ -38,6 +38,17 @@ func (r *FacetQueryResponse) UnmarshalJSON(b []byte) error {
 type FacetEntry struct {
 	Value string `json:"value"`
 	Count int64  `json:"count"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (f *FacetEntry) UnmarshalJSON(b []byte) error {
+	type alias FacetEntry
+	if err := json.Unmarshal(b, (*alias)(f)); err != nil {
+		return err
+	}
+	f.Raw = append(f.Raw[:0:0], b...)
+	return nil
 }
 
 // FacetQuery gets the most frequent values of a field in matching events.

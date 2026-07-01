@@ -1,9 +1,22 @@
 package graphql
 
+import "encoding/json"
+
 // ScopeEntity is a single scope level (account, site, or group) in responses.
 type ScopeEntity struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (s *ScopeEntity) UnmarshalJSON(b []byte) error {
+	type alias ScopeEntity
+	if err := json.Unmarshal(b, (*alias)(s)); err != nil {
+		return err
+	}
+	s.Raw = append(s.Raw[:0:0], b...)
+	return nil
 }
 
 // ScopeInfo is scope information returned in API responses.
@@ -11,6 +24,17 @@ type ScopeInfo struct {
 	Account ScopeEntity `json:"account"`
 	Site    ScopeEntity `json:"site"`
 	Group   ScopeEntity `json:"group"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (s *ScopeInfo) UnmarshalJSON(b []byte) error {
+	type alias ScopeInfo
+	if err := json.Unmarshal(b, (*alias)(s)); err != nil {
+		return err
+	}
+	s.Raw = append(s.Raw[:0:0], b...)
+	return nil
 }
 
 // CloudInfo holds cloud details for an asset.
@@ -20,6 +44,17 @@ type CloudInfo struct {
 	ProviderName string `json:"providerName"`
 	Region       string `json:"region"`
 	ResourceID   string `json:"resourceId"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (c *CloudInfo) UnmarshalJSON(b []byte) error {
+	type alias CloudInfo
+	if err := json.Unmarshal(b, (*alias)(c)); err != nil {
+		return err
+	}
+	c.Raw = append(c.Raw[:0:0], b...)
+	return nil
 }
 
 // Asset is an asset associated with an xSPM finding (misconfiguration or vulnerability).
@@ -31,6 +66,17 @@ type Asset struct {
 	Type        string     `json:"type"`
 	OsType      string     `json:"osType"`
 	CloudInfo   *CloudInfo `json:"cloudInfo"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (a *Asset) UnmarshalJSON(b []byte) error {
+	type alias Asset
+	if err := json.Unmarshal(b, (*alias)(a)); err != nil {
+		return err
+	}
+	a.Raw = append(a.Raw[:0:0], b...)
+	return nil
 }
 
 // Filter is a GraphQL filter input.
@@ -63,6 +109,17 @@ type PageInfo struct {
 	HasPreviousPage bool   `json:"hasPreviousPage"`
 	EndCursor       string `json:"endCursor"`
 	StartCursor     string `json:"startCursor"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (p *PageInfo) UnmarshalJSON(b []byte) error {
+	type alias PageInfo
+	if err := json.Unmarshal(b, (*alias)(p)); err != nil {
+		return err
+	}
+	p.Raw = append(p.Raw[:0:0], b...)
+	return nil
 }
 
 // Edge is a single edge in a Relay connection.

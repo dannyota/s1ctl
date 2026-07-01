@@ -96,6 +96,9 @@ func newExclusionsPushCmd() *cobra.Command {
 					}
 					created++
 				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"created": created})
+				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", pluralize(created, "exclusion"))
 				return nil
 			})

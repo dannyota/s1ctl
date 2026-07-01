@@ -44,6 +44,17 @@ type TimeseriesResult struct {
 	Values              []*float64 `json:"values"`
 	CPUUsage            float64    `json:"cpuUsage"`
 	FoundExistingSeries bool       `json:"foundExistingSeries"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (t *TimeseriesResult) UnmarshalJSON(b []byte) error {
+	type alias TimeseriesResult
+	if err := json.Unmarshal(b, (*alias)(t)); err != nil {
+		return err
+	}
+	t.Raw = append(t.Raw[:0:0], b...)
+	return nil
 }
 
 // TimeseriesQuery executes a time-series aggregation query.

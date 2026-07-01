@@ -56,12 +56,34 @@ type MitreTechnique struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
 	Link  string `json:"link"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (m *MitreTechnique) UnmarshalJSON(b []byte) error {
+	type alias MitreTechnique
+	if err := json.Unmarshal(b, (*alias)(m)); err != nil {
+		return err
+	}
+	m.Raw = append(m.Raw[:0:0], b...)
+	return nil
 }
 
 // MitreTactic is a MITRE ATT&CK tactic with associated techniques.
 type MitreTactic struct {
 	Tactic     string           `json:"tactic"`
 	Techniques []MitreTechnique `json:"techniques"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (m *MitreTactic) UnmarshalJSON(b []byte) error {
+	type alias MitreTactic
+	if err := json.Unmarshal(b, (*alias)(m)); err != nil {
+		return err
+	}
+	m.Raw = append(m.Raw[:0:0], b...)
+	return nil
 }
 
 // PlatformRule is a SentinelOne platform (pre-built) detection rule.
@@ -179,6 +201,17 @@ func platformRuleAction(c *Client, ctx context.Context, path string, filter Plat
 type DetectionKeyValue struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (d *DetectionKeyValue) UnmarshalJSON(b []byte) error {
+	type alias DetectionKeyValue
+	if err := json.Unmarshal(b, (*alias)(d)); err != nil {
+		return err
+	}
+	d.Raw = append(d.Raw[:0:0], b...)
+	return nil
 }
 
 // DetectionSurfacesList returns the available detection surfaces.

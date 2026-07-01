@@ -425,6 +425,9 @@ Dry-run by default — pass --yes to apply changes.`,
 					}
 					updated++
 				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"updated": updated})
+				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Updated %s\n", pluralize(updated, "policy"))
 				return nil
 			})

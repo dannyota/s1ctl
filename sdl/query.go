@@ -45,6 +45,17 @@ type Match struct {
 	Session    string         `json:"session"`
 	Thread     string         `json:"thread"`
 	Attributes map[string]any `json:"attributes"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (m *Match) UnmarshalJSON(b []byte) error {
+	type alias Match
+	if err := json.Unmarshal(b, (*alias)(m)); err != nil {
+		return err
+	}
+	m.Raw = append(m.Raw[:0:0], b...)
+	return nil
 }
 
 // Query executes a log query against the SDL REST API.

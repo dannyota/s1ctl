@@ -10,6 +10,17 @@ type CloudPolicyScope struct {
 	ID    string `json:"id"`
 	Level string `json:"level"`
 	Path  string `json:"path"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (c *CloudPolicyScope) UnmarshalJSON(b []byte) error {
+	type alias CloudPolicyScope
+	if err := json.Unmarshal(b, (*alias)(c)); err != nil {
+		return err
+	}
+	c.Raw = append(c.Raw[:0:0], b...)
+	return nil
 }
 
 // CloudPolicy is a CNS (Cloud Native Security) rule.

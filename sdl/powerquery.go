@@ -36,6 +36,17 @@ func (r *PowerQueryResponse) UnmarshalJSON(b []byte) error {
 type PowerQueryColumn struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (p *PowerQueryColumn) UnmarshalJSON(b []byte) error {
+	type alias PowerQueryColumn
+	if err := json.Unmarshal(b, (*alias)(p)); err != nil {
+		return err
+	}
+	p.Raw = append(p.Raw[:0:0], b...)
+	return nil
 }
 
 // PowerQuery executes a PowerQuery against the SDL API.

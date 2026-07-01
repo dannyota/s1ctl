@@ -93,6 +93,17 @@ func (c *Client) DeviceRulesDelete(ctx context.Context, ids []string) (int, erro
 type RuleOrder struct {
 	ID    string `json:"id"`
 	Order int    `json:"order"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (r *RuleOrder) UnmarshalJSON(b []byte) error {
+	type alias RuleOrder
+	if err := json.Unmarshal(b, (*alias)(r)); err != nil {
+		return err
+	}
+	r.Raw = append(r.Raw[:0:0], b...)
+	return nil
 }
 
 // DeviceRuleReorderFilter scopes a reorder operation.

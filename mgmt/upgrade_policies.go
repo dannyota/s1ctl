@@ -45,6 +45,17 @@ type UpgradePolicyPkg struct {
 	FileID string `json:"fileId"`
 	Major  string `json:"major"`
 	Minor  string `json:"minor"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (u *UpgradePolicyPkg) UnmarshalJSON(b []byte) error {
+	type alias UpgradePolicyPkg
+	if err := json.Unmarshal(b, (*alias)(u)); err != nil {
+		return err
+	}
+	u.Raw = append(u.Raw[:0:0], b...)
+	return nil
 }
 
 // UpgradePolicyListParams are query parameters for listing upgrade policies.
@@ -163,6 +174,17 @@ func (u *UpgradePackage) UnmarshalJSON(b []byte) error {
 type UpgradePackageFile struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (u *UpgradePackageFile) UnmarshalJSON(b []byte) error {
+	type alias UpgradePackageFile
+	if err := json.Unmarshal(b, (*alias)(u)); err != nil {
+		return err
+	}
+	u.Raw = append(u.Raw[:0:0], b...)
+	return nil
 }
 
 // UpgradePackageListParams are query parameters for listing available upgrade packages.

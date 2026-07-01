@@ -28,6 +28,9 @@ Dry-run by default — pass --yes to apply.`,
 					if err != nil {
 						return err
 					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Deleted %s\n", pluralize(affected, "firewall rule"))
 					return nil
 				})

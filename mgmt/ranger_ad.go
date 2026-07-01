@@ -60,6 +60,17 @@ type DomainStatus struct {
 	TotalJobs       int    `json:"totalJobs"`
 	CompletedJobs   int    `json:"completedJobs"`
 	DomainCompleted bool   `json:"domainCompletedStatus"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (d *DomainStatus) UnmarshalJSON(b []byte) error {
+	type alias DomainStatus
+	if err := json.Unmarshal(b, (*alias)(d)); err != nil {
+		return err
+	}
+	d.Raw = append(d.Raw[:0:0], b...)
+	return nil
 }
 
 // TenantStatus is the assessment status for an Azure tenant.
@@ -68,6 +79,17 @@ type TenantStatus struct {
 	TotalJobs       int    `json:"totalJobs"`
 	CompletedJobs   int    `json:"completedJobs"`
 	TenantCompleted bool   `json:"tenantCompletedStatus"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (t *TenantStatus) UnmarshalJSON(b []byte) error {
+	type alias TenantStatus
+	if err := json.Unmarshal(b, (*alias)(t)); err != nil {
+		return err
+	}
+	t.Raw = append(t.Raw[:0:0], b...)
+	return nil
 }
 
 // ADAssessmentStatus is the response from the Ranger AD assessment status endpoint.

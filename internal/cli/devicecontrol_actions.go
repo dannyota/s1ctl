@@ -31,6 +31,9 @@ Dry-run by default — pass --yes to apply.`,
 					if err != nil {
 						return err
 					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "device rule"))
 					return nil
 				})
@@ -60,6 +63,9 @@ Dry-run by default — pass --yes to apply.`,
 					affected, err := c.DeviceRulesSetStatus(cmd.Context(), args, mgmt.DeviceRuleStatusDisabled)
 					if err != nil {
 						return err
+					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
 					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "device rule"))
 					return nil
@@ -110,6 +116,9 @@ Dry-run by default — pass --yes to apply.`,
 					}
 					if err := c.DeviceRulesReorder(cmd.Context(), orders, filter); err != nil {
 						return err
+					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": len(orders)})
 					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Reordered %s\n", pluralize(len(orders), "device rule"))
 					return nil
@@ -165,6 +174,9 @@ Dry-run by default — pass --yes to apply.`,
 					affected, err := c.DeviceRulesCopy(cmd.Context(), filter, []mgmt.DeviceRuleCopyTarget{target})
 					if err != nil {
 						return err
+					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
 					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Copied %s\n", pluralize(affected, "device rule"))
 					return nil

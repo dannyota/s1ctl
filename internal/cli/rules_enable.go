@@ -30,6 +30,9 @@ Dry-run by default — pass --yes to apply.`,
 				if err != nil {
 					return err
 				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "rule"))
 				return nil
 			})
@@ -59,6 +62,9 @@ Dry-run by default — pass --yes to apply.`,
 				affected, err := c.RulesDisable(cmd.Context(), filter)
 				if err != nil {
 					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "rule"))
 				return nil

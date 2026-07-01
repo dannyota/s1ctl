@@ -78,6 +78,17 @@ type QueryResult struct {
 	CacheContext   string          `json:"cacheContext"`
 	NoResultReason string          `json:"noResultsReason"`
 	Data           json.RawMessage `json:"data"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (q *QueryResult) UnmarshalJSON(b []byte) error {
+	type alias QueryResult
+	if err := json.Unmarshal(b, (*alias)(q)); err != nil {
+		return err
+	}
+	q.Raw = append(q.Raw[:0:0], b...)
+	return nil
 }
 
 // PQResultData is the typed result for PowerQuery (type: PQ).
@@ -89,6 +100,17 @@ type PQResultData struct {
 	OmittedEvents                float64    `json:"omittedEvents"`
 	Outcome                      string     `json:"outcome"`
 	PartialResultsDueToTimeLimit bool       `json:"partialResultsDueToTimeLimit"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (p *PQResultData) UnmarshalJSON(b []byte) error {
+	type alias PQResultData
+	if err := json.Unmarshal(b, (*alias)(p)); err != nil {
+		return err
+	}
+	p.Raw = append(p.Raw[:0:0], b...)
+	return nil
 }
 
 // PQColumn describes a column in PQ results.
@@ -97,12 +119,34 @@ type PQColumn struct {
 	Format        string `json:"format"`
 	Type          string `json:"type"`
 	DecimalPlaces *int   `json:"decimalPlaces,omitempty"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (p *PQColumn) UnmarshalJSON(b []byte) error {
+	type alias PQColumn
+	if err := json.Unmarshal(b, (*alias)(p)); err != nil {
+		return err
+	}
+	p.Raw = append(p.Raw[:0:0], b...)
+	return nil
 }
 
 // PQCell is a single cell value in PQ results.
 type PQCell struct {
 	Value any    `json:"value"`
 	URL   string `json:"url,omitempty"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (p *PQCell) UnmarshalJSON(b []byte) error {
+	type alias PQCell
+	if err := json.Unmarshal(b, (*alias)(p)); err != nil {
+		return err
+	}
+	p.Raw = append(p.Raw[:0:0], b...)
+	return nil
 }
 
 // FacetResultData is the typed result for TOP_FACETS queries.
@@ -111,6 +155,17 @@ type FacetResultData struct {
 	MatchCount        float64 `json:"matchCount"`
 	SampledEventCount float64 `json:"sampledEventCount"`
 	Outcome           string  `json:"outcome"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (f *FacetResultData) UnmarshalJSON(b []byte) error {
+	type alias FacetResultData
+	if err := json.Unmarshal(b, (*alias)(f)); err != nil {
+		return err
+	}
+	f.Raw = append(f.Raw[:0:0], b...)
+	return nil
 }
 
 // Facet is a single facet in TOP_FACETS results.
@@ -121,12 +176,34 @@ type Facet struct {
 	SampledMatchCount float64      `json:"sampledMatchCount"`
 	UniqueValuesCount float64      `json:"uniqueValuesCount"`
 	Values            []FacetValue `json:"values"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (f *Facet) UnmarshalJSON(b []byte) error {
+	type alias Facet
+	if err := json.Unmarshal(b, (*alias)(f)); err != nil {
+		return err
+	}
+	f.Raw = append(f.Raw[:0:0], b...)
+	return nil
 }
 
 // FacetValue is a single value within a facet.
 type FacetValue struct {
 	Count float64 `json:"count"`
 	Value string  `json:"value"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (f *FacetValue) UnmarshalJSON(b []byte) error {
+	type alias FacetValue
+	if err := json.Unmarshal(b, (*alias)(f)); err != nil {
+		return err
+	}
+	f.Raw = append(f.Raw[:0:0], b...)
+	return nil
 }
 
 // GraphQL request/response wrappers (unexported).
@@ -159,4 +236,15 @@ type SavedSearch struct {
 	URL   string `json:"url"`
 	Index int    `json:"index"`
 	Type  string `json:"type"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (s *SavedSearch) UnmarshalJSON(b []byte) error {
+	type alias SavedSearch
+	if err := json.Unmarshal(b, (*alias)(s)); err != nil {
+		return err
+	}
+	s.Raw = append(s.Raw[:0:0], b...)
+	return nil
 }

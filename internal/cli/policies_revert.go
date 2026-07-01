@@ -57,6 +57,9 @@ func revertSitePolicy(cmd *cobra.Command, siteID string, yes bool) error {
 		if err := c.PolicyRevertSite(cmd.Context(), siteID); err != nil {
 			return fmt.Errorf("revert site %s policy: %w", siteID, err)
 		}
+		if outputFormat == "json" {
+			return printJSON(cmd.OutOrStdout(), map[string]any{"success": true, "scope": "site", "id": siteID})
+		}
 		fmt.Fprintf(cmd.OutOrStdout(), "Reverted policy for site %s\n", siteID)
 		return nil
 	})
@@ -71,6 +74,9 @@ func revertAccountPolicy(cmd *cobra.Command, accountID string, yes bool) error {
 		if err := c.PolicyRevertAccount(cmd.Context(), accountID); err != nil {
 			return fmt.Errorf("revert account %s policy: %w", accountID, err)
 		}
+		if outputFormat == "json" {
+			return printJSON(cmd.OutOrStdout(), map[string]any{"success": true, "scope": "account", "id": accountID})
+		}
 		fmt.Fprintf(cmd.OutOrStdout(), "Reverted policy for account %s\n", accountID)
 		return nil
 	})
@@ -84,6 +90,9 @@ func revertGroupPolicy(cmd *cobra.Command, siteID, groupID string, yes bool) err
 		}
 		if err := c.PolicyRevertGroup(cmd.Context(), siteID, groupID); err != nil {
 			return fmt.Errorf("revert group %s policy: %w", groupID, err)
+		}
+		if outputFormat == "json" {
+			return printJSON(cmd.OutOrStdout(), map[string]any{"success": true, "scope": "group", "id": groupID})
 		}
 		fmt.Fprintf(cmd.OutOrStdout(), "Reverted policy for group %s\n", groupID)
 		return nil

@@ -86,6 +86,9 @@ Dry-run by default — pass --yes to apply.`,
 					if err := c.FirewallRulesImport(cmd.Context(), scope, filename, data); err != nil {
 						return err
 					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), map[string]any{"success": true, "file": filename})
+					}
 					fmt.Fprintf(cmd.OutOrStdout(), "Imported firewall rules from %s\n", filename)
 					return nil
 				})

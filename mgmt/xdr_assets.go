@@ -44,11 +44,33 @@ type XDRCategoryDetails struct {
 	Server                 XDRCategoryCount `json:"server"`
 	Storage                XDRCategoryCount `json:"storage"`
 	Workstation            XDRCategoryCount `json:"workstation"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (x *XDRCategoryDetails) UnmarshalJSON(b []byte) error {
+	type alias XDRCategoryDetails
+	if err := json.Unmarshal(b, (*alias)(x)); err != nil {
+		return err
+	}
+	x.Raw = append(x.Raw[:0:0], b...)
+	return nil
 }
 
 // XDRCategoryCount is a single category's count.
 type XDRCategoryCount struct {
 	Count int `json:"count"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (x *XDRCategoryCount) UnmarshalJSON(b []byte) error {
+	type alias XDRCategoryCount
+	if err := json.Unmarshal(b, (*alias)(x)); err != nil {
+		return err
+	}
+	x.Raw = append(x.Raw[:0:0], b...)
+	return nil
 }
 
 // XDRSurfaceDetails holds per-surface counts.
@@ -58,11 +80,33 @@ type XDRSurfaceDetails struct {
 	Identity         XDRSurfaceCount `json:"identity"`
 	Network          XDRSurfaceCount `json:"network"`
 	NetworkDiscovery XDRSurfaceCount `json:"networkDiscovery"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (x *XDRSurfaceDetails) UnmarshalJSON(b []byte) error {
+	type alias XDRSurfaceDetails
+	if err := json.Unmarshal(b, (*alias)(x)); err != nil {
+		return err
+	}
+	x.Raw = append(x.Raw[:0:0], b...)
+	return nil
 }
 
 // XDRSurfaceCount is a single surface's count.
 type XDRSurfaceCount struct {
 	Count int `json:"count"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (x *XDRSurfaceCount) UnmarshalJSON(b []byte) error {
+	type alias XDRSurfaceCount
+	if err := json.Unmarshal(b, (*alias)(x)); err != nil {
+		return err
+	}
+	x.Raw = append(x.Raw[:0:0], b...)
+	return nil
 }
 
 // XDRAssetCountsParams are query parameters for asset counts.

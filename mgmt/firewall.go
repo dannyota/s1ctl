@@ -75,24 +75,68 @@ const (
 type FirewallHost struct {
 	Type   FirewallHostType `json:"type"`
 	Values []string         `json:"values,omitempty"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (f *FirewallHost) UnmarshalJSON(b []byte) error {
+	type alias FirewallHost
+	if err := json.Unmarshal(b, (*alias)(f)); err != nil {
+		return err
+	}
+	f.Raw = append(f.Raw[:0:0], b...)
+	return nil
 }
 
 // FirewallPort describes a port matcher (local or remote).
 type FirewallPort struct {
 	Type   FirewallPortType `json:"type"`
 	Values []string         `json:"values,omitempty"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (f *FirewallPort) UnmarshalJSON(b []byte) error {
+	type alias FirewallPort
+	if err := json.Unmarshal(b, (*alias)(f)); err != nil {
+		return err
+	}
+	f.Raw = append(f.Raw[:0:0], b...)
+	return nil
 }
 
 // FirewallLocation describes a location matcher.
 type FirewallLocation struct {
 	Type   FirewallLocationType `json:"type"`
 	Values []string             `json:"values,omitempty"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (f *FirewallLocation) UnmarshalJSON(b []byte) error {
+	type alias FirewallLocation
+	if err := json.Unmarshal(b, (*alias)(f)); err != nil {
+		return err
+	}
+	f.Raw = append(f.Raw[:0:0], b...)
+	return nil
 }
 
 // FirewallApplication describes an application matcher.
 type FirewallApplication struct {
 	Type   FirewallAppType `json:"type"`
 	Values []string        `json:"values,omitempty"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (f *FirewallApplication) UnmarshalJSON(b []byte) error {
+	type alias FirewallApplication
+	if err := json.Unmarshal(b, (*alias)(f)); err != nil {
+		return err
+	}
+	f.Raw = append(f.Raw[:0:0], b...)
+	return nil
 }
 
 // FirewallRule is a SentinelOne firewall rule.

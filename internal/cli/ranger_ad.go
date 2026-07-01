@@ -312,6 +312,9 @@ Dry-run by default — pass --yes to apply.`,
 				if !success {
 					return fmt.Errorf("assessment trigger failed: %s", msg)
 				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]any{"success": true, "message": msg})
+				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Assessment triggered: %s\n", msg)
 				return nil
 			})
