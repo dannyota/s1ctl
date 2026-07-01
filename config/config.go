@@ -23,6 +23,7 @@ import (
 type Instance struct {
 	ConsoleURL string `yaml:"console_url"`
 	Token      string `yaml:"token"`
+	SDLURL     string `yaml:"sdl_url"`
 
 	source string
 }
@@ -68,8 +69,12 @@ func Load(explicit string) (*Instance, error) {
 	if v := os.Getenv("S1_TOKEN"); v != "" {
 		inst.Token = v
 	}
+	if v := os.Getenv("S1_SDL_URL"); v != "" {
+		inst.SDLURL = v
+	}
 
 	inst.ConsoleURL = strings.TrimRight(inst.ConsoleURL, "/")
+	inst.SDLURL = strings.TrimRight(inst.SDLURL, "/")
 	return inst, nil
 }
 

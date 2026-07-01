@@ -19,63 +19,101 @@ func newDatalakeCmd() *cobra.Command {
 }
 
 func newDatalakePowerQueryCmd() *cobra.Command {
-	var query, startTime, endTime, priority string
+	var query, startTime, endTime, priority, protocol string
 
 	cmd := &cobra.Command{
 		Use:   "powerquery",
 		Short: "Execute a PowerQuery",
+		Long: `Execute a PowerQuery against the Singularity Data Lake.
+
+By default, uses the GraphQL protocol which connects through the management
+console and does not require a separate SDL URL. Use --protocol rest to use
+the REST API, which requires S1_SDL_URL to be configured.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if query == "" {
 				return fmt.Errorf("--query is required")
 			}
-			c, err := sdlClient()
-			if err != nil {
-				return err
+			switch protocol {
+			case "graphql":
+				return runPowerQueryGraphQL(cmd, query, startTime, endTime)
+			case "rest":
+				return runPowerQueryREST(cmd, query, startTime, endTime, priority)
+			default:
+				return fmt.Errorf("unsupported protocol: %s (use graphql or rest)", protocol)
 			}
-			resp, err := c.PowerQuery(cmd.Context(), &sdl.PowerQueryRequest{
-				Query:     query,
-				StartTime: startTime,
-				EndTime:   endTime,
-				Priority:  priority,
-			})
-			if err != nil {
-				return err
-			}
-			if jsonOutput {
-				return printJSON(resp)
-			}
-			if len(resp.Columns) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "No results.")
-				return nil
-			}
-			headers := make([]string, len(resp.Columns))
-			for i, col := range resp.Columns {
-				headers[i] = col.Name
-			}
-			var rows [][]string
-			for _, row := range resp.Values {
-				cells := make([]string, len(row))
-				for i, v := range row {
-					cells[i] = truncate(fmt.Sprint(v), 60)
-				}
-				rows = append(rows, cells)
-			}
-			printTable(headers, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(len(resp.Values), "row"))
-			return nil
 		},
 	}
 	cmd.Flags().StringVar(&query, "query", "", "PowerQuery expression (required)")
 	cmd.Flags().StringVar(&startTime, "start", "24h", "start time (e.g. 24h, 7d)")
 	cmd.Flags().StringVar(&endTime, "end", "", "end time")
-	cmd.Flags().StringVar(&priority, "priority", "low", "query priority (low, high)")
+	cmd.Flags().StringVar(&priority, "priority", "low", "query priority (low, high) [REST only]")
+	cmd.Flags().StringVar(&protocol, "protocol", "graphql", "API protocol (graphql, rest)")
 	return cmd
 }
 
-func sdlClient() (*sdl.Client, error) {
+func runPowerQueryGraphQL(cmd *cobra.Command, query, startTime, endTime string) error {
 	consoleURL, token, err := resolveConfig()
+	if err != nil {
+		return err
+	}
+	c := sdl.NewClient(consoleURL, token)
+	resp, err := c.PowerQueryGraphQL(cmd.Context(), &sdl.PowerQueryRequest{
+		Query:     query,
+		StartTime: startTime,
+		EndTime:   endTime,
+	})
+	if err != nil {
+		return err
+	}
+	return printPowerQueryResult(cmd, resp)
+}
+
+func runPowerQueryREST(cmd *cobra.Command, query, startTime, endTime, priority string) error {
+	c, err := sdlClient()
+	if err != nil {
+		return err
+	}
+	resp, err := c.PowerQuery(cmd.Context(), &sdl.PowerQueryRequest{
+		Query:     query,
+		StartTime: startTime,
+		EndTime:   endTime,
+		Priority:  priority,
+	})
+	if err != nil {
+		return err
+	}
+	return printPowerQueryResult(cmd, resp)
+}
+
+func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse) error {
+	if jsonOutput {
+		return printJSON(resp)
+	}
+	if len(resp.Columns) == 0 {
+		fmt.Fprintln(cmd.OutOrStdout(), "No results.")
+		return nil
+	}
+	headers := make([]string, len(resp.Columns))
+	for i, col := range resp.Columns {
+		headers[i] = col.Name
+	}
+	var rows [][]string
+	for _, row := range resp.Values {
+		cells := make([]string, len(row))
+		for i, v := range row {
+			cells[i] = truncate(fmt.Sprint(v), 60)
+		}
+		rows = append(rows, cells)
+	}
+	printTable(headers, rows)
+	fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(len(resp.Values), "row"))
+	return nil
+}
+
+func sdlClient() (*sdl.Client, error) {
+	sdlURL, token, err := resolveSDLURL()
 	if err != nil {
 		return nil, err
 	}
-	return sdl.NewClient(consoleURL, token), nil
+	return sdl.NewClient(sdlURL, token), nil
 }

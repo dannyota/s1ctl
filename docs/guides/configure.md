@@ -16,8 +16,13 @@ The interactive wizard walks through setup and writes `~/.s1ctl/config.yaml`.
 |----------|-------------|
 | `S1_CONSOLE_URL` | Console URL (e.g. `https://your-console.sentinelone.net`) |
 | `S1_TOKEN` | API token |
+| `S1_SDL_URL` | SDL REST console URL (e.g. `https://xdr.us1.sentinelone.net`) — only needed with `--protocol rest` |
 
 Environment variables override the config file.
+
+> **Note:** Data Lake queries use GraphQL by default, which connects through
+> your management console — no extra URL needed. If you prefer the REST
+> protocol (`--protocol rest`), set `S1_SDL_URL` to your Data Lake console URL.
 
 ## Config file
 
@@ -26,6 +31,7 @@ Default location: `~/.s1ctl/config.yaml`.
 ```yaml
 console_url: https://your-console.sentinelone.net
 token: your-api-token
+sdl_url: https://xdr.us1.sentinelone.net  # optional, only for --protocol rest
 ```
 
 Override the path with `--config`:

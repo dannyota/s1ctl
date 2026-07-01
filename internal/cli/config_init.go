@@ -36,7 +36,7 @@ func runConfigInit(cmd *cobra.Command, _ []string) error {
 	}
 	existing := config.ReadForEdit(path)
 
-	var consoleURL, token string
+	var consoleURL, token, sdlURL string
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -50,6 +50,11 @@ func runConfigInit(cmd *cobra.Command, _ []string) error {
 				Value(&token).
 				EchoMode(huh.EchoModePassword).
 				Placeholder("(unchanged)"),
+			huh.NewInput().
+				Title("SDL URL (optional)").
+				Description("Data Lake console, e.g. https://xdr.us1.sentinelone.net").
+				Value(&sdlURL).
+				Placeholder(existing.SDLURL),
 		),
 	)
 	if err := form.Run(); err != nil {
@@ -61,6 +66,9 @@ func runConfigInit(cmd *cobra.Command, _ []string) error {
 	}
 	if token != "" {
 		existing.Token = token
+	}
+	if sdlURL != "" {
+		existing.SDLURL = sdlURL
 	}
 
 	if err := existing.Validate(); err != nil {
@@ -89,15 +97,22 @@ func runConfigShow(cmd *cobra.Command, _ []string) error {
 	}
 
 	if jsonOutput {
-		return printJSON(map[string]string{
+		out := map[string]string{
 			"console_url": inst.ConsoleURL,
 			"token":       "(redacted)",
 			"source":      inst.Source(),
-		})
+		}
+		if inst.SDLURL != "" {
+			out["sdl_url"] = inst.SDLURL
+		}
+		return printJSON(out)
 	}
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Console URL: %s\n", inst.ConsoleURL)
 	fmt.Fprintf(cmd.OutOrStdout(), "Token:       %s\n", "(redacted)")
+	if inst.SDLURL != "" {
+		fmt.Fprintf(cmd.OutOrStdout(), "SDL URL:     %s\n", inst.SDLURL)
+	}
 	fmt.Fprintf(cmd.OutOrStdout(), "Source:      %s\n", inst.Source())
 	return nil
 }

@@ -37,10 +37,11 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	cfg, _ := loadConfig()
 	results := []checkResult{
 		checkMGMT(ctx, consoleURL, token),
 		checkGraphQL(ctx, consoleURL, token),
-		checkSDL(ctx, consoleURL, token),
+		checkSDL(ctx, cfg.SDLURL, token),
 	}
 
 	if jsonOutput {
@@ -94,11 +95,14 @@ func checkGraphQL(ctx context.Context, consoleURL, token string) checkResult {
 	return r
 }
 
-func checkSDL(ctx context.Context, consoleURL, token string) checkResult {
-	c := sdl.NewClient(consoleURL, token)
+func checkSDL(ctx context.Context, sdlURL, token string) checkResult {
+	if sdlURL == "" {
+		return checkResult{Surface: "SDL", Latency: "-", Error: "not configured (set S1_SDL_URL)"}
+	}
+	c := sdl.NewClient(sdlURL, token)
 	start := time.Now()
 	_, err := c.PowerQuery(ctx, &sdl.PowerQueryRequest{
-		Query:     "* | limit 1",
+		Query:     "\"*\" | limit 1",
 		StartTime: "1h",
 	})
 	elapsed := time.Since(start).Round(time.Millisecond)

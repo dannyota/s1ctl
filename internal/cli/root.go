@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"os"
+	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -42,20 +42,20 @@ func Execute() int {
 }
 
 func resolveConfig() (consoleURL, token string, err error) {
-	consoleURL = os.Getenv("S1_CONSOLE_URL")
-	token = os.Getenv("S1_TOKEN")
-	if consoleURL != "" && token != "" {
-		return consoleURL, token, nil
-	}
 	cfg, loadErr := loadConfig()
 	if loadErr != nil {
 		return "", "", loadErr
 	}
-	if consoleURL == "" {
-		consoleURL = cfg.ConsoleURL
+	return cfg.ConsoleURL, cfg.Token, nil
+}
+
+func resolveSDLURL() (sdlURL, token string, err error) {
+	cfg, loadErr := loadConfig()
+	if loadErr != nil {
+		return "", "", loadErr
 	}
-	if token == "" {
-		token = cfg.Token
+	if cfg.SDLURL == "" {
+		return "", "", fmt.Errorf("SDL URL is required (set S1_SDL_URL or sdl_url in config)\nThe SDL console is separate from the management console (e.g. https://xdr.us1.sentinelone.net)")
 	}
-	return consoleURL, token, nil
+	return cfg.SDLURL, cfg.Token, nil
 }
