@@ -81,6 +81,39 @@ func (c *Client) post(ctx context.Context, path string, body, dst any) error {
 	return nil
 }
 
+func (c *Client) postText(ctx context.Context, path, contentType string, headers map[string]string, body io.Reader, dst any) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+path, body)
+	if err != nil {
+		return fmt.Errorf("sdl: %w", err)
+	}
+	req.Header.Set("Content-Type", contentType)
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return fmt.Errorf("sdl: %w", err)
+	}
+	defer resp.Body.Close() //nolint:errcheck
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("sdl: read body: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return &APIError{Status: resp.StatusCode, Body: respBody}
+	}
+
+	if dst != nil {
+		if err := json.Unmarshal(respBody, dst); err != nil {
+			return fmt.Errorf("sdl: unmarshal: %w", err)
+		}
+	}
+	return nil
+}
+
 // APIError is a non-2xx response from the SDL API.
 type APIError struct {
 	Status int
