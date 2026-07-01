@@ -38,4 +38,7 @@ func registerCommands(root *cobra.Command) {
 	// Hunting & data lake
 	root.AddCommand(newVisibilityCmd())
 	root.AddCommand(newDatalakeCmd())
+
+	// Tooling
+	root.AddCommand(newDocsCmd())
 }

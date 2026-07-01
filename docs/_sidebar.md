@@ -15,6 +15,22 @@
   - [Examples](guides/examples.md)
   - [Go SDK](guides/sdk.md)
 
+- **Commands**
+  - [Overview](commands/)
+  - [agents](commands/agents.md)
+  - [alerts](commands/alerts.md)
+  - [threats](commands/threats.md)
+  - [rules](commands/rules.md)
+  - [vulnerabilities](commands/vulnerabilities.md)
+  - [misconfigurations](commands/misconfigurations.md)
+  - [exclusions](commands/exclusions.md)
+  - [policies](commands/policies.md)
+  - [sites](commands/sites.md)
+  - [groups](commands/groups.md)
+  - [datalake](commands/datalake.md)
+  - [remoteops](commands/remoteops.md)
+  - [Global](commands/global.md)
+
 - **Design**
   - [Architecture](design/architecture.md)
   - [Surfaces](design/surfaces.md)
