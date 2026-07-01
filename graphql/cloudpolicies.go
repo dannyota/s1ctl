@@ -132,3 +132,56 @@ func (c *Client) CloudPoliciesGet(ctx context.Context, id string) (*CloudPolicy,
 	}
 	return resp.CnsRule, nil
 }
+
+// CloudPoliciesActionResponse is the response from actionOnCNSRules.
+type CloudPoliciesActionResponse struct {
+	IDs []string `json:"ids"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (r *CloudPoliciesActionResponse) UnmarshalJSON(b []byte) error {
+	type alias CloudPoliciesActionResponse
+	if err := json.Unmarshal(b, (*alias)(r)); err != nil {
+		return err
+	}
+	r.Raw = append(r.Raw[:0:0], b...)
+	return nil
+}
+
+const cloudPoliciesActionMutation = `mutation CloudPoliciesAction($action: String!, $input: CloudCommonActionInput!) {
+  actionOnCNSRules(action: $action, input: $input) {
+    ids
+  }
+}`
+
+// CloudPoliciesAction performs a bulk action (enable, disable, delete) on CNS
+// rules by ID.
+func (c *Client) CloudPoliciesAction(ctx context.Context, action string, ids []string) (*CloudPoliciesActionResponse, error) {
+	vars := map[string]any{
+		"action": action,
+		"input":  map[string]any{"ids": ids},
+	}
+	var resp struct {
+		ActionOnCNSRules *CloudPoliciesActionResponse `json:"actionOnCNSRules"`
+	}
+	if err := c.Do(ctx, EndpointCloudPolicies, cloudPoliciesActionMutation, vars, &resp); err != nil {
+		return nil, err
+	}
+	return resp.ActionOnCNSRules, nil
+}
+
+// CloudPoliciesEnable enables the specified CNS rules.
+func (c *Client) CloudPoliciesEnable(ctx context.Context, ids []string) (*CloudPoliciesActionResponse, error) {
+	return c.CloudPoliciesAction(ctx, "enable", ids)
+}
+
+// CloudPoliciesDisable disables the specified CNS rules.
+func (c *Client) CloudPoliciesDisable(ctx context.Context, ids []string) (*CloudPoliciesActionResponse, error) {
+	return c.CloudPoliciesAction(ctx, "disable", ids)
+}
+
+// CloudPoliciesDelete deletes the specified CNS rules.
+func (c *Client) CloudPoliciesDelete(ctx context.Context, ids []string) (*CloudPoliciesActionResponse, error) {
+	return c.CloudPoliciesAction(ctx, "delete", ids)
+}

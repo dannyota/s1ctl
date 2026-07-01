@@ -262,5 +262,8 @@ NEW alerts, site count, and policy mode warnings.`,
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	cmd.AddCommand(newStatusCapabilitiesCmd())
+	cmd.AddCommand(newStatusSurfacesCmd())
+	cmd.AddCommand(newStatusEnumsCmd())
 	return cmd
 }

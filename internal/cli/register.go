@@ -22,6 +22,7 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newAccountsCmd())
 	root.AddCommand(newPoliciesCmd())
 	root.AddCommand(newExclusionsCmd())
+	root.AddCommand(newUnifiedExclusionsCmd())
 	root.AddCommand(newActivitiesCmd())
 	root.AddCommand(newCloudPoliciesCmd())
 	root.AddCommand(newRulesCmd())
@@ -34,6 +35,17 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newDeviceControlCmd())
 	root.AddCommand(newFirewallCmd())
 	root.AddCommand(newUpdatesCmd())
+	root.AddCommand(newReportsCmd())
+	root.AddCommand(newSettingsCmd())
+	root.AddCommand(newUpgradePoliciesCmd())
+
+	// Threat intelligence
+	root.AddCommand(newIOCsCmd())
+	root.AddCommand(newDetectionLibraryCmd())
+	root.AddCommand(newRangerADCmd())
+
+	// Asset inventory
+	root.AddCommand(newAssetsCmd())
 
 	// System
 	root.AddCommand(newSystemCmd())
@@ -44,4 +56,5 @@ func registerCommands(root *cobra.Command) {
 
 	// Tooling
 	root.AddCommand(newDocsCmd())
+	root.AddCommand(newAuditCmd())
 }

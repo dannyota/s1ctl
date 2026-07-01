@@ -110,6 +110,38 @@ func (c *Client) jsonRequest(ctx context.Context, method, path string, body, dst
 	return c.do(req, dst)
 }
 
+// getRaw sends a GET request and returns the raw response body without
+// JSON unmarshalling. Used for export endpoints that return CSV or other
+// non-JSON formats.
+func (c *Client) getRaw(ctx context.Context, path string, params url.Values) ([]byte, error) {
+	u := c.baseURL + path
+	if len(params) > 0 {
+		u += "?" + params.Encode()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, fmt.Errorf("mgmt: %w", err)
+	}
+
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("mgmt: rate limit: %w", err)
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("mgmt: %w", err)
+	}
+	defer resp.Body.Close() //nolint:errcheck
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("mgmt: read body: %w", err)
+	}
+	if resp.StatusCode >= 400 {
+		return nil, parseError(resp.StatusCode, data)
+	}
+	return data, nil
+}
+
 func (c *Client) do(req *http.Request, dst any) error {
 	if err := c.limiter.Wait(req.Context()); err != nil {
 		return fmt.Errorf("mgmt: rate limit: %w", err)

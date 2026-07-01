@@ -81,26 +81,24 @@ Filter flags only match alerts with status NEW. Dry-run by default.`,
 				return nil
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would resolve %s. Pass --yes to apply.\n",
-					pluralize(len(ids), "alert"))
+			action := fmt.Sprintf("resolve %s", pluralize(len(ids), "alert"))
+			return guard(cmd.OutOrStdout(), "alerts resolve", action, strings.Join(ids, ","), yes, func() error {
+				c, err := gqlClient()
+				if err != nil {
+					return err
+				}
+				if err := c.AlertsUpdateStatus(cmd.Context(), ids, "RESOLVED"); err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]any{
+						"status":   "resolved",
+						"affected": len(ids),
+					})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "resolve: %s affected\n", pluralize(len(ids), "alert"))
 				return nil
-			}
-			c, err := gqlClient()
-			if err != nil {
-				return err
-			}
-			if err := c.AlertsUpdateStatus(cmd.Context(), ids, "RESOLVED"); err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]any{
-					"status":   "resolved",
-					"affected": len(ids),
-				})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "resolve: %s affected\n", pluralize(len(ids), "alert"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")

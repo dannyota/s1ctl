@@ -13,6 +13,12 @@ func newDeviceControlCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newDeviceControlListCmd())
+	cmd.AddCommand(newDeviceControlDeleteCmd())
+	cmd.AddCommand(newDeviceControlEnableCmd())
+	cmd.AddCommand(newDeviceControlDisableCmd())
+	cmd.AddCommand(newDeviceControlReorderCmd())
+	cmd.AddCommand(newDeviceControlCopyCmd())
+	cmd.AddCommand(newDeviceControlEventsCmd())
 	addDeviceControlSyncCmds(cmd)
 	return cmd
 }

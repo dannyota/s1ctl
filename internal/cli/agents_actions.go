@@ -9,12 +9,8 @@ import (
 )
 
 func addAgentActions(parent *cobra.Command) {
-	parent.AddCommand(newAgentActionCmd("isolate", "Network-isolate an agent", func(c *mgmt.Client, cmd *cobra.Command, f mgmt.ActionFilter) (int, error) {
-		return c.AgentsDisconnect(cmd.Context(), f)
-	}))
-	parent.AddCommand(newAgentActionCmd("connect", "Reconnect an isolated agent", func(c *mgmt.Client, cmd *cobra.Command, f mgmt.ActionFilter) (int, error) {
-		return c.AgentsConnect(cmd.Context(), f)
-	}))
+	parent.AddCommand(newAgentsIsolateCmd())
+	parent.AddCommand(newAgentsReconnectCmd())
 	parent.AddCommand(newAgentActionCmd("scan", "Start full disk scan", func(c *mgmt.Client, cmd *cobra.Command, f mgmt.ActionFilter) (int, error) {
 		return c.AgentsInitiateScan(cmd.Context(), f)
 	}))

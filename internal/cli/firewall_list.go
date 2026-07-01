@@ -13,6 +13,14 @@ func newFirewallCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newFirewallListCmd())
+	cmd.AddCommand(newFirewallDeleteCmd())
+	cmd.AddCommand(newFirewallEnableCmd())
+	cmd.AddCommand(newFirewallDisableCmd())
+	cmd.AddCommand(newFirewallReorderCmd())
+	cmd.AddCommand(newFirewallCopyCmd())
+	cmd.AddCommand(newFirewallProtocolsCmd())
+	cmd.AddCommand(newFirewallExportCmd())
+	cmd.AddCommand(newFirewallImportCmd())
 	addFirewallSyncCmds(cmd)
 	return cmd
 }

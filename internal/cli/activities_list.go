@@ -17,6 +17,7 @@ func newActivitiesCmd() *cobra.Command {
 	cmd.AddCommand(newActivitiesListCmd())
 	cmd.AddCommand(newActivitiesCountCmd())
 	cmd.AddCommand(newActivitiesTypesCmd())
+	cmd.AddCommand(newActivitiesExportCmd())
 	return cmd
 }
 

@@ -107,6 +107,39 @@ func (c *Client) ActivitiesList(ctx context.Context, params *ActivityListParams)
 	return list[Activity](c, ctx, "/activities", params.values())
 }
 
+// ActivityExportParams are query parameters for exporting activities as CSV.
+type ActivityExportParams struct {
+	SiteIDs       []string
+	AccountIDs    []string
+	GroupIDs      []string
+	ActivityTypes []int
+	CreatedAtGt   string
+	CreatedAtLt   string
+	CreatedAtGte  string
+	CreatedAtLte  string
+}
+
+func (p *ActivityExportParams) values() url.Values {
+	v := url.Values{}
+	if p == nil {
+		return v
+	}
+	addCSV(v, "siteIds", p.SiteIDs)
+	addCSV(v, "accountIds", p.AccountIDs)
+	addCSV(v, "groupIds", p.GroupIDs)
+	addIntCSV(v, "activityTypes", p.ActivityTypes)
+	addString(v, "createdAt__gt", p.CreatedAtGt)
+	addString(v, "createdAt__lt", p.CreatedAtLt)
+	addString(v, "createdAt__gte", p.CreatedAtGte)
+	addString(v, "createdAt__lte", p.CreatedAtLte)
+	return v
+}
+
+// ActivitiesExport returns the raw CSV export of activities matching the filter.
+func (c *Client) ActivitiesExport(ctx context.Context, params *ActivityExportParams) ([]byte, error) {
+	return c.getRaw(ctx, "/export/activities", params.values())
+}
+
 // ActivitiesCount returns the count of activities matching the filter.
 func (c *Client) ActivitiesCount(ctx context.Context, params *ActivityListParams) (int, error) {
 	if params == nil {

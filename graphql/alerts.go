@@ -239,6 +239,98 @@ func (c *Client) AlertGroups(ctx context.Context, groupByField string, params *L
 	return &resp.AlertGroups, nil
 }
 
+// AlertHistoryItem is a single entry in an alert's audit trail.
+type AlertHistoryItem struct {
+	CreatedAt  string               `json:"createdAt"`
+	EventText  string               `json:"eventText"`
+	EventType  string               `json:"eventType"`
+	ReportURL  string               `json:"reportUrl"`
+	Creator    *AlertHistoryCreator `json:"historyItemCreator"`
+	ActionData *AlertHistoryData    `json:"historyItemData"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (h *AlertHistoryItem) UnmarshalJSON(b []byte) error {
+	type alias AlertHistoryItem
+	if err := json.Unmarshal(b, (*alias)(h)); err != nil {
+		return err
+	}
+	h.Raw = append(h.Raw[:0:0], b...)
+	return nil
+}
+
+func (h *AlertHistoryItem) ActorName() string {
+	if h.Creator != nil {
+		return h.Creator.UserID
+	}
+	return ""
+}
+
+type AlertHistoryCreator struct {
+	UserID   string `json:"userId"`
+	UserType string `json:"userType"`
+}
+
+type AlertHistoryData struct {
+	Message     *FormattedContent `json:"message"`
+	Description *FormattedContent `json:"description"`
+}
+
+type FormattedContent struct {
+	Format string `json:"format"`
+	Text   string `json:"text"`
+}
+
+const alertHistoryQuery = `query AlertHistory($alertId: ID!, $first: Int, $after: String, $filter: AlertHistoryFilterInput) {
+  alertHistory(alertId: $alertId, first: $first, after: $after, filter: $filter) {
+    edges {
+      cursor
+      node {
+        createdAt
+        eventText
+        eventType
+        reportUrl
+        historyItemCreator {
+          ... on UserHistoryItemCreator { userId userType }
+        }
+        historyItemData {
+          ... on MitigationActionHistoryItemData {
+            message { format text }
+          }
+          ... on EnrichmentHistoryItemData {
+            description { format text }
+          }
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+      startCursor
+    }
+    totalCount
+  }
+}`
+
+func (c *Client) AlertHistory(ctx context.Context, alertID string, first int, after string) (*Connection[AlertHistoryItem], error) {
+	vars := map[string]any{"alertId": alertID}
+	if first > 0 {
+		vars["first"] = first
+	}
+	if after != "" {
+		vars["after"] = after
+	}
+	var resp struct {
+		AlertHistory Connection[AlertHistoryItem] `json:"alertHistory"`
+	}
+	if err := c.Do(ctx, EndpointAlerts, alertHistoryQuery, vars, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.AlertHistory, nil
+}
+
 func (c *Client) doAlertTriggerActions(ctx context.Context, vars map[string]any) error {
 	var resp struct {
 		AlertTriggerActions struct {

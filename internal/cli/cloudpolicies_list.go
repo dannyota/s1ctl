@@ -17,6 +17,7 @@ func newCloudPoliciesCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newCloudPoliciesListCmd())
 	cmd.AddCommand(newCloudPoliciesGetCmd())
+	addCloudPolicyActions(cmd)
 	return cmd
 }
 

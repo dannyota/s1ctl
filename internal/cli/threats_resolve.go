@@ -11,6 +11,7 @@ import (
 
 func newThreatsResolveCmd() *cobra.Command {
 	var siteIDs, classifications, verdicts, mitigationStatuses []string
+	var filters []string
 	var name, query string
 	var yes bool
 
@@ -20,10 +21,12 @@ func newThreatsResolveCmd() *cobra.Command {
 		Long: `Set incident status to "resolved" on one or more threats.
 
 Specify threat IDs as arguments, or use filter flags to match threats.
+Use typed flags (--classification, --verdict) or the generic --filter
+flag with key=value pairs (e.g. --filter classifications=Malware).
 Filter flags only match unresolved threats. Dry-run by default.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			hasFilters := name != "" || len(classifications) > 0 || len(verdicts) > 0 ||
-				len(mitigationStatuses) > 0 || len(siteIDs) > 0 || query != ""
+				len(mitigationStatuses) > 0 || len(siteIDs) > 0 || query != "" || len(filters) > 0
 			if len(args) == 0 && !hasFilters {
 				return fmt.Errorf("specify threat IDs or use filter flags")
 			}
@@ -43,6 +46,9 @@ Filter flags only match unresolved threats. Dry-run by default.`,
 					IncidentStatuses:   []string{"unresolved"},
 					Query:              query,
 					Limit:              1000,
+				}
+				if err := applyThreatFilters(params, filters); err != nil {
+					return err
 				}
 				threats, _, err := fetchAllREST("threat", func(cur string) ([]mgmt.Threat, *mgmt.Pagination, error) {
 					params.Cursor = cur
@@ -67,25 +73,23 @@ Filter flags only match unresolved threats. Dry-run by default.`,
 				return nil
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would resolve %s. Pass --yes to apply.\n",
-					pluralize(len(ids), "threat"))
+			action := fmt.Sprintf("resolve %s", pluralize(len(ids), "threat"))
+			return guard(cmd.OutOrStdout(), "threats resolve", action, strings.Join(ids, ","), yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				filter := mgmt.ActionFilter{IDs: ids}
+				affected, err := c.ThreatsUpdateStatus(cmd.Context(), "resolved", filter)
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "resolve: %s affected\n", pluralize(affected, "threat"))
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			filter := mgmt.ActionFilter{IDs: ids}
-			affected, err := c.ThreatsUpdateStatus(cmd.Context(), "resolved", filter)
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "resolve: %s affected\n", pluralize(affected, "threat"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
@@ -93,7 +97,40 @@ Filter flags only match unresolved threats. Dry-run by default.`,
 	cmd.Flags().StringSliceVar(&classifications, "classification", nil, "filter by classification (e.g. Malware, PUP)")
 	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (true_positive, false_positive, suspicious, undefined)")
 	cmd.Flags().StringSliceVar(&mitigationStatuses, "mitigation-status", nil, "filter by mitigation status")
+	cmd.Flags().StringArrayVar(&filters, "filter", nil, `key=value filter (e.g. --filter classifications=Malware)`)
 	cmd.Flags().StringVar(&query, "query", "", "free text search filter")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
 	return cmd
+}
+
+func applyThreatFilters(params *mgmt.ThreatListParams, filters []string) error {
+	for _, f := range filters {
+		key, val, ok := strings.Cut(f, "=")
+		if !ok {
+			return fmt.Errorf("invalid filter %q: expected key=value", f)
+		}
+		switch key {
+		case "siteIds":
+			params.SiteIDs = append(params.SiteIDs, val)
+		case "accountIds":
+			params.AccountIDs = append(params.AccountIDs, val)
+		case "groupIds":
+			params.GroupIDs = append(params.GroupIDs, val)
+		case "agentIds":
+			params.AgentIDs = append(params.AgentIDs, val)
+		case "classifications":
+			params.Classifications = append(params.Classifications, val)
+		case "mitigationStatuses":
+			params.MitigationStatuses = append(params.MitigationStatuses, val)
+		case "analystVerdicts":
+			params.AnalystVerdicts = append(params.AnalystVerdicts, val)
+		case "confidenceLevels":
+			params.ConfidenceLevels = append(params.ConfidenceLevels, val)
+		case "query":
+			params.Query = val
+		default:
+			return fmt.Errorf("unknown threat filter key %q", key)
+		}
+	}
+	return nil
 }

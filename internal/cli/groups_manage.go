@@ -22,27 +22,25 @@ func newGroupsCreateCmd() *cobra.Command {
 			if name == "" {
 				return fmt.Errorf("--name is required")
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would create group %q in site %s. Pass --yes to apply.\n",
-					name, siteID)
+			action := fmt.Sprintf("create group %q in site %s", name, siteID)
+			return guard(cmd.OutOrStdout(), "groups create", action, siteID, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				g, err := c.GroupsCreate(cmd.Context(), siteID, mgmt.GroupCreate{
+					Name:        name,
+					Description: description,
+				})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), g)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created group %s (%s)\n", g.Name, g.ID)
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			g, err := c.GroupsCreate(cmd.Context(), siteID, mgmt.GroupCreate{
-				Name:        name,
-				Description: description,
 			})
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), g)
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created group %s (%s)\n", g.Name, g.ID)
-			return nil
 		},
 	}
 	cmd.Flags().StringVar(&siteID, "site-id", "", "site ID (required)")
@@ -61,22 +59,21 @@ func newGroupsDeleteCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id := args[0]
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would delete group %s. Pass --yes to apply.\n", id)
+			action := fmt.Sprintf("delete group %s", id)
+			return guard(cmd.OutOrStdout(), "groups delete", action, id, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				if err := c.GroupsDelete(cmd.Context(), id); err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]string{"status": "deleted", "id": id})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Deleted group %s\n", id)
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			if err := c.GroupsDelete(cmd.Context(), id); err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]string{"status": "deleted", "id": id})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted group %s\n", id)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")

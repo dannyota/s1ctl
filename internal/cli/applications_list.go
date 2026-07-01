@@ -10,10 +10,12 @@ func newApplicationsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "applications",
 		Aliases: []string{"apps"},
-		Short:   "Application inventory",
+		Short:   "Application inventory and risk management",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newApplicationsListCmd())
+	cmd.AddCommand(newApplicationsRisksCmd())
+	cmd.AddCommand(newApplicationsCVEsCmd())
 	return cmd
 }
 

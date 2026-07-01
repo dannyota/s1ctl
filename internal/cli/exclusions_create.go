@@ -57,25 +57,22 @@ For path exclusions, --path-type specifies the match type:
 				GroupIDs:          groupIDs,
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would create %s exclusion for %q (%s). Pass --yes to apply.\n",
-					exclType, value, osType)
+			action := fmt.Sprintf("create %s exclusion for %q (%s)", exclType, value, osType)
+			return guard(cmd.OutOrStdout(), "exclusions create", action, value, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				created, err := c.ExclusionsCreate(cmd.Context(), siteIDs, excl)
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), created)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created exclusion %s (%s: %s)\n", created.ID, created.Type, created.Value)
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			created, err := c.ExclusionsCreate(cmd.Context(), siteIDs, excl)
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), created)
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created exclusion %s (%s: %s)\n", created.ID, created.Type, created.Value)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&exclType, "type", "", "exclusion type (path, file_type, white_hash, browser, certificate, document_type)")
