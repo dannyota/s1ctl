@@ -15,6 +15,9 @@ func newApplicationsCVEsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cves",
 		Short: "List CVEs across applications",
+		Long: `List CVEs across applications.
+
+Requires both --app-name and --vendor unless querying by application IDs.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			c, err := mgmtClient()
 			if err != nil {

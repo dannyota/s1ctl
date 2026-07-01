@@ -169,9 +169,12 @@ func (c *ThreatIntelConfig) UnmarshalJSON(b []byte) error {
 
 // ThreatIntelConfig returns the user's threat intelligence configuration.
 func (c *Client) ThreatIntelConfig(ctx context.Context) (*ThreatIntelConfig, error) {
-	var resp singleResponse[ThreatIntelConfig]
-	if err := c.get(ctx, "/threat-intelligence/user-config", nil, &resp); err != nil {
+	configs, _, err := list[ThreatIntelConfig](c, ctx, "/threat-intelligence/user-config", nil)
+	if err != nil {
 		return nil, err
 	}
-	return &resp.Data, nil
+	if len(configs) == 0 {
+		return &ThreatIntelConfig{}, nil
+	}
+	return &configs[0], nil
 }

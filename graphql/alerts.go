@@ -273,13 +273,13 @@ type AlertHistoryCreator struct {
 }
 
 type AlertHistoryData struct {
-	Message     *FormattedContent `json:"message"`
-	Description *FormattedContent `json:"description"`
+	Message     *AlertHistoryText `json:"message"`
+	Description *AlertHistoryText `json:"description"`
 }
 
-type FormattedContent struct {
-	Format string `json:"format"`
-	Text   string `json:"text"`
+type AlertHistoryText struct {
+	Content string `json:"content"`
+	Type    string `json:"type"`
 }
 
 const alertHistoryQuery = `query AlertHistory($alertId: ID!, $first: Int, $after: String, $filter: AlertHistoryFilterInput) {
@@ -296,10 +296,10 @@ const alertHistoryQuery = `query AlertHistory($alertId: ID!, $first: Int, $after
         }
         historyItemData {
           ... on MitigationActionHistoryItemData {
-            message { format text }
+            message { content type }
           }
           ... on EnrichmentHistoryItemData {
-            description { format text }
+            description { content type }
           }
         }
       }

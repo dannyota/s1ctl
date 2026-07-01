@@ -29,10 +29,18 @@ func newDLListCmd() *cobra.Command {
 	var limit int
 	var all bool
 
+	var scopeID string
+
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List platform detection rules",
+		Long: `List platform detection rules from the detection library.
+
+Requires --scope (global, account, site, group) and --scope-id for non-global scopes.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if scopeLevel == "" {
+				return fmt.Errorf("--scope is required (global, account, site, group)")
+			}
 			c, err := mgmtClient()
 			if err != nil {
 				return err
@@ -46,6 +54,7 @@ func newDLListCmd() *cobra.Command {
 				Tags:           tags,
 				NameContains:   nameContains,
 				ScopeLevel:     scopeLevel,
+				ScopeID:        scopeID,
 				Limit:          limit,
 				Cursor:         cursor,
 			}
@@ -95,7 +104,8 @@ func newDLListCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&categories, "category", nil, "filter by category (Events, Correlation, UEBAFirstSeen, Scheduled)")
 	cmd.Flags().StringSliceVar(&tags, "tag", nil, "filter by tag")
 	cmd.Flags().StringVar(&nameContains, "name", "", "filter by rule name (substring match)")
-	cmd.Flags().StringVar(&scopeLevel, "scope", "", "filter by scope level (global, account, site, group)")
+	cmd.Flags().StringVar(&scopeLevel, "scope", "", "scope level: global, account, site, group (required)")
+	cmd.Flags().StringVar(&scopeID, "scope-id", "", "account, site, or group ID for scoped listing")
 	cmd.Flags().IntVar(&limit, "limit", 0, fmt.Sprintf("max results per page (default %d)", defaultPageSize))
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
@@ -118,10 +128,10 @@ func newDLSurfacesCmd() *cobra.Command {
 			if outputFormat == "json" {
 				return printJSON(cmd.OutOrStdout(), surfaces)
 			}
-			headers := []string{"Key", "Title"}
+			headers := []string{"Key", "Value"}
 			rows := make([][]string, len(surfaces))
 			for i, s := range surfaces {
-				rows[i] = []string{s.Key, s.Title}
+				rows[i] = []string{s.Key, s.Value}
 			}
 			printTable(headers, rows)
 			return nil
@@ -145,10 +155,10 @@ func newDLDataSourcesCmd() *cobra.Command {
 			if outputFormat == "json" {
 				return printJSON(cmd.OutOrStdout(), sources)
 			}
-			headers := []string{"Key", "Title"}
+			headers := []string{"Key", "Value"}
 			rows := make([][]string, len(sources))
 			for i, s := range sources {
-				rows[i] = []string{s.Key, s.Title}
+				rows[i] = []string{s.Key, s.Value}
 			}
 			printTable(headers, rows)
 			return nil
@@ -164,24 +174,26 @@ func newDLEnableCmd() *cobra.Command {
 		Use:   "enable <rule-id>...",
 		Short: "Enable platform detection rules",
 		Long: `Enable one or more platform detection rules by ID.
+
+If --scope-level is not specified, the rule's inherited scope is
+auto-detected. Platform rules inherited from a higher scope (e.g.
+account) can only be toggled at that scope — not at site or group.
+
 Dry-run by default — pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would enable %s. Pass --yes to apply.\n",
-					pluralize(len(args), "rule"))
-				return nil
-			}
-
 			c, err := mgmtClient()
 			if err != nil {
 				return err
 			}
-
-			filter := mgmt.PlatformRuleActionFilter{
-				PlatformRuleIDs: args,
-				ScopeID:         scopeID,
-				ScopeLevel:      scopeLevel,
+			filter, err := resolveDLScope(cmd, c, args, scopeLevel, scopeID)
+			if err != nil {
+				return err
+			}
+			if !yes {
+				fmt.Fprintf(cmd.OutOrStdout(), "Would enable %s at %s scope. Pass --yes to apply.\n",
+					pluralize(len(args), "rule"), filter.ScopeLevel)
+				return nil
 			}
 			affected, err := c.PlatformRulesEnable(cmd.Context(), filter)
 			if err != nil {
@@ -192,8 +204,8 @@ Dry-run by default — pass --yes to apply.`,
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	cmd.Flags().StringVar(&scopeID, "scope-id", "", "account, site, or group ID for scoped enable")
-	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level (global, account, site, group)")
+	cmd.Flags().StringVar(&scopeID, "scope-id", "", "account, site, or group ID (auto-detected if omitted)")
+	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level (auto-detected from rule if omitted)")
 	return cmd
 }
 
@@ -205,24 +217,26 @@ func newDLDisableCmd() *cobra.Command {
 		Use:   "disable <rule-id>...",
 		Short: "Disable platform detection rules",
 		Long: `Disable one or more platform detection rules by ID.
+
+If --scope-level is not specified, the rule's inherited scope is
+auto-detected. Platform rules inherited from a higher scope (e.g.
+account) can only be toggled at that scope — not at site or group.
+
 Dry-run by default — pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would disable %s. Pass --yes to apply.\n",
-					pluralize(len(args), "rule"))
-				return nil
-			}
-
 			c, err := mgmtClient()
 			if err != nil {
 				return err
 			}
-
-			filter := mgmt.PlatformRuleActionFilter{
-				PlatformRuleIDs: args,
-				ScopeID:         scopeID,
-				ScopeLevel:      scopeLevel,
+			filter, err := resolveDLScope(cmd, c, args, scopeLevel, scopeID)
+			if err != nil {
+				return err
+			}
+			if !yes {
+				fmt.Fprintf(cmd.OutOrStdout(), "Would disable %s at %s scope. Pass --yes to apply.\n",
+					pluralize(len(args), "rule"), filter.ScopeLevel)
+				return nil
 			}
 			affected, err := c.PlatformRulesDisable(cmd.Context(), filter)
 			if err != nil {
@@ -233,9 +247,63 @@ Dry-run by default — pass --yes to apply.`,
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	cmd.Flags().StringVar(&scopeID, "scope-id", "", "account, site, or group ID for scoped disable")
-	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level (global, account, site, group)")
+	cmd.Flags().StringVar(&scopeID, "scope-id", "", "account, site, or group ID (auto-detected if omitted)")
+	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level (auto-detected from rule if omitted)")
 	return cmd
+}
+
+// resolveDLScope auto-detects the scope level for a platform rule action.
+// Looks up the first rule ID across scopes to find its
+// highestInheritedScopeLevel, which is the minimum scope required to
+// toggle it. The API returns 500 if you try to toggle at a lower scope.
+func resolveDLScope(cmd *cobra.Command, c *mgmt.Client, ruleIDs []string, scopeLevel, scopeID string) (mgmt.PlatformRuleActionFilter, error) {
+	filter := mgmt.PlatformRuleActionFilter{
+		PlatformRuleIDs: ruleIDs,
+		ScopeLevel:      scopeLevel,
+		ScopeID:         scopeID,
+	}
+	if scopeLevel != "" {
+		return filter, nil
+	}
+	if scopeID == "" {
+		return filter, fmt.Errorf("--scope-id is required (use --scope-level to skip auto-detection)")
+	}
+	for _, scope := range []string{"site", "account", "global"} {
+		rules, _, err := c.PlatformRulesList(cmd.Context(), &mgmt.PlatformRuleListParams{
+			IDs:        ruleIDs[:1],
+			ScopeLevel: scope,
+			ScopeID:    scopeID,
+			Limit:      1,
+		})
+		if err != nil || len(rules) == 0 {
+			continue
+		}
+		resolved := string(rules[0].HighestInheritedScope)
+		filter.ScopeLevel = resolved
+		if resolved != scope {
+			if resolved == "account" || resolved == "global" {
+				scopeUp, err := resolveParentScopeID(cmd, c, scopeID, resolved)
+				if err == nil {
+					filter.ScopeID = scopeUp
+				}
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Rule inherited from %s scope (auto-detected)\n", resolved)
+		}
+		return filter, nil
+	}
+	return filter, fmt.Errorf("could not find rule %s at any scope for --scope-id %s", ruleIDs[0], scopeID)
+}
+
+// resolveParentScopeID looks up a site to find its account ID.
+func resolveParentScopeID(cmd *cobra.Command, c *mgmt.Client, siteID, targetScope string) (string, error) {
+	if targetScope == "global" {
+		return "", nil
+	}
+	site, err := c.SitesGet(cmd.Context(), siteID)
+	if err != nil {
+		return "", err
+	}
+	return site.AccountID, nil
 }
 
 // joinTruncate joins string slice items with commas, truncating if too long.

@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/mgmt"
@@ -15,6 +17,7 @@ func newExclusionsCmd() *cobra.Command {
 	cmd.AddCommand(newExclusionsListCmd())
 	cmd.AddCommand(newExclusionsGetCmd())
 	cmd.AddCommand(newExclusionsCreateCmd())
+	cmd.AddCommand(newExclusionsDeleteCmd())
 	addExclusionSyncCmds(cmd)
 	return cmd
 }
@@ -120,4 +123,31 @@ func newExclusionsGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newExclusionsDeleteCmd() *cobra.Command {
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "delete <exclusion-id>",
+		Short: "Delete an exclusion",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return guard(cmd.OutOrStdout(), "exclusions delete",
+				"delete exclusion "+args[0], args[0], yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					affected, err := c.ExclusionsDelete(cmd.Context(), []string{args[0]})
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Deleted %s\n", pluralize(affected, "exclusion"))
+					return nil
+				})
+		},
+	}
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
 }

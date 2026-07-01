@@ -24,7 +24,8 @@ type UnifiedExclusion struct {
 	Engines           string          `json:"engines"`
 	ChildProcess      bool            `json:"childProcess"`
 	Recommendation    string          `json:"recommendation"`
-	Scope             string          `json:"scope"`
+	Scope             json.RawMessage `json:"scope"`
+	ScopeName         string          `json:"scopeName"`
 	ScopePath         string          `json:"scopePath"`
 	UserName          string          `json:"userName"`
 	CreatorName       string          `json:"creatorName"`

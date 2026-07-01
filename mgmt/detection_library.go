@@ -175,54 +175,34 @@ func platformRuleAction(c *Client, ctx context.Context, path string, filter Plat
 	return resp.Data.Affected, nil
 }
 
-// DetectionSurface is a detection surface returned by the detection library.
-type DetectionSurface struct {
+// DetectionKeyValue is a key-value pair returned by detection library lookups.
+type DetectionKeyValue struct {
 	Key   string `json:"key"`
-	Title string `json:"title"`
-
-	Raw json.RawMessage `json:"-"`
-}
-
-func (s *DetectionSurface) UnmarshalJSON(b []byte) error {
-	type alias DetectionSurface
-	if err := json.Unmarshal(b, (*alias)(s)); err != nil {
-		return err
-	}
-	s.Raw = append(s.Raw[:0:0], b...)
-	return nil
+	Value string `json:"value"`
 }
 
 // DetectionSurfacesList returns the available detection surfaces.
-func (c *Client) DetectionSurfacesList(ctx context.Context) ([]DetectionSurface, error) {
-	var resp listResponse[DetectionSurface]
+func (c *Client) DetectionSurfacesList(ctx context.Context) ([]DetectionKeyValue, error) {
+	var resp struct {
+		Data struct {
+			Surfaces []DetectionKeyValue `json:"surfaces"`
+		} `json:"data"`
+	}
 	if err := c.get(ctx, "/detection-library/surfaces", nil, &resp); err != nil {
 		return nil, err
 	}
-	return resp.Data, nil
-}
-
-// DetectionDataSource is a data source returned by the detection library.
-type DetectionDataSource struct {
-	Key   string `json:"key"`
-	Title string `json:"title"`
-
-	Raw json.RawMessage `json:"-"`
-}
-
-func (s *DetectionDataSource) UnmarshalJSON(b []byte) error {
-	type alias DetectionDataSource
-	if err := json.Unmarshal(b, (*alias)(s)); err != nil {
-		return err
-	}
-	s.Raw = append(s.Raw[:0:0], b...)
-	return nil
+	return resp.Data.Surfaces, nil
 }
 
 // DetectionDataSourcesList returns the available detection data sources.
-func (c *Client) DetectionDataSourcesList(ctx context.Context) ([]DetectionDataSource, error) {
-	var resp listResponse[DetectionDataSource]
+func (c *Client) DetectionDataSourcesList(ctx context.Context) ([]DetectionKeyValue, error) {
+	var resp struct {
+		Data struct {
+			DataSources []DetectionKeyValue `json:"dataSources"`
+		} `json:"data"`
+	}
 	if err := c.get(ctx, "/detection-library/data-sources", nil, &resp); err != nil {
 		return nil, err
 	}
-	return resp.Data, nil
+	return resp.Data.DataSources, nil
 }

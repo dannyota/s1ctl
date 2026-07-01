@@ -46,13 +46,12 @@ func (c *Client) ExclusionsUpdate(ctx context.Context, id string, data Exclusion
 // ExclusionsDelete deletes exclusions by ID.
 func (c *Client) ExclusionsDelete(ctx context.Context, ids []string) (int, error) {
 	req := map[string]any{
-		"data": map[string]any{},
-		"filter": map[string]any{
+		"data": map[string]any{
 			"ids": ids,
 		},
 	}
 	var resp affectedResponse
-	if err := c.post(ctx, "/exclusions/delete", req, &resp); err != nil {
+	if err := c.jsonRequest(ctx, "DELETE", "/exclusions", req, &resp); err != nil {
 		return 0, err
 	}
 	return resp.Data.Affected, nil
