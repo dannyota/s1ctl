@@ -31,6 +31,12 @@ s1ctl alerts resolve --name "Package Manager" --yes
 s1ctl alerts resolve --source CWS --severity LOW --yes
 ```
 
+Add investigation notes to an alert:
+
+```bash
+s1ctl alerts add-note <alert-id> "Recurring FP from endpoint mgmt agent" --yes
+```
+
 ## Investigate threats
 
 List unresolved threats with agent name and creation date:
@@ -45,13 +51,21 @@ Filter by mitigation status:
 s1ctl threats list --mitigation-status not_mitigated --all
 ```
 
-Resolve benign threats in bulk:
+Resolve benign threats in bulk by ID or filter:
 
 ```bash
 s1ctl threats resolve <id1> <id2> --yes
+s1ctl threats resolve --classification Malware --yes
+s1ctl threats resolve --name "dcagentservice" --yes
 ```
 
 ## Agent management
+
+Classify agents by operational state:
+
+```bash
+s1ctl agents health
+```
 
 Find outdated agents:
 
@@ -152,6 +166,20 @@ Enable or disable a rule:
 ```bash
 s1ctl rules enable <rule-id> --yes
 s1ctl rules disable <rule-id> --yes
+```
+
+## Vulnerability management
+
+Summarize vulnerabilities by severity:
+
+```bash
+s1ctl vulns health
+```
+
+List critical open vulnerabilities:
+
+```bash
+s1ctl vulns list --severity CRITICAL --status NEW
 ```
 
 ## Data lake queries

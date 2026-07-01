@@ -52,7 +52,7 @@ the REST API, which requires S1_SDL_URL to be configured.`,
 	cmd.Flags().StringVar(&endTime, "end", "", "end time")
 	cmd.Flags().StringVar(&priority, "priority", "low", "query priority (low, high) [REST only]")
 	cmd.Flags().StringVar(&protocol, "protocol", "graphql", "API protocol (graphql, rest)")
-	cmd.Flags().IntVar(&pqColWidth, "col-width", 80, "max column width in table output")
+	cmd.Flags().IntVar(&pqColWidth, "col-width", 120, "max column width in table output")
 	return cmd
 }
 

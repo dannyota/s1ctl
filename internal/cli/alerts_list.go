@@ -21,6 +21,7 @@ func newAlertsCmd() *cobra.Command {
 	cmd.AddCommand(newAlertsResolveCmd())
 	cmd.AddCommand(newAlertsStatusCmd())
 	cmd.AddCommand(newAlertsVerdictCmd())
+	cmd.AddCommand(newAlertsAddNoteCmd())
 	return cmd
 }
 

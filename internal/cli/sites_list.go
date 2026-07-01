@@ -66,12 +66,12 @@ func newSitesListCmd() *cobra.Command {
 				return err
 			}
 
-			headers := []string{"ID", "Name", "State", "Type", "Licenses"}
+			headers := []string{"ID", "Name", "State", "Type", "Agents"}
 			rows := make([][]string, len(sites))
 			for i, s := range sites {
 				rows[i] = []string{
 					s.ID, s.Name, s.State, s.SiteType,
-					fmt.Sprintf("%d / %d", s.ActiveLicenses, s.TotalLicenses),
+					fmt.Sprintf("%d", s.ActiveLicenses),
 				}
 			}
 			return printOutput(cmd.OutOrStdout(), headers, rows, sites, len(sites), total, "site", all)

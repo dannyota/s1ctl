@@ -176,6 +176,18 @@ func (c *Client) AlertsUpdateVerdict(ctx context.Context, ids []string, verdict 
 	return c.doAlertTriggerActions(ctx, vars)
 }
 
+// AlertsAddNote adds an investigation note to the specified alerts.
+func (c *Client) AlertsAddNote(ctx context.Context, ids []string, text string) error {
+	vars := map[string]any{
+		"actions": []map[string]any{{
+			"id":      "S1/alert/addNote",
+			"payload": map[string]any{"note": map[string]any{"value": text}},
+		}},
+		"filter": orFilterByIDs(ids),
+	}
+	return c.doAlertTriggerActions(ctx, vars)
+}
+
 func (c *Client) doAlertTriggerActions(ctx context.Context, vars map[string]any) error {
 	var resp struct {
 		AlertTriggerActions struct {

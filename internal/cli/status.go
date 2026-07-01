@@ -17,7 +17,7 @@ func newStatusCmd() *cobra.Command {
 		Use:   "status",
 		Short: "Show environment health summary",
 		Long: `One-shot dashboard: agent count and health, unresolved threats,
-NEW alerts, and site count.`,
+NEW alerts, site count, and policy mode warnings.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			mc, err := mgmtClient()
 			if err != nil {
@@ -40,6 +40,7 @@ NEW alerts, and site count.`,
 				alerts         int
 				newAlerts      int
 				criticalAlerts int
+				siteList       []mgmt.Site
 			}
 
 			var c counts
@@ -133,13 +134,14 @@ NEW alerts, and site count.`,
 			}()
 			go func() {
 				defer wg.Done()
-				n, e := mc.SitesCount(ctx, &mgmt.SiteListParams{})
+				sites, _, e := mc.SitesList(ctx, &mgmt.SiteListParams{Limit: 100})
 				if e != nil {
 					setErr(e)
 					return
 				}
 				mu.Lock()
-				c.sites = n
+				c.sites = len(sites)
+				c.siteList = sites
 				mu.Unlock()
 
 				ng, e2 := mc.GroupsCount(ctx, &mgmt.GroupListParams{SiteIDs: siteIDs})
@@ -198,8 +200,20 @@ NEW alerts, and site count.`,
 				return firstErr
 			}
 
+			// Check policy modes per site.
+			var detectSites []string
+			for _, s := range c.siteList {
+				pol, pErr := mc.PolicyGetSite(ctx, s.ID)
+				if pErr != nil {
+					continue
+				}
+				if pol.MitigationMode == "detect" {
+					detectSites = append(detectSites, s.Name)
+				}
+			}
+
 			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{
+				out := map[string]any{
 					"agents":          c.agents,
 					"active_agents":   c.activeAgents,
 					"outdated_agents": c.outdatedAgents,
@@ -211,7 +225,11 @@ NEW alerts, and site count.`,
 					"alerts":          c.alerts,
 					"new_alerts":      c.newAlerts,
 					"critical_alerts": c.criticalAlerts,
-				})
+				}
+				if len(detectSites) > 0 {
+					out["detect_mode_sites"] = detectSites
+				}
+				return printJSON(cmd.OutOrStdout(), out)
 			}
 
 			w := cmd.OutOrStdout()
@@ -231,6 +249,15 @@ NEW alerts, and site count.`,
 			fmt.Fprintf(w, "  CRITICAL: %d\n", c.criticalAlerts)
 			fmt.Fprintln(w)
 			fmt.Fprintf(w, "Sites: %d  Groups: %d\n", c.sites, c.groups)
+
+			if len(detectSites) > 0 {
+				fmt.Fprintln(w)
+				fmt.Fprintf(w, "Warning: %s in detect mode (threats not auto-mitigated)\n",
+					pluralize(len(detectSites), "site"))
+				for _, name := range detectSites {
+					fmt.Fprintf(w, "  - %s\n", name)
+				}
+			}
 			return nil
 		},
 	}

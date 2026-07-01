@@ -27,9 +27,9 @@ a surface forward.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| agents | list, get, count, outdated, versions | isolate, connect, scan, decommission, upgrade, move-to-site, fetch-logs, restart, enable, disable, reset-config, approve/reject-uninstall, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging | -- | built |
+| agents | list, get, count, outdated, versions, health | isolate, connect, scan, decommission, upgrade, move-to-site, fetch-logs, restart, enable, disable, reset-config, approve/reject-uninstall, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging | -- | built |
 | threats | list, get, count | mitigate, verdict, status, resolve, add-to-blacklist, fetch-file | -- | built |
-| alerts | list, get, count (GraphQL) | status, verdict, resolve | -- | built |
+| alerts | list, get, count (GraphQL) | status, verdict, resolve, add-note | -- | built |
 | sites | list, get | create, update, delete | -- | built |
 | groups | list, get, count | create, update, delete | -- | built |
 | accounts | list, get | -- | -- | built |
@@ -57,7 +57,7 @@ a surface forward.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| vulnerabilities | list, get (GraphQL) | status, verdict | -- | built |
+| vulnerabilities | list, get, health (GraphQL) | status, verdict | -- | built |
 | misconfigurations | list, get (GraphQL) | status, verdict | -- | built |
 | cloud policies | list, get (GraphQL) | -- | pull/push | built |
 | cloud onboarding | list, get | onboard, delete | -- | designed |

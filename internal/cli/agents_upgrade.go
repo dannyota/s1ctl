@@ -142,29 +142,51 @@ func newAgentsVersionsCmd() *cobra.Command {
 			}
 
 			type versionCount struct {
-				Version string
-				Count   int
+				Version string `json:"version"`
+				Linux   int    `json:"linux"`
+				Windows int    `json:"windows"`
+				MacOS   int    `json:"macos"`
+				Total   int    `json:"total"`
 			}
-			counts := make(map[string]int)
+			counts := make(map[string]*versionCount)
 			for _, a := range agents {
-				counts[a.AgentVersion]++
+				vc, ok := counts[a.AgentVersion]
+				if !ok {
+					vc = &versionCount{Version: a.AgentVersion}
+					counts[a.AgentVersion] = vc
+				}
+				vc.Total++
+				switch strings.ToLower(a.OSType) {
+				case "linux":
+					vc.Linux++
+				case "windows":
+					vc.Windows++
+				case "macos", "osx":
+					vc.MacOS++
+				}
 			}
-			var versions []versionCount
-			for v, n := range counts {
-				versions = append(versions, versionCount{v, n})
+			var versions []*versionCount
+			for _, vc := range counts {
+				versions = append(versions, vc)
 			}
 			sort.Slice(versions, func(i, j int) bool {
-				return versions[i].Count > versions[j].Count
+				return versions[i].Total > versions[j].Total
 			})
 
 			if outputFormat == "json" {
 				return printJSON(cmd.OutOrStdout(), versions)
 			}
 
-			headers := []string{"Version", "Count"}
+			headers := []string{"Version", "Linux", "Windows", "macOS", "Total"}
 			rows := make([][]string, len(versions))
 			for i, v := range versions {
-				rows[i] = []string{v.Version, fmt.Sprintf("%d", v.Count)}
+				rows[i] = []string{
+					v.Version,
+					fmt.Sprintf("%d", v.Linux),
+					fmt.Sprintf("%d", v.Windows),
+					fmt.Sprintf("%d", v.MacOS),
+					fmt.Sprintf("%d", v.Total),
+				}
 			}
 			printTable(headers, rows)
 			fmt.Fprintf(cmd.OutOrStdout(), "\n%s across %s\n",
