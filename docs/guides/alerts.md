@@ -18,7 +18,7 @@ s1ctl alerts list [flags]
 | Flag | Type | Default | Description |
 | --- | --- | --- | --- |
 | `--severity` | `[]string` | all | Filter by severity (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`) |
-| `--verdict` | `[]string` | all | Filter by analyst verdict |
+| `--verdict` | `[]string` | all | Filter by analyst verdict (`TRUE_POSITIVE`, `FALSE_POSITIVE`, `SUSPICIOUS`, `UNDEFINED`) |
 | `--limit` | `int` | 50 | Max results per page |
 | `--all` | `bool` | false | Fetch all pages (auto-paginate) |
 | `--after` | `string` | | GraphQL cursor for manual pagination |

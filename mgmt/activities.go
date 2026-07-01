@@ -79,6 +79,29 @@ func (p *ActivityListParams) values() url.Values {
 	return v
 }
 
+// ActivityType describes a SentinelOne activity type code.
+type ActivityType struct {
+	ID          int    `json:"id"`
+	Description string `json:"action"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (t *ActivityType) UnmarshalJSON(b []byte) error {
+	type alias ActivityType
+	if err := json.Unmarshal(b, (*alias)(t)); err != nil {
+		return err
+	}
+	t.Raw = append(t.Raw[:0:0], b...)
+	return nil
+}
+
+// ActivitiesTypes returns all available activity type codes.
+func (c *Client) ActivitiesTypes(ctx context.Context) ([]ActivityType, error) {
+	items, _, err := list[ActivityType](c, ctx, "/activities/types", nil)
+	return items, err
+}
+
 // ActivitiesList returns a paginated list of activities.
 func (c *Client) ActivitiesList(ctx context.Context, params *ActivityListParams) ([]Activity, *Pagination, error) {
 	return list[Activity](c, ctx, "/activities", params.values())

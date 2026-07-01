@@ -29,8 +29,8 @@ s1ctl alerts count [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
-| `--status` | stringSlice | - | filter by status (NEW, RESOLVED, etc.) |
-| `--verdict` | stringSlice | - | filter by analyst verdict |
+| `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
+| `--verdict` | stringSlice | - | filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED) |
 
 ## alerts get
 
@@ -59,8 +59,8 @@ s1ctl alerts list [flags]
 | `--sort-by` | string | - | sort field (e.g. detectedAt, severity) |
 | `--sort-order` | string | - | sort direction (ASC, DESC) |
 | `--source` | stringSlice | - | filter by detection source (STAR, EDR, CWS) |
-| `--status` | stringSlice | - | filter by status (NEW, RESOLVED, etc.) |
-| `--verdict` | stringSlice | - | filter by analyst verdict |
+| `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
+| `--verdict` | stringSlice | - | filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED) |
 
 ## alerts resolve
 
@@ -86,7 +86,7 @@ Filter flags only match alerts with status NEW. Dry-run by default.
 
 ## alerts status
 
-Update alert status
+Update alert status (NEW, IN_PROGRESS, RESOLVED)
 
 ```text
 s1ctl alerts status <id> <status> [flags]
@@ -100,7 +100,7 @@ s1ctl alerts status <id> <status> [flags]
 
 ## alerts verdict
 
-Update alert analyst verdict
+Update alert analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)
 
 ```text
 s1ctl alerts verdict <id> <verdict> [flags]

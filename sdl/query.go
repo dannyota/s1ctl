@@ -59,3 +59,65 @@ func (c *Client) Query(ctx context.Context, req *LogQueryRequest) (*LogQueryResp
 	}
 	return &resp, nil
 }
+
+// QueryOption customizes QueryAll behavior.
+type QueryOption func(*queryConfig)
+
+type queryConfig struct {
+	maxEvents int
+	onPage    func(fetched int)
+}
+
+// WithMaxEvents caps the total number of events returned across all pages.
+// Zero or negative means no limit.
+func WithMaxEvents(n int) QueryOption {
+	return func(c *queryConfig) { c.maxEvents = n }
+}
+
+// WithPageCallback registers a function called after each page with the
+// running total of events fetched so far.
+func WithPageCallback(fn func(fetched int)) QueryOption {
+	return func(c *queryConfig) { c.onPage = fn }
+}
+
+// QueryAll executes a log query and follows continuation tokens until all
+// results are fetched or the maxEvents cap is reached.
+func (c *Client) QueryAll(ctx context.Context, req *LogQueryRequest, opts ...QueryOption) (*LogQueryResponse, error) {
+	var cfg queryConfig
+	for _, o := range opts {
+		o(&cfg)
+	}
+
+	resp, err := c.Query(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if cfg.onPage != nil {
+		cfg.onPage(len(resp.Matches))
+	}
+
+	for resp.ContinuationToken != "" {
+		if cfg.maxEvents > 0 && len(resp.Matches) >= cfg.maxEvents {
+			resp.Matches = resp.Matches[:cfg.maxEvents]
+			break
+		}
+
+		page := *req
+		page.ContinuationToken = resp.ContinuationToken
+		next, err := c.Query(ctx, &page)
+		if err != nil {
+			return nil, err
+		}
+		resp.Matches = append(resp.Matches, next.Matches...)
+		resp.ContinuationToken = next.ContinuationToken
+		if cfg.onPage != nil {
+			cfg.onPage(len(resp.Matches))
+		}
+	}
+
+	if cfg.maxEvents > 0 && len(resp.Matches) > cfg.maxEvents {
+		resp.Matches = resp.Matches[:cfg.maxEvents]
+	}
+
+	return resp, nil
+}

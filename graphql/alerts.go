@@ -188,6 +188,57 @@ func (c *Client) AlertsAddNote(ctx context.Context, ids []string, text string) e
 	return c.doAlertTriggerActions(ctx, vars)
 }
 
+// AlertGroup is a single group-by bucket from the alertGroups query.
+type AlertGroup struct {
+	Value string `json:"value"`
+	Label string `json:"label"`
+	Count int64  `json:"count"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (g *AlertGroup) UnmarshalJSON(b []byte) error {
+	type alias AlertGroup
+	if err := json.Unmarshal(b, (*alias)(g)); err != nil {
+		return err
+	}
+	g.Raw = append(g.Raw[:0:0], b...)
+	return nil
+}
+
+const alertGroupsQuery = `query AlertGroups($first: Int, $after: String, $filters: [FilterInput!], $scope: ScopeSelectorInput, $groupByFieldId: String!) {
+  alertGroups(first: $first, after: $after, filters: $filters, scope: $scope, groupByFieldId: $groupByFieldId) {
+    edges {
+      cursor
+      node {
+        value
+        label
+        count
+      }
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+      startCursor
+    }
+    totalCount
+  }
+}`
+
+// AlertGroups returns alert counts grouped by the specified field.
+func (c *Client) AlertGroups(ctx context.Context, groupByField string, params *ListParams) (*Connection[AlertGroup], error) {
+	vars := listVars(params)
+	vars["groupByFieldId"] = groupByField
+	var resp struct {
+		AlertGroups Connection[AlertGroup] `json:"alertGroups"`
+	}
+	if err := c.Do(ctx, EndpointAlerts, alertGroupsQuery, vars, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.AlertGroups, nil
+}
+
 func (c *Client) doAlertTriggerActions(ctx context.Context, vars map[string]any) error {
 	var resp struct {
 		AlertTriggerActions struct {

@@ -17,7 +17,6 @@ type Site struct {
 	SiteType          string `json:"siteType"`
 	TotalLicenses     int    `json:"totalLicenses"`
 	ActiveLicenses    int    `json:"activeLicenses"`
-	ActiveAgents      int    `json:"activeAgents"`
 	CreatedAt         string `json:"createdAt"`
 	UpdatedAt         string `json:"updatedAt"`
 	Expiration        string `json:"expiration"`

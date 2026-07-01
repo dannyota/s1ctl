@@ -22,6 +22,7 @@ func newAlertsCmd() *cobra.Command {
 	cmd.AddCommand(newAlertsStatusCmd())
 	cmd.AddCommand(newAlertsVerdictCmd())
 	cmd.AddCommand(newAlertsAddNoteCmd())
+	cmd.AddCommand(newAlertsStatsCmd())
 	return cmd
 }
 
@@ -119,8 +120,8 @@ func newAlertsListCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
-	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, RESOLVED, etc.)")
-	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
+	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, IN_PROGRESS, RESOLVED)")
+	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)")
 	cmd.Flags().StringSliceVar(&sources, "source", nil, "filter by detection source (STAR, EDR, CWS)")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
@@ -173,8 +174,8 @@ func newAlertsCountCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
-	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, RESOLVED, etc.)")
-	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
+	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, IN_PROGRESS, RESOLVED)")
+	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)")
 	return cmd
 }
 
@@ -232,7 +233,7 @@ func newAlertsStatusCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "status <id> <status>",
-		Short: "Update alert status",
+		Short: "Update alert status (NEW, IN_PROGRESS, RESOLVED)",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, status := args[0], args[1]
@@ -263,7 +264,7 @@ func newAlertsVerdictCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "verdict <id> <verdict>",
-		Short: "Update alert analyst verdict",
+		Short: "Update alert analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, verdict := args[0], args[1]

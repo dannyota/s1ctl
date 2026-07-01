@@ -35,6 +35,9 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newFirewallCmd())
 	root.AddCommand(newUpdatesCmd())
 
+	// System
+	root.AddCommand(newSystemCmd())
+
 	// Hunting & data lake
 	root.AddCommand(newVisibilityCmd())
 	root.AddCommand(newDatalakeCmd())

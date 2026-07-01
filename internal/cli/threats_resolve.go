@@ -91,7 +91,7 @@ Filter flags only match unresolved threats. Dry-run by default.`,
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringVar(&name, "name", "", "match threats by name (contains, case-insensitive)")
 	cmd.Flags().StringSliceVar(&classifications, "classification", nil, "filter by classification (e.g. Malware, PUP)")
-	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
+	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (true_positive, false_positive, suspicious, undefined)")
 	cmd.Flags().StringSliceVar(&mitigationStatuses, "mitigation-status", nil, "filter by mitigation status")
 	cmd.Flags().StringVar(&query, "query", "", "free text search filter")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")

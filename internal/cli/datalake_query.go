@@ -127,7 +127,7 @@ func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse, col
 
 func newDatalakeQueryCmd() *cobra.Command {
 	var query, startTime, endTime, protocol string
-	var maxCount int
+	var maxCount, maxEvents int
 	var all bool
 
 	cmd := &cobra.Command{
@@ -136,7 +136,10 @@ func newDatalakeQueryCmd() *cobra.Command {
 		Long: `Execute a basic log query against the Singularity Data Lake.
 
 Uses the SDL REST API (/api/query) to search log events. Requires
-S1_SDL_URL to be configured.`,
+S1_SDL_URL to be configured.
+
+By default, returns only the first page. Use --all to fetch all pages via
+continuation token, or --max-events to cap the total number of events.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if query == "" {
 				return fmt.Errorf("--query is required")
@@ -144,19 +147,20 @@ S1_SDL_URL to be configured.`,
 			if protocol != "rest" {
 				return fmt.Errorf("unsupported protocol: %s (basic query supports rest only)", protocol)
 			}
-			return runDatalakeQuery(cmd, query, startTime, endTime, maxCount, all)
+			return runDatalakeQuery(cmd, query, startTime, endTime, maxCount, maxEvents, all)
 		},
 	}
 	cmd.Flags().StringVar(&query, "query", "", "query expression (required)")
 	cmd.Flags().StringVar(&startTime, "start", "24h", "start time (e.g. 24h, 7d)")
 	cmd.Flags().StringVar(&endTime, "end", "", "end time")
-	cmd.Flags().IntVar(&maxCount, "max-count", 0, "max events to return")
+	cmd.Flags().IntVar(&maxCount, "max-count", 0, "max events per page (1-5000)")
+	cmd.Flags().IntVar(&maxEvents, "max-events", 0, "max total events across all pages (0 = no limit)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages via continuation token")
 	cmd.Flags().StringVar(&protocol, "protocol", "rest", "API protocol (rest)")
 	return cmd
 }
 
-func runDatalakeQuery(cmd *cobra.Command, query, startTime, endTime string, maxCount int, all bool) error {
+func runDatalakeQuery(cmd *cobra.Command, query, startTime, endTime string, maxCount, maxEvents int, all bool) error {
 	c, err := sdlClient()
 	if err != nil {
 		return err
@@ -169,30 +173,31 @@ func runDatalakeQuery(cmd *cobra.Command, query, startTime, endTime string, maxC
 	if maxCount > 0 {
 		req.MaxCount = maxCount
 	}
+
 	var resp *sdl.LogQueryResponse
-	err = runWithSpinner("Running query...", func() error {
-		var queryErr error
-		resp, queryErr = c.Query(cmd.Context(), req)
-		return queryErr
-	})
+	if all || maxEvents > 0 {
+		var opts []sdl.QueryOption
+		if maxEvents > 0 {
+			opts = append(opts, sdl.WithMaxEvents(maxEvents))
+		}
+		opts = append(opts, sdl.WithPageCallback(func(n int) {
+			printProgress("event", n, 0)
+		}))
+		err = runWithSpinner("Running query...", func() error {
+			var queryErr error
+			resp, queryErr = c.QueryAll(cmd.Context(), req, opts...)
+			return queryErr
+		})
+		clearProgress()
+	} else {
+		err = runWithSpinner("Running query...", func() error {
+			var queryErr error
+			resp, queryErr = c.Query(cmd.Context(), req)
+			return queryErr
+		})
+	}
 	if err != nil {
 		return err
-	}
-	if all && resp.ContinuationToken != "" {
-		for resp.ContinuationToken != "" {
-			req.ContinuationToken = resp.ContinuationToken
-			var next *sdl.LogQueryResponse
-			err = runWithSpinner(fmt.Sprintf("Fetching more (%d so far)...", len(resp.Matches)), func() error {
-				var queryErr error
-				next, queryErr = c.Query(cmd.Context(), req)
-				return queryErr
-			})
-			if err != nil {
-				return err
-			}
-			resp.Matches = append(resp.Matches, next.Matches...)
-			resp.ContinuationToken = next.ContinuationToken
-		}
 	}
 	return printLogQueryResult(cmd, resp)
 }

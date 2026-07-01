@@ -20,6 +20,7 @@ func newThreatsCmd() *cobra.Command {
 	cmd.AddCommand(newThreatsResolveCmd())
 	cmd.AddCommand(newThreatNotesCmd())
 	cmd.AddCommand(newThreatAddNoteCmd())
+	cmd.AddCommand(newThreatsTimelineCmd())
 	addThreatActions(cmd)
 	return cmd
 }
@@ -87,8 +88,8 @@ func newThreatsListCmd() *cobra.Command {
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&classifications, "classification", nil, "filter by classification")
-	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by incident status")
-	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
+	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by incident status (unresolved, in_progress, resolved)")
+	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (true_positive, false_positive, suspicious, undefined)")
 	cmd.Flags().StringSliceVar(&mitigationStatuses, "mitigation-status", nil, "filter by mitigation status (not_mitigated, mitigated, etc.)")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")

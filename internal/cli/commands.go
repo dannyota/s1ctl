@@ -1,6 +1,11 @@
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"slices"
+	"strings"
+
+	"github.com/spf13/cobra"
+)
 
 func newCommandsCmd() *cobra.Command {
 	return &cobra.Command{
@@ -14,6 +19,7 @@ func newCommandsCmd() *cobra.Command {
 type cmdEntry struct {
 	Name  string `json:"name"`
 	Short string `json:"short"`
+	Kind  string `json:"kind"`
 }
 
 func runCommands(cmd *cobra.Command, _ []string) error {
@@ -31,6 +37,21 @@ func runCommands(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
+var mutationVerbs = []string{
+	"create", "delete", "update", "push", "resolve",
+	"enable", "disable", "upgrade", "revert", "isolate",
+	"decommission", "run", "sync", "init", "note",
+}
+
+func commandKind(name string) string {
+	parts := strings.Fields(name)
+	verb := parts[len(parts)-1]
+	if slices.Contains(mutationVerbs, verb) {
+		return "mutation"
+	}
+	return "read"
+}
+
 func collectCommands(cmd *cobra.Command, prefix string) []cmdEntry {
 	var entries []cmdEntry
 	for _, c := range cmd.Commands() {
@@ -41,7 +62,11 @@ func collectCommands(cmd *cobra.Command, prefix string) []cmdEntry {
 		if c.HasSubCommands() {
 			entries = append(entries, collectCommands(c, name+" ")...)
 		} else {
-			entries = append(entries, cmdEntry{Name: name, Short: c.Short})
+			entries = append(entries, cmdEntry{
+				Name:  name,
+				Short: c.Short,
+				Kind:  commandKind(name),
+			})
 		}
 	}
 	return entries

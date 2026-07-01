@@ -59,8 +59,8 @@ s1ctl threats list [flags]
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--sort-by` | string | - | sort field (e.g. createdAt, classification) |
 | `--sort-order` | string | - | sort direction (asc, desc) |
-| `--status` | stringSlice | - | filter by incident status |
-| `--verdict` | stringSlice | - | filter by analyst verdict |
+| `--status` | stringSlice | - | filter by incident status (unresolved, in_progress, resolved) |
+| `--verdict` | stringSlice | - | filter by analyst verdict (true_positive, false_positive, suspicious, undefined) |
 
 ## threats mitigate
 
@@ -119,7 +119,7 @@ Filter flags only match unresolved threats. Dry-run by default.
 | `--name` | string | - | match threats by name (contains, case-insensitive) |
 | `--query` | string | - | free text search filter |
 | `--site-id` | stringSlice | - | filter by site ID |
-| `--verdict` | stringSlice | - | filter by analyst verdict |
+| `--verdict` | stringSlice | - | filter by analyst verdict (true_positive, false_positive, suspicious, undefined) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## threats status

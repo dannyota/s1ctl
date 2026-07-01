@@ -92,3 +92,18 @@ func (c *Client) PolicyUpdateAccount(ctx context.Context, accountID string, poli
 func (c *Client) PolicyUpdateGroup(ctx context.Context, siteID, groupID string, policy json.RawMessage) (*Policy, error) {
 	return c.putPolicy(ctx, fmt.Sprintf("/sites/%s/groups/%s/policy", siteID, groupID), policy)
 }
+
+// PolicyRevertSite reverts a site policy to its parent (account) inherited values.
+func (c *Client) PolicyRevertSite(ctx context.Context, siteID string) error {
+	return c.put(ctx, fmt.Sprintf("/sites/%s/revert-policy", siteID), map[string]any{}, nil)
+}
+
+// PolicyRevertAccount reverts an account policy to the global inherited values.
+func (c *Client) PolicyRevertAccount(ctx context.Context, accountID string) error {
+	return c.put(ctx, fmt.Sprintf("/accounts/%s/revert-policy", accountID), map[string]any{}, nil)
+}
+
+// PolicyRevertGroup reverts a group policy to its parent (site) inherited values.
+func (c *Client) PolicyRevertGroup(ctx context.Context, siteID, groupID string) error {
+	return c.put(ctx, fmt.Sprintf("/sites/%s/groups/%s/revert-policy", siteID, groupID), map[string]any{}, nil)
+}

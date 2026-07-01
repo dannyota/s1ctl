@@ -17,6 +17,7 @@ func newSitesCmd() *cobra.Command {
 	cmd.AddCommand(newSitesListCmd())
 	cmd.AddCommand(newSitesCountCmd())
 	cmd.AddCommand(newSitesGetCmd())
+	cmd.AddCommand(newSitesLicensesCmd())
 	return cmd
 }
 
@@ -66,7 +67,7 @@ func newSitesListCmd() *cobra.Command {
 				return err
 			}
 
-			headers := []string{"ID", "Name", "State", "Type", "Agents"}
+			headers := []string{"ID", "Name", "State", "Type", "Licenses"}
 			rows := make([][]string, len(sites))
 			for i, s := range sites {
 				rows[i] = []string{

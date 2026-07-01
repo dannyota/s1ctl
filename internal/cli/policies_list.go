@@ -18,6 +18,7 @@ func newPoliciesCmd() *cobra.Command {
 	cmd.AddCommand(newPoliciesListCmd())
 	cmd.AddCommand(newPoliciesGetCmd())
 	cmd.AddCommand(newPoliciesDiffCmd())
+	cmd.AddCommand(newPoliciesRevertCmd())
 	addPolicySyncCmds(cmd)
 	return cmd
 }
