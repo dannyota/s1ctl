@@ -4,6 +4,13 @@
   - [Install](guides/install.md)
   - [Configure](guides/configure.md)
   - [Quickstart](guides/quickstart.md)
+  - [The loop](guides/the-loop.md)
+  - [Agents](guides/agents.md)
+  - [Threats](guides/threats.md)
+  - [Sites and groups](guides/sites-groups.md)
+  - [Exclusions](guides/exclusions.md)
+  - [Alerts](guides/alerts.md)
+  - [Data lake](guides/datalake.md)
   - [Go SDK](guides/sdk.md)
 
 - **Design**
@@ -13,6 +20,7 @@
   - [CLI naming](design/cli-naming.md)
   - [CLI v1](design/cli-v1.md)
   - [Doc style](STYLE.md)
+  - [Glossary](GLOSSARY.md)
 
 - [Roadmap](https://github.com/dannyota/s1ctl/blob/main/ROADMAP.md)
 - [GitHub](https://github.com/dannyota/s1ctl)
