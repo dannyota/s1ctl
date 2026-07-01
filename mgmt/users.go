@@ -68,3 +68,14 @@ func (c *Client) UsersList(ctx context.Context, params *UserListParams) ([]User,
 func (c *Client) UsersGet(ctx context.Context, id string) (*User, error) {
 	return getByID[User](c, ctx, "/users", "user", id)
 }
+
+// UsersDelete deletes a user.
+func (c *Client) UsersDelete(ctx context.Context, id string) error {
+	req := map[string]any{
+		"filter": map[string]any{
+			"ids": []string{id},
+		},
+		"data": map[string]any{},
+	}
+	return c.post(ctx, "/users/delete", req, nil)
+}

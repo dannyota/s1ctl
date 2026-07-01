@@ -24,3 +24,13 @@ func (c *Client) ThreatsUpdateStatus(ctx context.Context, status string, filter 
 	data := map[string]string{"incidentStatus": status}
 	return doAction(c, ctx, "/threats/incident", filter, data)
 }
+
+// ThreatsAddToBlacklist adds threat hashes to the blacklist.
+func (c *Client) ThreatsAddToBlacklist(ctx context.Context, filter ActionFilter) (int, error) {
+	return doAction(c, ctx, "/threats/add-to-blacklist", filter, nil)
+}
+
+// ThreatsFetchFile fetches threat files for further analysis.
+func (c *Client) ThreatsFetchFile(ctx context.Context, filter ActionFilter) (int, error) {
+	return doAction(c, ctx, "/threats/fetch-file", filter, nil)
+}

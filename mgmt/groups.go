@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 )
 
@@ -72,4 +73,43 @@ func (c *Client) GroupsList(ctx context.Context, params *GroupListParams) ([]Gro
 // GroupsGet returns a single group by ID.
 func (c *Client) GroupsGet(ctx context.Context, id string) (*Group, error) {
 	return getByID[Group](c, ctx, "/groups", "group", id)
+}
+
+// GroupCreate is the request body for creating a group.
+type GroupCreate struct {
+	Name        string `json:"name"`
+	SiteID      string `json:"siteId"`
+	Description string `json:"description,omitempty"`
+}
+
+// GroupUpdate is the request body for updating a group.
+type GroupUpdate struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+}
+
+// GroupsCreate creates a group.
+func (c *Client) GroupsCreate(ctx context.Context, siteID string, data GroupCreate) (*Group, error) {
+	data.SiteID = siteID
+	req := map[string]any{"data": data}
+	var resp singleResponse[Group]
+	if err := c.post(ctx, "/groups", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// GroupsUpdate updates a group.
+func (c *Client) GroupsUpdate(ctx context.Context, id string, data GroupUpdate) (*Group, error) {
+	req := map[string]any{"data": data}
+	var resp singleResponse[Group]
+	if err := c.put(ctx, fmt.Sprintf("/groups/%s", id), req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// GroupsDelete deletes a group.
+func (c *Client) GroupsDelete(ctx context.Context, id string) error {
+	return c.delete(ctx, fmt.Sprintf("/groups/%s", id), nil, nil)
 }

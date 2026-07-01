@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 )
 
@@ -61,4 +62,45 @@ func (c *Client) TagsList(ctx context.Context, params *TagListParams) ([]Tag, *P
 // TagsGet returns a single tag by ID.
 func (c *Client) TagsGet(ctx context.Context, id string) (*Tag, error) {
 	return getByID[Tag](c, ctx, "/tags", "tag", id)
+}
+
+// TagCreate is the request body for creating a tag.
+type TagCreate struct {
+	Key         string `json:"key"`
+	Value       string `json:"value"`
+	Description string `json:"description,omitempty"`
+	Scope       string `json:"scope,omitempty"`
+	ScopeID     string `json:"scopeId,omitempty"`
+}
+
+// TagUpdate is the request body for updating a tag.
+type TagUpdate struct {
+	Key         *string `json:"key,omitempty"`
+	Value       *string `json:"value,omitempty"`
+	Description *string `json:"description,omitempty"`
+}
+
+// TagsCreate creates a tag.
+func (c *Client) TagsCreate(ctx context.Context, data TagCreate) (*Tag, error) {
+	req := map[string]any{"data": data}
+	var resp singleResponse[Tag]
+	if err := c.post(ctx, "/tags", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// TagsUpdate updates a tag.
+func (c *Client) TagsUpdate(ctx context.Context, id string, data TagUpdate) (*Tag, error) {
+	req := map[string]any{"data": data}
+	var resp singleResponse[Tag]
+	if err := c.put(ctx, fmt.Sprintf("/tags/%s", id), req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// TagsDelete deletes a tag.
+func (c *Client) TagsDelete(ctx context.Context, id string) error {
+	return c.delete(ctx, fmt.Sprintf("/tags/%s", id), nil, nil)
 }

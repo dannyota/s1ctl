@@ -59,3 +59,8 @@ func (p *RemoteScriptListParams) values() url.Values {
 func (c *Client) RemoteScriptsList(ctx context.Context, params *RemoteScriptListParams) ([]RemoteScript, *Pagination, error) {
 	return list[RemoteScript](c, ctx, "/remote-scripts", params.values())
 }
+
+// RemoteScriptsGet returns a single remote script by ID.
+func (c *Client) RemoteScriptsGet(ctx context.Context, id string) (*RemoteScript, error) {
+	return getByID[RemoteScript](c, ctx, "/remote-scripts", "remote script", id)
+}

@@ -101,3 +101,48 @@ func (c *Client) SitesGet(ctx context.Context, id string) (*Site, error) {
 	}
 	return &resp.Data.Sites[0], nil
 }
+
+// SiteCreate is the request body for creating a site.
+type SiteCreate struct {
+	Name              string `json:"name"`
+	AccountID         string `json:"accountId"`
+	SiteType          string `json:"siteType,omitempty"`
+	Description       string `json:"description,omitempty"`
+	Expiration        string `json:"expiration,omitempty"`
+	UnlimitedLicenses bool   `json:"unlimitedLicenses"`
+	TotalLicenses     int    `json:"totalLicenses"`
+}
+
+// SiteUpdate is the request body for updating a site.
+type SiteUpdate struct {
+	Name              *string `json:"name,omitempty"`
+	Description       *string `json:"description,omitempty"`
+	Expiration        *string `json:"expiration,omitempty"`
+	UnlimitedLicenses *bool   `json:"unlimitedLicenses,omitempty"`
+	TotalLicenses     *int    `json:"totalLicenses,omitempty"`
+}
+
+// SitesCreate creates a site.
+func (c *Client) SitesCreate(ctx context.Context, data SiteCreate) (*Site, error) {
+	req := map[string]any{"data": data}
+	var resp singleResponse[Site]
+	if err := c.post(ctx, "/sites", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SitesUpdate updates a site.
+func (c *Client) SitesUpdate(ctx context.Context, id string, data SiteUpdate) (*Site, error) {
+	req := map[string]any{"data": data}
+	var resp singleResponse[Site]
+	if err := c.put(ctx, fmt.Sprintf("/sites/%s", id), req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SitesDelete deletes a site.
+func (c *Client) SitesDelete(ctx context.Context, id string) error {
+	return c.delete(ctx, fmt.Sprintf("/sites/%s", id), nil, nil)
+}

@@ -13,6 +13,11 @@ type listResponse[T any] struct {
 	Pagination Pagination `json:"pagination"`
 }
 
+// singleResponse is the standard SentinelOne single-object envelope.
+type singleResponse[T any] struct {
+	Data T `json:"data"`
+}
+
 // list fetches a paginated list of resources.
 func list[T any](c *Client, ctx context.Context, path string, params url.Values) ([]T, *Pagination, error) {
 	var resp listResponse[T]

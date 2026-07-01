@@ -82,6 +82,37 @@ func (c *Client) post(ctx context.Context, path string, body, dst any) error {
 	return c.do(req, dst)
 }
 
+func (c *Client) put(ctx context.Context, path string, body, dst any) error {
+	var reader io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("mgmt: marshal: %w", err)
+		}
+		reader = bytes.NewReader(data)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.baseURL+path, reader)
+	if err != nil {
+		return fmt.Errorf("mgmt: %w", err)
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	return c.do(req, dst)
+}
+
+func (c *Client) delete(ctx context.Context, path string, params url.Values, dst any) error {
+	u := c.baseURL + path
+	if len(params) > 0 {
+		u += "?" + params.Encode()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u, nil)
+	if err != nil {
+		return fmt.Errorf("mgmt: %w", err)
+	}
+	return c.do(req, dst)
+}
+
 func (c *Client) do(req *http.Request, dst any) error {
 	resp, err := c.http.Do(req)
 	if err != nil {

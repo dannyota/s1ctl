@@ -60,3 +60,8 @@ func (p *UpdateListParams) values() url.Values {
 func (c *Client) UpdatesList(ctx context.Context, params *UpdateListParams) ([]UpdatePackage, *Pagination, error) {
 	return list[UpdatePackage](c, ctx, "/update/agent/packages", params.values())
 }
+
+// UpdatesGet returns a single update package by ID.
+func (c *Client) UpdatesGet(ctx context.Context, id string) (*UpdatePackage, error) {
+	return getByID[UpdatePackage](c, ctx, "/update/agent/packages", "update package", id)
+}

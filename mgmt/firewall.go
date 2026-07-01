@@ -58,3 +58,8 @@ func (p *FirewallRuleListParams) values() url.Values {
 func (c *Client) FirewallRulesList(ctx context.Context, params *FirewallRuleListParams) ([]FirewallRule, *Pagination, error) {
 	return list[FirewallRule](c, ctx, "/firewall-control", params.values())
 }
+
+// FirewallRulesGet returns a single firewall rule by ID.
+func (c *Client) FirewallRulesGet(ctx context.Context, id string) (*FirewallRule, error) {
+	return getByID[FirewallRule](c, ctx, "/firewall-control", "firewall rule", id)
+}

@@ -53,3 +53,40 @@ func (c *Client) PolicyGetGroup(ctx context.Context, siteID, groupID string) (*P
 	p.Raw = append(p.Raw[:0:0], resp.Data...)
 	return p, nil
 }
+
+// PolicyUpdateSite updates the policy for a site.
+func (c *Client) PolicyUpdateSite(ctx context.Context, siteID string, policy json.RawMessage) (*Policy, error) {
+	req := map[string]any{"data": policy}
+	var resp policyResponse
+	if err := c.put(ctx, fmt.Sprintf("/sites/%s/policy", siteID), req, &resp); err != nil {
+		return nil, err
+	}
+	p := &Policy{}
+	p.Raw = append(p.Raw[:0:0], resp.Data...)
+	return p, nil
+}
+
+// PolicyUpdateAccount updates the policy for an account.
+func (c *Client) PolicyUpdateAccount(ctx context.Context, accountID string, policy json.RawMessage) (*Policy, error) {
+	req := map[string]any{"data": policy}
+	var resp policyResponse
+	if err := c.put(ctx, fmt.Sprintf("/accounts/%s/policy", accountID), req, &resp); err != nil {
+		return nil, err
+	}
+	p := &Policy{}
+	p.Raw = append(p.Raw[:0:0], resp.Data...)
+	return p, nil
+}
+
+// PolicyUpdateGroup updates the policy for a group.
+func (c *Client) PolicyUpdateGroup(ctx context.Context, siteID, groupID string, policy json.RawMessage) (*Policy, error) {
+	req := map[string]any{"data": policy}
+	var resp policyResponse
+	path := fmt.Sprintf("/sites/%s/groups/%s/policy", siteID, groupID)
+	if err := c.put(ctx, path, req, &resp); err != nil {
+		return nil, err
+	}
+	p := &Policy{}
+	p.Raw = append(p.Raw[:0:0], resp.Data...)
+	return p, nil
+}

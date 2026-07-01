@@ -58,3 +58,8 @@ func (p *DeviceRuleListParams) values() url.Values {
 func (c *Client) DeviceRulesList(ctx context.Context, params *DeviceRuleListParams) ([]DeviceRule, *Pagination, error) {
 	return list[DeviceRule](c, ctx, "/device-control", params.values())
 }
+
+// DeviceRulesGet returns a single device control rule by ID.
+func (c *Client) DeviceRulesGet(ctx context.Context, id string) (*DeviceRule, error) {
+	return getByID[DeviceRule](c, ctx, "/device-control", "device rule", id)
+}
