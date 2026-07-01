@@ -206,33 +206,31 @@ Dry-run by default — pass --yes to apply changes.`,
 				}
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would create %s, update %s from %s. Pass --yes to apply.\n",
-					pluralize(len(toCreate), "rule"),
-					pluralize(len(toUpdate), "rule"),
-					inDir)
+			action := fmt.Sprintf("create %s, update %s from %s",
+				pluralize(len(toCreate), "rule"),
+				pluralize(len(toUpdate), "rule"),
+				inDir)
+			return guard(cmd.OutOrStdout(), "rules push", action, inDir, yes, func() error {
+				var created, updated int
+				for _, lr := range toCreate {
+					if _, cErr := c.RulesCreate(cmd.Context(), lr.toCreate()); cErr != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "warning: create %s: %v\n", lr.Name, cErr)
+						continue
+					}
+					created++
+				}
+				for i, lr := range toUpdate {
+					if _, uErr := c.RulesUpdate(cmd.Context(), updateIDs[i], lr.toCreate()); uErr != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "warning: update %s: %v\n", lr.Name, uErr)
+						continue
+					}
+					updated++
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
+					pluralize(created, "rule"),
+					pluralize(updated, "rule"))
 				return nil
-			}
-
-			var created, updated int
-			for _, lr := range toCreate {
-				if _, cErr := c.RulesCreate(cmd.Context(), lr.toCreate()); cErr != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "warning: create %s: %v\n", lr.Name, cErr)
-					continue
-				}
-				created++
-			}
-			for i, lr := range toUpdate {
-				if _, uErr := c.RulesUpdate(cmd.Context(), updateIDs[i], lr.toCreate()); uErr != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "warning: update %s: %v\n", lr.Name, uErr)
-					continue
-				}
-				updated++
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
-				pluralize(created, "rule"),
-				pluralize(updated, "rule"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&inDir, "dir", "rules", "directory containing rule YAML files")

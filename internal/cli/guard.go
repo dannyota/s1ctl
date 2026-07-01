@@ -58,6 +58,7 @@ func auditLogPath() string {
 func writeAuditRecord(rec auditRecord) error {
 	path := auditLogPath()
 	if path == "" {
+		fmt.Fprintln(os.Stderr, "Warning: could not determine home directory, audit log skipped")
 		return nil
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {

@@ -238,22 +238,20 @@ func newAlertsStatusCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, status := args[0], args[1]
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would set status=%s on alert %s. Pass --yes to apply.\n", status, id)
+			return guard(cmd.OutOrStdout(), "alerts status", fmt.Sprintf("set status=%s on alert %s", status, id), id, yes, func() error {
+				c, err := gqlClient()
+				if err != nil {
+					return err
+				}
+				if err := c.AlertsUpdateStatus(cmd.Context(), []string{id}, status); err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]string{"status": "updated", "id": id})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "status: updated alert %s\n", id)
 				return nil
-			}
-			c, err := gqlClient()
-			if err != nil {
-				return err
-			}
-			if err := c.AlertsUpdateStatus(cmd.Context(), []string{id}, status); err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]string{"status": "updated", "id": id})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "status: updated alert %s\n", id)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
@@ -269,22 +267,20 @@ func newAlertsVerdictCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, verdict := args[0], args[1]
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would set verdict=%s on alert %s. Pass --yes to apply.\n", verdict, id)
+			return guard(cmd.OutOrStdout(), "alerts verdict", fmt.Sprintf("set verdict=%s on alert %s", verdict, id), id, yes, func() error {
+				c, err := gqlClient()
+				if err != nil {
+					return err
+				}
+				if err := c.AlertsUpdateVerdict(cmd.Context(), []string{id}, verdict); err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]string{"verdict": "updated", "id": id})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "verdict: updated alert %s\n", id)
 				return nil
-			}
-			c, err := gqlClient()
-			if err != nil {
-				return err
-			}
-			if err := c.AlertsUpdateVerdict(cmd.Context(), []string{id}, verdict); err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]string{"verdict": "updated", "id": id})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "verdict: updated alert %s\n", id)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")

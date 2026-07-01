@@ -211,11 +211,13 @@ func (p *ADExposureListParams) values() url.Values {
 
 // RangerADExposures returns a paginated list of AD exposures.
 func (c *Client) RangerADExposures(ctx context.Context, params *ADExposureListParams) ([]ADExposure, *Pagination, error) {
+	if params == nil {
+		params = &ADExposureListParams{}
+	}
 	body := struct {
 		Filter ADExposureFilter `json:"filter"`
 	}{Filter: params.Filter}
 	var resp listResponse[ADExposure]
-	// This endpoint uses POST with a body + query params for pagination.
 	qv := params.values()
 	u := "/ranger-ad/get-exposures"
 	if len(qv) > 0 {
@@ -258,6 +260,9 @@ func (p *ADAffectedObjectListParams) values() url.Values {
 
 // RangerADAffectedObjects returns a paginated list of affected objects for a detection.
 func (c *Client) RangerADAffectedObjects(ctx context.Context, params *ADAffectedObjectListParams) ([]ADAffectedObject, *Pagination, error) {
+	if params == nil {
+		params = &ADAffectedObjectListParams{}
+	}
 	body := struct {
 		Filter ADAffectedObjectFilter `json:"filter"`
 	}{Filter: params.Filter}
@@ -314,6 +319,9 @@ type successResponse struct {
 
 // RangerADTriggerAssessment triggers a new AD assessment scan.
 func (c *Client) RangerADTriggerAssessment(ctx context.Context, params *ADTriggerAssessmentParams) (bool, string, error) {
+	if params == nil {
+		params = &ADTriggerAssessmentParams{}
+	}
 	body := struct {
 		Filter ADTriggerAssessmentFilter `json:"filter"`
 	}{Filter: params.Filter}

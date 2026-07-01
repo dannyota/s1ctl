@@ -220,43 +220,39 @@ is given, new rules are created at the global (tenant) scope.`,
 				}
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(),
-					"Would create %s, update %s from %s. Pass --yes to apply.\n",
-					pluralize(len(toCreate), "device rule"),
-					pluralize(len(toUpdate), "device rule"),
-					inDir)
+			action := fmt.Sprintf("create %s, update %s from %s",
+				pluralize(len(toCreate), "device rule"),
+				pluralize(len(toUpdate), "device rule"),
+				inDir)
+			return guard(cmd.OutOrStdout(), "devicecontrol push", action, inDir, yes, func() error {
+				// Build scope filter for new rules.
+				filter := mgmt.DeviceRuleScopeFilter{
+					SiteIDs: siteIDs,
+				}
+				if len(siteIDs) == 0 {
+					t := true
+					filter.Tenant = &t
+				}
+				var created, updated int
+				for _, lr := range toCreate {
+					if _, cErr := c.DeviceRulesCreate(cmd.Context(), lr.toCreate(), filter); cErr != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "warning: create %s: %v\n", lr.RuleName, cErr)
+						continue
+					}
+					created++
+				}
+				for i, lr := range toUpdate {
+					if _, uErr := c.DeviceRulesUpdate(cmd.Context(), updateIDs[i], lr.toCreate()); uErr != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "warning: update %s: %v\n", lr.RuleName, uErr)
+						continue
+					}
+					updated++
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
+					pluralize(created, "device rule"),
+					pluralize(updated, "device rule"))
 				return nil
-			}
-
-			// Build scope filter for new rules.
-			filter := mgmt.DeviceRuleScopeFilter{
-				SiteIDs: siteIDs,
-			}
-			if len(siteIDs) == 0 {
-				t := true
-				filter.Tenant = &t
-			}
-
-			var created, updated int
-			for _, lr := range toCreate {
-				if _, cErr := c.DeviceRulesCreate(cmd.Context(), lr.toCreate(), filter); cErr != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "warning: create %s: %v\n", lr.RuleName, cErr)
-					continue
-				}
-				created++
-			}
-			for i, lr := range toUpdate {
-				if _, uErr := c.DeviceRulesUpdate(cmd.Context(), updateIDs[i], lr.toCreate()); uErr != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "warning: update %s: %v\n", lr.RuleName, uErr)
-					continue
-				}
-				updated++
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
-				pluralize(created, "device rule"),
-				pluralize(updated, "device rule"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&inDir, "dir", "devicecontrol", "directory containing device rule YAML files")

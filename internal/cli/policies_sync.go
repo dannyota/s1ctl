@@ -411,27 +411,23 @@ Dry-run by default — pass --yes to apply changes.`,
 				}
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "\nWould update %s. Pass --yes to apply.\n",
-					pluralize(len(diffs), "policy"))
+			return guard(cmd.OutOrStdout(), "policies push", "update "+pluralize(len(diffs), "policy"), inDir, yes, func() error {
+				var updated int
+				for _, d := range diffs {
+					payload, mErr := policyUpdatePayload(d.file)
+					if mErr != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "Warning: marshal policy for %s: %v\n", policyScopeLabel(d.file), mErr)
+						continue
+					}
+					if uErr := updatePolicyForScope(cmd, c, d.file, payload); uErr != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "Warning: update %s: %v\n", policyScopeLabel(d.file), uErr)
+						continue
+					}
+					updated++
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Updated %s\n", pluralize(updated, "policy"))
 				return nil
-			}
-
-			var updated int
-			for _, d := range diffs {
-				payload, mErr := policyUpdatePayload(d.file)
-				if mErr != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: marshal policy for %s: %v\n", policyScopeLabel(d.file), mErr)
-					continue
-				}
-				if uErr := updatePolicyForScope(cmd, c, d.file, payload); uErr != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: update %s: %v\n", policyScopeLabel(d.file), uErr)
-					continue
-				}
-				updated++
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated %s\n", pluralize(updated, "policy"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&inDir, "dir", "policies", "directory containing policy YAML files")

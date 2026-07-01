@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -24,7 +25,7 @@ func newRangerADCmd() *cobra.Command {
 }
 
 func newRADStatusCmd() *cobra.Command {
-	var siteIDs, accountIDs string
+	var siteIDs, accountIDs []string
 
 	cmd := &cobra.Command{
 		Use:   "status",
@@ -35,8 +36,8 @@ func newRADStatusCmd() *cobra.Command {
 				return err
 			}
 			params := &mgmt.ADAssessmentStatusParams{
-				SiteIDs:    siteIDs,
-				AccountIDs: accountIDs,
+				SiteIDs:    strings.Join(siteIDs, ","),
+				AccountIDs: strings.Join(accountIDs, ","),
 			}
 			status, err := c.RangerADAssessmentStatus(cmd.Context(), params)
 			if err != nil {
@@ -81,14 +82,14 @@ func newRADStatusCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&siteIDs, "site-id", "", "filter by site ID (comma-separated)")
-	cmd.Flags().StringVar(&accountIDs, "account-id", "", "filter by account ID (comma-separated)")
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	return cmd
 }
 
 func newRADExposuresCmd() *cobra.Command {
 	var severity, status, source, detectionName, domainName []string
-	var siteIDs, accountIDs string
+	var siteIDs, accountIDs []string
 	var limit int
 	var all bool
 
@@ -102,8 +103,8 @@ func newRADExposuresCmd() *cobra.Command {
 			}
 			params := &mgmt.ADExposureListParams{
 				Limit:      limit,
-				SiteIDs:    siteIDs,
-				AccountIDs: accountIDs,
+				SiteIDs:    strings.Join(siteIDs, ","),
+				AccountIDs: strings.Join(accountIDs, ","),
 				Filter: mgmt.ADExposureFilter{
 					Severity:        severity,
 					DetectionStatus: status,
@@ -168,8 +169,8 @@ func newRADExposuresCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&source, "source", nil, "filter by source (OnPremAD, AzureAD)")
 	cmd.Flags().StringSliceVar(&detectionName, "detection", nil, "filter by detection name")
 	cmd.Flags().StringSliceVar(&domainName, "domain", nil, "filter by domain name")
-	cmd.Flags().StringVar(&siteIDs, "site-id", "", "filter by site ID (comma-separated)")
-	cmd.Flags().StringVar(&accountIDs, "account-id", "", "filter by account ID (comma-separated)")
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().IntVar(&limit, "limit", 0, fmt.Sprintf("max results per page (default %d)", defaultPageSize))
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	return cmd
@@ -177,7 +178,7 @@ func newRADExposuresCmd() *cobra.Command {
 
 func newRADAffectedObjectsCmd() *cobra.Command {
 	var detectionName, domainName, objectType []string
-	var siteIDs, accountIDs string
+	var siteIDs, accountIDs []string
 	var limit int
 	var all bool
 
@@ -197,8 +198,8 @@ Requires --detection and --domain flags to identify the exposure.`,
 			}
 			params := &mgmt.ADAffectedObjectListParams{
 				Limit:      limit,
-				SiteIDs:    siteIDs,
-				AccountIDs: accountIDs,
+				SiteIDs:    strings.Join(siteIDs, ","),
+				AccountIDs: strings.Join(accountIDs, ","),
 				Filter: mgmt.ADAffectedObjectFilter{
 					DetectionName: detectionName,
 					DomainName:    domainName,
@@ -257,8 +258,8 @@ Requires --detection and --domain flags to identify the exposure.`,
 	cmd.Flags().StringSliceVar(&detectionName, "detection", nil, "detection name (required)")
 	cmd.Flags().StringSliceVar(&domainName, "domain", nil, "domain name (required)")
 	cmd.Flags().StringSliceVar(&objectType, "object-type", nil, "filter by object type (Computer, User, Group, ...)")
-	cmd.Flags().StringVar(&siteIDs, "site-id", "", "filter by site ID (comma-separated)")
-	cmd.Flags().StringVar(&accountIDs, "account-id", "", "filter by account ID (comma-separated)")
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().IntVar(&limit, "limit", 0, fmt.Sprintf("max results per page (default %d)", defaultPageSize))
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	return cmd
@@ -266,7 +267,8 @@ Requires --detection and --domain flags to identify the exposure.`,
 
 func newRADAssessCmd() *cobra.Command {
 	var yes, fullScan bool
-	var siteIDs, accountIDs, scanSource string
+	var scanSource string
+	var siteIDs, accountIDs []string
 	var domainName []string
 
 	cmd := &cobra.Command{
@@ -276,50 +278,51 @@ func newRADAssessCmd() *cobra.Command {
 Use --full-scan for a complete scan, or omit for a targeted reassessment.
 Dry-run by default — pass --yes to apply.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if !yes {
-				scanType := "targeted assessment"
-				if fullScan {
-					scanType = "full scan"
+			scanType := "targeted assessment"
+			if fullScan {
+				scanType = "full scan"
+			}
+			target := strings.Join(domainName, ",")
+			if target == "" {
+				target = "all"
+			}
+			return guard(cmd.OutOrStdout(), "ranger-ad assess", "trigger "+scanType, target, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Would trigger %s. Pass --yes to apply.\n", scanType)
+
+				filter := mgmt.ADTriggerAssessmentFilter{
+					IsFullScan: fullScan,
+					DomainName: domainName,
+				}
+				if scanSource != "" {
+					filter.ScanSource = &scanSource
+				}
+
+				params := &mgmt.ADTriggerAssessmentParams{
+					SiteIDs:    strings.Join(siteIDs, ","),
+					AccountIDs: strings.Join(accountIDs, ","),
+					Filter:     filter,
+				}
+				success, msg, err := c.RangerADTriggerAssessment(cmd.Context(), params)
+				if err != nil {
+					return err
+				}
+				if !success {
+					return fmt.Errorf("assessment trigger failed: %s", msg)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Assessment triggered: %s\n", msg)
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			filter := mgmt.ADTriggerAssessmentFilter{
-				IsFullScan: fullScan,
-				DomainName: domainName,
-			}
-			if scanSource != "" {
-				filter.ScanSource = &scanSource
-			}
-
-			params := &mgmt.ADTriggerAssessmentParams{
-				SiteIDs:    siteIDs,
-				AccountIDs: accountIDs,
-				Filter:     filter,
-			}
-			success, msg, err := c.RangerADTriggerAssessment(cmd.Context(), params)
-			if err != nil {
-				return err
-			}
-			if !success {
-				return fmt.Errorf("assessment trigger failed: %s", msg)
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Assessment triggered: %s\n", msg)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
 	cmd.Flags().BoolVar(&fullScan, "full-scan", false, "perform a full scan (default: targeted)")
 	cmd.Flags().StringSliceVar(&domainName, "domain", nil, "domain names to scan")
 	cmd.Flags().StringVar(&scanSource, "scan-source", "", "scan source (AD, Azure)")
-	cmd.Flags().StringVar(&siteIDs, "site-id", "", "filter by site ID (comma-separated)")
-	cmd.Flags().StringVar(&accountIDs, "account-id", "", "filter by account ID (comma-separated)")
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	return cmd
 }
 

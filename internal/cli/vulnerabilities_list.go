@@ -149,22 +149,20 @@ func newVulnerabilitiesStatusCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, status := args[0], args[1]
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would set status=%s on vulnerability %s. Pass --yes to apply.\n", status, id)
+			return guard(cmd.OutOrStdout(), "vulnerabilities status", fmt.Sprintf("set status=%s on vulnerability %s", status, id), id, yes, func() error {
+				c, err := gqlClient()
+				if err != nil {
+					return err
+				}
+				if err := c.VulnerabilitiesUpdateStatus(cmd.Context(), []string{id}, status); err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]string{"status": "updated", "id": id})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "status: updated vulnerability %s\n", id)
 				return nil
-			}
-			c, err := gqlClient()
-			if err != nil {
-				return err
-			}
-			if err := c.VulnerabilitiesUpdateStatus(cmd.Context(), []string{id}, status); err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]string{"status": "updated", "id": id})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "status: updated vulnerability %s\n", id)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
@@ -180,22 +178,20 @@ func newVulnerabilitiesVerdictCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, verdict := args[0], args[1]
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would set verdict=%s on vulnerability %s. Pass --yes to apply.\n", verdict, id)
+			return guard(cmd.OutOrStdout(), "vulnerabilities verdict", fmt.Sprintf("set verdict=%s on vulnerability %s", verdict, id), id, yes, func() error {
+				c, err := gqlClient()
+				if err != nil {
+					return err
+				}
+				if err := c.VulnerabilitiesUpdateVerdict(cmd.Context(), []string{id}, verdict); err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]string{"verdict": "updated", "id": id})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "verdict: updated vulnerability %s\n", id)
 				return nil
-			}
-			c, err := gqlClient()
-			if err != nil {
-				return err
-			}
-			if err := c.VulnerabilitiesUpdateVerdict(cmd.Context(), []string{id}, verdict); err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]string{"verdict": "updated", "id": id})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "verdict: updated vulnerability %s\n", id)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")

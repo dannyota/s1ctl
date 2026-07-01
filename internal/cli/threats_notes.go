@@ -78,23 +78,21 @@ func newThreatAddNoteCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			threatID, text := args[0], args[1]
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would add note to threat %s. Pass --yes to apply.\n", threatID)
+			return guard(cmd.OutOrStdout(), "threats add-note", "add note to threat "+threatID, threatID, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.ThreatNotesCreate(cmd.Context(), threatID, text)
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Note added to %s\n", pluralize(affected, "threat"))
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			affected, err := c.ThreatNotesCreate(cmd.Context(), threatID, text)
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Note added to %s\n", pluralize(affected, "threat"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")

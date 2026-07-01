@@ -147,48 +147,44 @@ func newUnifiedExclusionsCreateCmd() *cobra.Command {
 				return fmt.Errorf("--scope-level is required")
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would create unified exclusion %q (%s, %s). Pass --yes to apply.\n",
-					name, osType, threatType)
+			return guard(cmd.OutOrStdout(), "unified-exclusions create", "create unified exclusion "+name+" ("+osType+", "+threatType+")", name, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+
+				data := mgmt.UnifiedExclusionCreate{
+					ExclusionName:     name,
+					OSType:            osType,
+					ThreatType:        threatType,
+					ModeType:          modeType,
+					Reason:            reason,
+					Type:              exclType,
+					Description:       description,
+					InteractionLevel:  interactionLevel,
+					PathExclusionType: pathType,
+					Engines:           engines,
+					Source:            source,
+				}
+				if value != "" {
+					data.Value = value
+				}
+
+				scope := mgmt.UnifiedExclusionScope{
+					ScopeLevel:   scopeLevel,
+					ScopeLevelID: scopeID,
+				}
+
+				created, err := c.UnifiedExclusionsCreate(cmd.Context(), scope, data)
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), created)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created unified exclusion %s (%s)\n", created.ExclusionName, created.ID)
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			data := mgmt.UnifiedExclusionCreate{
-				ExclusionName:     name,
-				OSType:            osType,
-				ThreatType:        threatType,
-				ModeType:          modeType,
-				Reason:            reason,
-				Type:              exclType,
-				Description:       description,
-				InteractionLevel:  interactionLevel,
-				PathExclusionType: pathType,
-				Engines:           engines,
-				Source:            source,
-			}
-			if value != "" {
-				data.Value = value
-			}
-
-			scope := mgmt.UnifiedExclusionScope{
-				ScopeLevel:   scopeLevel,
-				ScopeLevelID: scopeID,
-			}
-
-			created, err := c.UnifiedExclusionsCreate(cmd.Context(), scope, data)
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), created)
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created unified exclusion %s (%s)\n", created.ExclusionName, created.ID)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "exclusion name (required)")

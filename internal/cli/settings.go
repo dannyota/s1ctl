@@ -147,7 +147,10 @@ func settingsGetSMTP(cmd *cobra.Command, c *mgmt.Client, params *mgmt.SettingsPa
 		return err
 	}
 	if outputFormat == "json" {
-		return printJSON(cmd.OutOrStdout(), s)
+		redacted := *s
+		redacted.Password = ""
+		redacted.Raw = nil
+		return printJSON(cmd.OutOrStdout(), redacted)
 	}
 
 	rows := [][]string{
@@ -169,7 +172,13 @@ func settingsGetSyslog(cmd *cobra.Command, c *mgmt.Client, params *mgmt.Settings
 		return err
 	}
 	if outputFormat == "json" {
-		return printJSON(cmd.OutOrStdout(), s)
+		redacted := *s
+		redacted.Token = ""
+		redacted.ClientKeyContent = ""
+		redacted.ClientCertContent = ""
+		redacted.ServerCertContent = ""
+		redacted.Raw = nil
+		return printJSON(cmd.OutOrStdout(), redacted)
 	}
 
 	token := orDash(s.Token)
@@ -206,27 +215,24 @@ Types: smtp, syslog`,
 				return fmt.Errorf("unknown settings type %q (valid: smtp, syslog)", settingsType)
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would test %s connectivity. Pass --yes to apply.\n", settingsType)
+			return guard(cmd.OutOrStdout(), "settings test", "test "+settingsType+" connectivity", settingsType, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				params := &mgmt.SettingsParams{
+					SiteIDs:    siteIDs,
+					AccountIDs: accountIDs,
+				}
+
+				switch settingsType {
+				case "smtp":
+					return settingsTestSMTP(cmd, c, params)
+				case "syslog":
+					return settingsTestSyslog(cmd, c, params)
+				}
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			params := &mgmt.SettingsParams{
-				SiteIDs:    siteIDs,
-				AccountIDs: accountIDs,
-			}
-
-			switch settingsType {
-			case "smtp":
-				return settingsTestSMTP(cmd, c, params)
-			case "syslog":
-				return settingsTestSyslog(cmd, c, params)
-			}
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")

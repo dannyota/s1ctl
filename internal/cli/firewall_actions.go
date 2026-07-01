@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -18,23 +19,20 @@ func newFirewallEnableCmd() *cobra.Command {
 Dry-run by default — pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would enable %s. Pass --yes to apply.\n",
-					pluralize(len(args), "firewall rule"))
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			affected, err := c.FirewallRulesSetStatus(cmd.Context(), args, mgmt.FirewallStatusEnabled)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "firewall rule"))
-			return nil
+			return guard(cmd.OutOrStdout(), "firewall enable",
+				"enable "+pluralize(len(args), "firewall rule"),
+				strings.Join(args, ","), yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					affected, err := c.FirewallRulesSetStatus(cmd.Context(), args, mgmt.FirewallStatusEnabled)
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "firewall rule"))
+					return nil
+				})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
@@ -51,23 +49,20 @@ func newFirewallDisableCmd() *cobra.Command {
 Dry-run by default — pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would disable %s. Pass --yes to apply.\n",
-					pluralize(len(args), "firewall rule"))
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			affected, err := c.FirewallRulesSetStatus(cmd.Context(), args, mgmt.FirewallStatusDisabled)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "firewall rule"))
-			return nil
+			return guard(cmd.OutOrStdout(), "firewall disable",
+				"disable "+pluralize(len(args), "firewall rule"),
+				strings.Join(args, ","), yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					affected, err := c.FirewallRulesSetStatus(cmd.Context(), args, mgmt.FirewallStatusDisabled)
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "firewall rule"))
+					return nil
+				})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
@@ -96,32 +91,28 @@ Dry-run by default — pass --yes to apply.`,
 				return err
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would reorder %s. Pass --yes to apply.\n",
-					pluralize(len(orders), "firewall rule"))
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			filter := mgmt.FirewallRuleReorderFilter{
-				AccountIDs: accountIDs,
-				SiteIDs:    siteIDs,
-				GroupIDs:   groupIDs,
-			}
-			if len(siteIDs) == 0 && len(accountIDs) == 0 && len(groupIDs) == 0 {
-				t := true
-				filter.Tenant = &t
-			}
-
-			if err := c.FirewallRulesReorder(cmd.Context(), orders, filter); err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Reordered %s\n", pluralize(len(orders), "firewall rule"))
-			return nil
+			return guard(cmd.OutOrStdout(), "firewall reorder",
+				"reorder "+pluralize(len(orders), "firewall rule"),
+				fmt.Sprintf("%d rules", len(orders)), yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					filter := mgmt.FirewallRuleReorderFilter{
+						AccountIDs: accountIDs,
+						SiteIDs:    siteIDs,
+						GroupIDs:   groupIDs,
+					}
+					if len(siteIDs) == 0 && len(accountIDs) == 0 && len(groupIDs) == 0 {
+						t := true
+						filter.Tenant = &t
+					}
+					if err := c.FirewallRulesReorder(cmd.Context(), orders, filter); err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Reordered %s\n", pluralize(len(orders), "firewall rule"))
+					return nil
+				})
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "scope: site IDs")
@@ -145,42 +136,38 @@ Use --source-site-id or --source-account-id to define the source, and
 --target-site-id, --target-account-id, or --target-group-id for the destination.
 Dry-run by default — pass --yes to apply.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if !yes {
-				fmt.Fprintln(cmd.OutOrStdout(), "Would copy firewall rules to target scope. Pass --yes to apply.")
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			filter := mgmt.FirewallRuleReorderFilter{
-				SiteIDs:    sourceSiteIDs,
-				AccountIDs: sourceAccountIDs,
-			}
-			if len(sourceSiteIDs) == 0 && len(sourceAccountIDs) == 0 {
-				t := true
-				filter.Tenant = &t
-			}
-
-			target := mgmt.FirewallRuleCopyTarget{}
-			if targetSiteID != "" {
-				target.SiteID = &targetSiteID
-			}
-			if targetAccountID != "" {
-				target.AccountID = &targetAccountID
-			}
-			if targetGroupID != "" {
-				target.GroupID = &targetGroupID
-			}
-
-			affected, err := c.FirewallRulesCopy(cmd.Context(), filter, []mgmt.FirewallRuleCopyTarget{target})
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Copied %s\n", pluralize(affected, "firewall rule"))
-			return nil
+			return guard(cmd.OutOrStdout(), "firewall copy",
+				"copy firewall rules to target scope",
+				"target scope", yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					filter := mgmt.FirewallRuleReorderFilter{
+						SiteIDs:    sourceSiteIDs,
+						AccountIDs: sourceAccountIDs,
+					}
+					if len(sourceSiteIDs) == 0 && len(sourceAccountIDs) == 0 {
+						t := true
+						filter.Tenant = &t
+					}
+					target := mgmt.FirewallRuleCopyTarget{}
+					if targetSiteID != "" {
+						target.SiteID = &targetSiteID
+					}
+					if targetAccountID != "" {
+						target.AccountID = &targetAccountID
+					}
+					if targetGroupID != "" {
+						target.GroupID = &targetGroupID
+					}
+					affected, err := c.FirewallRulesCopy(cmd.Context(), filter, []mgmt.FirewallRuleCopyTarget{target})
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Copied %s\n", pluralize(affected, "firewall rule"))
+					return nil
+				})
 		},
 	}
 	cmd.Flags().StringSliceVar(&sourceSiteIDs, "source-site-id", nil, "source site IDs")

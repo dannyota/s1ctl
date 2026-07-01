@@ -33,23 +33,21 @@ func newAgentActionCmd(verb, short string, fn agentActionFn) *cobra.Command {
 		Short: short,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would %s agent %s. Pass --yes to apply.\n", verb, args[0])
+			return guard(cmd.OutOrStdout(), "agents "+verb, verb+" agent "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := fn(c, cmd, mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", verb, pluralize(affected, "agent"))
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			affected, err := fn(c, cmd, mgmt.ActionFilter{IDs: []string{args[0]}})
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", verb, pluralize(affected, "agent"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
@@ -70,23 +68,21 @@ func newAgentMoveCmd() *cobra.Command {
 			if groupID == "" {
 				return fmt.Errorf("--group-id is required")
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would move agent %s to group %s. Pass --yes to apply.\n", args[0], groupID)
+			return guard(cmd.OutOrStdout(), "agents move", "move agent "+args[0]+" to group "+groupID, args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.AgentsMoveToGroup(cmd.Context(), groupID, mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "move: %s affected\n", pluralize(affected, "agent"))
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			affected, err := c.AgentsMoveToGroup(cmd.Context(), groupID, mgmt.ActionFilter{IDs: []string{args[0]}})
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "move: %s affected\n", pluralize(affected, "agent"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&groupID, "group-id", "", "target group ID (required)")

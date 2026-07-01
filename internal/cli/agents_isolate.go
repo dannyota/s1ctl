@@ -31,24 +31,21 @@ Both can be combined. Dry-run by default; pass --yes to apply.`,
 				fmt.Fprintln(cmd.OutOrStdout(), "No matching agents found.")
 				return nil
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would isolate %s. Pass --yes to apply.\n",
-					pluralize(len(ids), "agent"))
+			return guard(cmd.OutOrStdout(), "agents isolate", "isolate "+pluralize(len(ids), "agent"), strings.Join(ids, ","), yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.AgentsDisconnect(cmd.Context(), mgmt.ActionFilter{IDs: ids})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "isolate: %s affected\n", pluralize(affected, "agent"))
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			affected, err := c.AgentsDisconnect(cmd.Context(), mgmt.ActionFilter{IDs: ids})
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "isolate: %s affected\n", pluralize(affected, "agent"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `key=value filter (e.g. --filter infected=true)`)
@@ -77,24 +74,21 @@ Both can be combined. Dry-run by default; pass --yes to apply.`,
 				fmt.Fprintln(cmd.OutOrStdout(), "No matching agents found.")
 				return nil
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would reconnect %s. Pass --yes to apply.\n",
-					pluralize(len(ids), "agent"))
+			return guard(cmd.OutOrStdout(), "agents reconnect", "reconnect "+pluralize(len(ids), "agent"), strings.Join(ids, ","), yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.AgentsConnect(cmd.Context(), mgmt.ActionFilter{IDs: ids})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "reconnect: %s affected\n", pluralize(affected, "agent"))
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			affected, err := c.AgentsConnect(cmd.Context(), mgmt.ActionFilter{IDs: ids})
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "reconnect: %s affected\n", pluralize(affected, "agent"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `key=value filter (e.g. --filter networkStatuses=disconnected)`)

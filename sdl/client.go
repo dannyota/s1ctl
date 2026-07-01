@@ -119,5 +119,8 @@ type APIError struct {
 }
 
 func (e *APIError) Error() string {
+	if len(e.Body) > 0 {
+		return fmt.Sprintf("sdl: HTTP %d: %s", e.Status, e.Body)
+	}
 	return fmt.Sprintf("sdl: HTTP %d", e.Status)
 }

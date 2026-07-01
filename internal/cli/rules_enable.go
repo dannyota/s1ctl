@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -18,24 +19,20 @@ func newRulesEnableCmd() *cobra.Command {
 Dry-run by default — pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would enable %s. Pass --yes to apply.\n",
-					pluralize(len(args), "rule"))
+			return guard(cmd.OutOrStdout(), "rules enable", "enable "+pluralize(len(args), "rule"), strings.Join(args, ","), yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+
+				filter := mgmt.RuleActionFilter{IDs: args}
+				affected, err := c.RulesEnable(cmd.Context(), filter)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "rule"))
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			filter := mgmt.RuleActionFilter{IDs: args}
-			affected, err := c.RulesEnable(cmd.Context(), filter)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "rule"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
@@ -52,24 +49,20 @@ func newRulesDisableCmd() *cobra.Command {
 Dry-run by default — pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would disable %s. Pass --yes to apply.\n",
-					pluralize(len(args), "rule"))
+			return guard(cmd.OutOrStdout(), "rules disable", "disable "+pluralize(len(args), "rule"), strings.Join(args, ","), yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+
+				filter := mgmt.RuleActionFilter{IDs: args}
+				affected, err := c.RulesDisable(cmd.Context(), filter)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "rule"))
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			filter := mgmt.RuleActionFilter{IDs: args}
-			affected, err := c.RulesDisable(cmd.Context(), filter)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "rule"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -138,25 +139,21 @@ Dry-run by default; pass --yes to apply.`,
 				ValidUntil:  validUntil,
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would create %s IOC for %q. Pass --yes to apply.\n",
-					iocType, value)
+			return guard(cmd.OutOrStdout(), "iocs create", fmt.Sprintf("create %s IOC for %q", iocType, value), value, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.IOCsCreate(cmd.Context(), []mgmt.IOCCreateInput{ioc})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", pluralize(affected, "IOC"))
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			affected, err := c.IOCsCreate(cmd.Context(), []mgmt.IOCCreateInput{ioc})
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", pluralize(affected, "IOC"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&iocType, "type", "", "IOC type (DNS, IPV4, IPV6, MD5, SHA1, SHA256, URL)")
@@ -183,25 +180,21 @@ func newIOCsDeleteCmd() *cobra.Command {
 Dry-run by default; pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would delete %s. Pass --yes to apply.\n",
-					pluralize(len(args), "IOC"))
+			return guard(cmd.OutOrStdout(), "iocs delete", "delete "+pluralize(len(args), "IOC"), strings.Join(args, ","), yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.IOCsDelete(cmd.Context(), args)
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Deleted %s\n", pluralize(affected, "IOC"))
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			affected, err := c.IOCsDelete(cmd.Context(), args)
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted %s\n", pluralize(affected, "IOC"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")

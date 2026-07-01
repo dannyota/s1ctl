@@ -250,34 +250,32 @@ Dry-run by default — pass --yes to apply changes.`,
 				}
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would create %s, update %s from %s. Pass --yes to apply.\n",
-					pluralize(len(toCreate), "firewall rule"),
-					pluralize(len(toUpdate), "firewall rule"),
-					inDir)
+			action := fmt.Sprintf("create %s, update %s from %s",
+				pluralize(len(toCreate), "firewall rule"),
+				pluralize(len(toUpdate), "firewall rule"),
+				inDir)
+			return guard(cmd.OutOrStdout(), "firewall push", action, inDir, yes, func() error {
+				scope := mgmt.FirewallRuleScope{SiteIDs: siteIDs}
+				var created, updated int
+				for _, lr := range toCreate {
+					if _, cErr := c.FirewallRulesCreate(cmd.Context(), scope, lr.toCreate()); cErr != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "warning: create %s: %v\n", lr.Name, cErr)
+						continue
+					}
+					created++
+				}
+				for i, lr := range toUpdate {
+					if _, uErr := c.FirewallRulesUpdate(cmd.Context(), updateIDs[i], lr.toCreate()); uErr != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "warning: update %s: %v\n", lr.Name, uErr)
+						continue
+					}
+					updated++
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
+					pluralize(created, "firewall rule"),
+					pluralize(updated, "firewall rule"))
 				return nil
-			}
-
-			scope := mgmt.FirewallRuleScope{SiteIDs: siteIDs}
-			var created, updated int
-			for _, lr := range toCreate {
-				if _, cErr := c.FirewallRulesCreate(cmd.Context(), scope, lr.toCreate()); cErr != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "warning: create %s: %v\n", lr.Name, cErr)
-					continue
-				}
-				created++
-			}
-			for i, lr := range toUpdate {
-				if _, uErr := c.FirewallRulesUpdate(cmd.Context(), updateIDs[i], lr.toCreate()); uErr != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "warning: update %s: %v\n", lr.Name, uErr)
-					continue
-				}
-				updated++
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
-				pluralize(created, "firewall rule"),
-				pluralize(updated, "firewall rule"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&inDir, "dir", "firewall", "directory containing firewall rule YAML files")

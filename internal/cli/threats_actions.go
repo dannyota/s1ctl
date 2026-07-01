@@ -34,23 +34,21 @@ func newThreatActionCmd(verb, short, flagName, flagDesc string, fn threatActionF
 			if val == "" {
 				return fmt.Errorf("%s is required", flagName)
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would set %s=%s on threat %s. Pass --yes to apply.\n", verb, val, args[0])
+			return guard(cmd.OutOrStdout(), "threats "+verb, fmt.Sprintf("set %s=%s on threat %s", verb, val, args[0]), args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := fn(c, cmd, val, mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", verb, pluralize(affected, "threat"))
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			affected, err := fn(c, cmd, val, mgmt.ActionFilter{IDs: []string{args[0]}})
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", verb, pluralize(affected, "threat"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&val, verb, "", flagDesc)
@@ -71,23 +69,21 @@ func newThreatMitigateCmd() *cobra.Command {
 			if action == "" {
 				return fmt.Errorf("--action is required (kill, quarantine, remediate, rollback-remediation)")
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would %s threat %s. Pass --yes to apply.\n", action, args[0])
+			return guard(cmd.OutOrStdout(), "threats mitigate", action+" threat "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.ThreatsMitigate(cmd.Context(), action, mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", action, pluralize(affected, "threat"))
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			affected, err := c.ThreatsMitigate(cmd.Context(), action, mgmt.ActionFilter{IDs: []string{args[0]}})
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", action, pluralize(affected, "threat"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&action, "action", "", "mitigation action (kill, quarantine, remediate, rollback-remediation)")

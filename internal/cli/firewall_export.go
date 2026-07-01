@@ -68,30 +68,27 @@ Dry-run by default — pass --yes to apply.`,
 				return fmt.Errorf("read %s: %w", filename, err)
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would import firewall rules from %s. Pass --yes to apply.\n", filename)
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			scope := mgmt.FirewallImportScope{
-				SiteIDs:    siteIDs,
-				AccountIDs: accountIDs,
-				GroupIDs:   groupIDs,
-			}
-			if len(siteIDs) == 0 && len(accountIDs) == 0 && len(groupIDs) == 0 {
-				scope.Tenant = true
-			}
-
-			if err := c.FirewallRulesImport(cmd.Context(), scope, filename, data); err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Imported firewall rules from %s\n", filename)
-			return nil
+			return guard(cmd.OutOrStdout(), "firewall import",
+				"import firewall rules from "+filename,
+				filename, yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					scope := mgmt.FirewallImportScope{
+						SiteIDs:    siteIDs,
+						AccountIDs: accountIDs,
+						GroupIDs:   groupIDs,
+					}
+					if len(siteIDs) == 0 && len(accountIDs) == 0 && len(groupIDs) == 0 {
+						scope.Tenant = true
+					}
+					if err := c.FirewallRulesImport(cmd.Context(), scope, filename, data); err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Imported firewall rules from %s\n", filename)
+					return nil
+				})
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "target site IDs")

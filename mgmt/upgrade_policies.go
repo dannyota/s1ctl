@@ -104,9 +104,9 @@ type UpgradePolicyCreate struct {
 	ScopeLevel   string           `json:"scopeLevel"`
 	ScopeID      string           `json:"scopeId,omitempty"`
 	IsActive     bool             `json:"isActive"`
-	IsScheduled  bool             `json:"isScheduled,omitempty"`
+	IsScheduled  bool             `json:"isScheduled"`
 	AllEndpoints bool             `json:"allEndpoints"`
-	MaxRetries   int              `json:"maxRetries,omitempty"`
+	MaxRetries   int              `json:"maxRetries"`
 	Package      UpgradePolicyPkg `json:"package"`
 	Tags         []string         `json:"tags,omitempty"`
 }

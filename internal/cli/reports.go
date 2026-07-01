@@ -274,21 +274,17 @@ as a JSON array via --insight-types.`,
 				task.IsTrend = &trend
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would create report task %q (%s). Pass --yes to apply.\n",
-					name, scheduleType)
+			return guard(cmd.OutOrStdout(), "reports create", "create report task "+name+" ("+scheduleType+")", name, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				if err := c.ReportTasksCreate(cmd.Context(), siteIDs, accountIDs, scope, task); err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created report task %q\n", name)
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			if err := c.ReportTasksCreate(cmd.Context(), siteIDs, accountIDs, scope, task); err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created report task %q\n", name)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "report task name (required)")

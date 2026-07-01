@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -190,17 +191,14 @@ Dry-run by default — pass --yes to apply.`,
 			if err != nil {
 				return err
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would enable %s at %s scope. Pass --yes to apply.\n",
-					pluralize(len(args), "rule"), filter.ScopeLevel)
+			return guard(cmd.OutOrStdout(), "detection-library enable", fmt.Sprintf("enable %s at %s scope", pluralize(len(args), "rule"), filter.ScopeLevel), strings.Join(args, ","), yes, func() error {
+				affected, err := c.PlatformRulesEnable(cmd.Context(), filter)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "rule"))
 				return nil
-			}
-			affected, err := c.PlatformRulesEnable(cmd.Context(), filter)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "rule"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
@@ -233,17 +231,14 @@ Dry-run by default — pass --yes to apply.`,
 			if err != nil {
 				return err
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would disable %s at %s scope. Pass --yes to apply.\n",
-					pluralize(len(args), "rule"), filter.ScopeLevel)
+			return guard(cmd.OutOrStdout(), "detection-library disable", fmt.Sprintf("disable %s at %s scope", pluralize(len(args), "rule"), filter.ScopeLevel), strings.Join(args, ","), yes, func() error {
+				affected, err := c.PlatformRulesDisable(cmd.Context(), filter)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "rule"))
 				return nil
-			}
-			affected, err := c.PlatformRulesDisable(cmd.Context(), filter)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "rule"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
@@ -268,6 +263,7 @@ func resolveDLScope(cmd *cobra.Command, c *mgmt.Client, ruleIDs []string, scopeL
 	if scopeID == "" {
 		return filter, fmt.Errorf("--scope-id is required (use --scope-level to skip auto-detection)")
 	}
+	var lastErr error
 	for _, scope := range []string{"site", "account", "global"} {
 		rules, _, err := c.PlatformRulesList(cmd.Context(), &mgmt.PlatformRuleListParams{
 			IDs:        ruleIDs[:1],
@@ -275,7 +271,11 @@ func resolveDLScope(cmd *cobra.Command, c *mgmt.Client, ruleIDs []string, scopeL
 			ScopeID:    scopeID,
 			Limit:      1,
 		})
-		if err != nil || len(rules) == 0 {
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if len(rules) == 0 {
 			continue
 		}
 		resolved := string(rules[0].HighestInheritedScope)
@@ -290,6 +290,9 @@ func resolveDLScope(cmd *cobra.Command, c *mgmt.Client, ruleIDs []string, scopeL
 			fmt.Fprintf(cmd.OutOrStdout(), "Rule inherited from %s scope (auto-detected)\n", resolved)
 		}
 		return filter, nil
+	}
+	if lastErr != nil {
+		return filter, fmt.Errorf("could not find rule %s at any scope for --scope-id %s: %w", ruleIDs[0], scopeID, lastErr)
 	}
 	return filter, fmt.Errorf("could not find rule %s at any scope for --scope-id %s", ruleIDs[0], scopeID)
 }

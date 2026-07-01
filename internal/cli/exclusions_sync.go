@@ -83,25 +83,22 @@ func newExclusionsPushCmd() *cobra.Command {
 			if err := json.Unmarshal(data, &exclusions); err != nil {
 				return fmt.Errorf("parse %s: %w", inFile, err)
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would push %s from %s. Pass --yes to apply.\n",
-					pluralize(len(exclusions), "exclusion"), inFile)
-				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			var created int
-			for _, excl := range exclusions {
-				if _, cErr := c.ExclusionsCreate(cmd.Context(), siteIDs, excl); cErr != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "warning: %v\n", cErr)
-					continue
+			return guard(cmd.OutOrStdout(), "exclusions push", fmt.Sprintf("push %s from %s", pluralize(len(exclusions), "exclusion"), inFile), inFile, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
 				}
-				created++
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", pluralize(created, "exclusion"))
-			return nil
+				var created int
+				for _, excl := range exclusions {
+					if _, cErr := c.ExclusionsCreate(cmd.Context(), siteIDs, excl); cErr != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "warning: %v\n", cErr)
+						continue
+					}
+					created++
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", pluralize(created, "exclusion"))
+				return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&inFile, "file", "samples/exclusions.json", "input file")

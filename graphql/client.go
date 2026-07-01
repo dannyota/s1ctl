@@ -144,6 +144,9 @@ type HTTPError struct {
 }
 
 func (e *HTTPError) Error() string {
+	if len(e.Body) > 0 {
+		return fmt.Sprintf("graphql: HTTP %d: %s", e.Status, e.Body)
+	}
 	return fmt.Sprintf("graphql: HTTP %d", e.Status)
 }
 

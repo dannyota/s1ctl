@@ -49,49 +49,43 @@ Dry-run by default — pass --yes to apply.`,
 }
 
 func revertSitePolicy(cmd *cobra.Command, siteID string, yes bool) error {
-	if !yes {
-		fmt.Fprintf(cmd.OutOrStdout(), "Would revert policy for site %s to account inherited values. Pass --yes to apply.\n", siteID)
+	return guard(cmd.OutOrStdout(), "policies revert", "revert policy for site "+siteID+" to account inherited values", siteID, yes, func() error {
+		c, err := mgmtClient()
+		if err != nil {
+			return err
+		}
+		if err := c.PolicyRevertSite(cmd.Context(), siteID); err != nil {
+			return fmt.Errorf("revert site %s policy: %w", siteID, err)
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Reverted policy for site %s\n", siteID)
 		return nil
-	}
-	c, err := mgmtClient()
-	if err != nil {
-		return err
-	}
-	if err := c.PolicyRevertSite(cmd.Context(), siteID); err != nil {
-		return fmt.Errorf("revert site %s policy: %w", siteID, err)
-	}
-	fmt.Fprintf(cmd.OutOrStdout(), "Reverted policy for site %s\n", siteID)
-	return nil
+	})
 }
 
 func revertAccountPolicy(cmd *cobra.Command, accountID string, yes bool) error {
-	if !yes {
-		fmt.Fprintf(cmd.OutOrStdout(), "Would revert policy for account %s to global inherited values. Pass --yes to apply.\n", accountID)
+	return guard(cmd.OutOrStdout(), "policies revert", "revert policy for account "+accountID+" to global inherited values", accountID, yes, func() error {
+		c, err := mgmtClient()
+		if err != nil {
+			return err
+		}
+		if err := c.PolicyRevertAccount(cmd.Context(), accountID); err != nil {
+			return fmt.Errorf("revert account %s policy: %w", accountID, err)
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Reverted policy for account %s\n", accountID)
 		return nil
-	}
-	c, err := mgmtClient()
-	if err != nil {
-		return err
-	}
-	if err := c.PolicyRevertAccount(cmd.Context(), accountID); err != nil {
-		return fmt.Errorf("revert account %s policy: %w", accountID, err)
-	}
-	fmt.Fprintf(cmd.OutOrStdout(), "Reverted policy for account %s\n", accountID)
-	return nil
+	})
 }
 
 func revertGroupPolicy(cmd *cobra.Command, siteID, groupID string, yes bool) error {
-	if !yes {
-		fmt.Fprintf(cmd.OutOrStdout(), "Would revert policy for group %s to site inherited values. Pass --yes to apply.\n", groupID)
+	return guard(cmd.OutOrStdout(), "policies revert", "revert policy for group "+groupID+" to site inherited values", groupID, yes, func() error {
+		c, err := mgmtClient()
+		if err != nil {
+			return err
+		}
+		if err := c.PolicyRevertGroup(cmd.Context(), siteID, groupID); err != nil {
+			return fmt.Errorf("revert group %s policy: %w", groupID, err)
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Reverted policy for group %s\n", groupID)
 		return nil
-	}
-	c, err := mgmtClient()
-	if err != nil {
-		return err
-	}
-	if err := c.PolicyRevertGroup(cmd.Context(), siteID, groupID); err != nil {
-		return fmt.Errorf("revert group %s policy: %w", groupID, err)
-	}
-	fmt.Fprintf(cmd.OutOrStdout(), "Reverted policy for group %s\n", groupID)
-	return nil
+	})
 }

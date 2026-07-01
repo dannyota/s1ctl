@@ -47,6 +47,7 @@ const misconfigurationsQuery = `query Misconfigurations($first: Int, $after: Str
         id
         externalId
         name
+        description
         severity
         status
         analystVerdict

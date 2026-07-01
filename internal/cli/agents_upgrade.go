@@ -31,25 +31,22 @@ to target agents by filter. Dry-run by default.`,
 			if len(filter.IDs) == 0 && len(filter.SiteIDs) == 0 && filter.Query == "" {
 				return fmt.Errorf("specify agent IDs or --site-id / --query")
 			}
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would trigger upgrade on %s. Pass --yes to apply.\n",
-					describeFilter(filter))
+			return guard(cmd.OutOrStdout(), "agents upgrade", "trigger upgrade on "+describeFilter(filter), describeFilter(filter), yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				_ = groupIDs
+				affected, err := c.AgentsUpdateSoftware(cmd.Context(), filter)
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "upgrade: %s affected\n", pluralize(affected, "agent"))
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			_ = groupIDs
-			affected, err := c.AgentsUpdateSoftware(cmd.Context(), filter)
-			if err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "upgrade: %s affected\n", pluralize(affected, "agent"))
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")

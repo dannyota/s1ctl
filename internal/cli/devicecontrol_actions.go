@@ -20,23 +20,20 @@ func newDeviceControlEnableCmd() *cobra.Command {
 Dry-run by default — pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would enable %s. Pass --yes to apply.\n",
-					pluralize(len(args), "device rule"))
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			affected, err := c.DeviceRulesSetStatus(cmd.Context(), args, mgmt.DeviceRuleStatusEnabled)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "device rule"))
-			return nil
+			return guard(cmd.OutOrStdout(), "devicecontrol enable",
+				"enable "+pluralize(len(args), "device rule"),
+				strings.Join(args, ","), yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					affected, err := c.DeviceRulesSetStatus(cmd.Context(), args, mgmt.DeviceRuleStatusEnabled)
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Enabled %s\n", pluralize(affected, "device rule"))
+					return nil
+				})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
@@ -53,23 +50,20 @@ func newDeviceControlDisableCmd() *cobra.Command {
 Dry-run by default — pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would disable %s. Pass --yes to apply.\n",
-					pluralize(len(args), "device rule"))
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			affected, err := c.DeviceRulesSetStatus(cmd.Context(), args, mgmt.DeviceRuleStatusDisabled)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "device rule"))
-			return nil
+			return guard(cmd.OutOrStdout(), "devicecontrol disable",
+				"disable "+pluralize(len(args), "device rule"),
+				strings.Join(args, ","), yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					affected, err := c.DeviceRulesSetStatus(cmd.Context(), args, mgmt.DeviceRuleStatusDisabled)
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Disabled %s\n", pluralize(affected, "device rule"))
+					return nil
+				})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
@@ -98,32 +92,28 @@ Dry-run by default — pass --yes to apply.`,
 				return err
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would reorder %s. Pass --yes to apply.\n",
-					pluralize(len(orders), "device rule"))
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			filter := mgmt.DeviceRuleReorderFilter{
-				AccountIDs: accountIDs,
-				SiteIDs:    siteIDs,
-				GroupIDs:   groupIDs,
-			}
-			if len(siteIDs) == 0 && len(accountIDs) == 0 && len(groupIDs) == 0 {
-				t := true
-				filter.Tenant = &t
-			}
-
-			if err := c.DeviceRulesReorder(cmd.Context(), orders, filter); err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Reordered %s\n", pluralize(len(orders), "device rule"))
-			return nil
+			return guard(cmd.OutOrStdout(), "devicecontrol reorder",
+				"reorder "+pluralize(len(orders), "device rule"),
+				fmt.Sprintf("%d rules", len(orders)), yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					filter := mgmt.DeviceRuleReorderFilter{
+						AccountIDs: accountIDs,
+						SiteIDs:    siteIDs,
+						GroupIDs:   groupIDs,
+					}
+					if len(siteIDs) == 0 && len(accountIDs) == 0 && len(groupIDs) == 0 {
+						t := true
+						filter.Tenant = &t
+					}
+					if err := c.DeviceRulesReorder(cmd.Context(), orders, filter); err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Reordered %s\n", pluralize(len(orders), "device rule"))
+					return nil
+				})
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "scope: site IDs")
@@ -148,41 +138,37 @@ Use --source-site-id or --source-account-id to define the source, and
 --target-site-id, --target-account-id, or --target-group-id for the destination.
 Dry-run by default — pass --yes to apply.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if !yes {
-				fmt.Fprintln(cmd.OutOrStdout(), "Would copy device rules to target scope. Pass --yes to apply.")
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			filter := mgmt.DeviceRuleScopeFilter{
-				SiteIDs:    sourceSiteIDs,
-				AccountIDs: sourceAccountIDs,
-			}
-			if len(sourceSiteIDs) == 0 && len(sourceAccountIDs) == 0 {
-				t := true
-				filter.Tenant = &t
-			}
-
-			target := mgmt.DeviceRuleCopyTarget{
-				GroupIDs: targetGroupIDs,
-			}
-			if targetSiteID != "" {
-				target.SiteID = &targetSiteID
-			}
-			if targetAccountID != "" {
-				target.AccountID = &targetAccountID
-			}
-
-			affected, err := c.DeviceRulesCopy(cmd.Context(), filter, []mgmt.DeviceRuleCopyTarget{target})
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Copied %s\n", pluralize(affected, "device rule"))
-			return nil
+			return guard(cmd.OutOrStdout(), "devicecontrol copy",
+				"copy device rules to target scope",
+				"target scope", yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					filter := mgmt.DeviceRuleScopeFilter{
+						SiteIDs:    sourceSiteIDs,
+						AccountIDs: sourceAccountIDs,
+					}
+					if len(sourceSiteIDs) == 0 && len(sourceAccountIDs) == 0 {
+						t := true
+						filter.Tenant = &t
+					}
+					target := mgmt.DeviceRuleCopyTarget{
+						GroupIDs: targetGroupIDs,
+					}
+					if targetSiteID != "" {
+						target.SiteID = &targetSiteID
+					}
+					if targetAccountID != "" {
+						target.AccountID = &targetAccountID
+					}
+					affected, err := c.DeviceRulesCopy(cmd.Context(), filter, []mgmt.DeviceRuleCopyTarget{target})
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "Copied %s\n", pluralize(affected, "device rule"))
+					return nil
+				})
 		},
 	}
 	cmd.Flags().StringSliceVar(&sourceSiteIDs, "source-site-id", nil, "source site IDs")

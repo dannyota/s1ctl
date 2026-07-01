@@ -67,27 +67,23 @@ Use "upgrade-policies packages" to find available package versions and file IDs.
 				Tags: tags,
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would create upgrade policy %q (%s, %s). Pass --yes to apply.\n",
-					name, osType, scopeLevel)
+			return guard(cmd.OutOrStdout(), "upgrade-policies create", "create upgrade policy "+name+" ("+osType+", "+scopeLevel+")", name, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				if err := c.UpgradePoliciesCreate(cmd.Context(), data); err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]string{
+						"status": "created",
+						"name":   name,
+					})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Created upgrade policy %q\n", name)
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			if err := c.UpgradePoliciesCreate(cmd.Context(), data); err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]string{
-					"status": "created",
-					"name":   name,
-				})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created upgrade policy %q\n", name)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "policy name (required)")
@@ -116,22 +112,20 @@ func newUpgradePoliciesDeleteCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id := args[0]
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would delete upgrade policy %s. Pass --yes to apply.\n", id)
+			return guard(cmd.OutOrStdout(), "upgrade-policies delete", "delete upgrade policy "+id, id, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				if err := c.UpgradePoliciesDelete(cmd.Context(), id); err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]string{"status": "deleted", "id": id})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Deleted upgrade policy %s\n", id)
 				return nil
-			}
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			if err := c.UpgradePoliciesDelete(cmd.Context(), id); err != nil {
-				return err
-			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), map[string]string{"status": "deleted", "id": id})
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted upgrade policy %s\n", id)
-			return nil
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")

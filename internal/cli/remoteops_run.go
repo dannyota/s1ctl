@@ -32,52 +32,49 @@ func newRemoteOpsRunCmd() *cobra.Command {
 				return fmt.Errorf("at least one target is required (--agent-id, --site-id, or --group-id)")
 			}
 
-			if !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "Would execute script %s. Pass --yes to apply.\n", scriptID)
+			return guard(cmd.OutOrStdout(), "remoteops run", "execute script "+scriptID, scriptID, yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+
+				dest := mgmt.OutputDestination(output)
+				if description == "" {
+					description = "s1ctl remote script execution"
+				}
+
+				filter := mgmt.RemoteScriptsExecuteFilter{
+					IDs:      agentIDs,
+					SiteIDs:  siteIDs,
+					GroupIDs: groupIDs,
+				}
+				data := mgmt.RemoteScriptsExecuteParams{
+					ScriptID:          scriptID,
+					OutputDestination: dest,
+					TaskDescription:   description,
+					InputParams:       inputParams,
+					TimeoutSeconds:    timeout,
+				}
+
+				result, err := c.RemoteScriptsExecute(cmd.Context(), filter, data)
+				if err != nil {
+					return err
+				}
+
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), result)
+				}
+
+				fmt.Fprintf(cmd.OutOrStdout(), "Executed: %s affected\n", pluralize(result.Affected, "agent"))
+				if result.ParentTaskID != "" {
+					fmt.Fprintf(cmd.OutOrStdout(), "Task ID: %s\n", result.ParentTaskID)
+					fmt.Fprintf(cmd.OutOrStdout(), "Check status: s1ctl remoteops results %s\n", result.ParentTaskID)
+				}
+				if result.Pending {
+					fmt.Fprintf(cmd.OutOrStdout(), "Pending approval (execution ID: %s)\n", result.PendingExecutionID)
+				}
 				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			dest := mgmt.OutputDestination(output)
-			if description == "" {
-				description = "s1ctl remote script execution"
-			}
-
-			filter := mgmt.RemoteScriptsExecuteFilter{
-				IDs:      agentIDs,
-				SiteIDs:  siteIDs,
-				GroupIDs: groupIDs,
-			}
-			data := mgmt.RemoteScriptsExecuteParams{
-				ScriptID:          scriptID,
-				OutputDestination: dest,
-				TaskDescription:   description,
-				InputParams:       inputParams,
-				TimeoutSeconds:    timeout,
-			}
-
-			result, err := c.RemoteScriptsExecute(cmd.Context(), filter, data)
-			if err != nil {
-				return err
-			}
-
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), result)
-			}
-
-			fmt.Fprintf(cmd.OutOrStdout(), "Executed: %s affected\n", pluralize(result.Affected, "agent"))
-			if result.ParentTaskID != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "Task ID: %s\n", result.ParentTaskID)
-				fmt.Fprintf(cmd.OutOrStdout(), "Check status: s1ctl remoteops results %s\n", result.ParentTaskID)
-			}
-			if result.Pending {
-				fmt.Fprintf(cmd.OutOrStdout(), "Pending approval (execution ID: %s)\n", result.PendingExecutionID)
-			}
-			return nil
+			})
 		},
 	}
 
