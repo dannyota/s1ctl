@@ -2,7 +2,9 @@ package cli
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -86,6 +88,7 @@ with alerts), silent (active with zero alerts), disabled, or erroring
 					State  string `json:"state"`
 					Alerts int    `json:"alerts"`
 					Status string `json:"status"`
+					OS     string `json:"os"`
 					Scope  string `json:"scope"`
 				}
 				out := make([]jsonItem, len(items))
@@ -96,13 +99,14 @@ with alerts), silent (active with zero alerts), disabled, or erroring
 						State:  it.State,
 						Alerts: it.Rule.GeneratedAlerts,
 						Status: string(it.Rule.Status),
+						OS:     parseOSTarget(it.Rule.S1QL),
 						Scope:  string(it.Rule.Scope),
 					}
 				}
 				return printJSON(cmd.OutOrStdout(), out)
 			}
 
-			headers := []string{"Name", "State", "Alerts", "Severity", "Scope", "Response"}
+			headers := []string{"Name", "State", "Alerts", "Severity", "OS", "Scope", "Response"}
 			rows := make([][]string, len(items))
 			for i, it := range items {
 				response := "-"
@@ -114,6 +118,7 @@ with alerts), silent (active with zero alerts), disabled, or erroring
 					it.State,
 					fmt.Sprintf("%d", it.Rule.GeneratedAlerts),
 					string(it.Rule.Severity),
+					parseOSTarget(it.Rule.S1QL),
 					string(it.Rule.Scope),
 					response,
 				}
@@ -131,4 +136,34 @@ with alerts), silent (active with zero alerts), disabled, or erroring
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	return cmd
+}
+
+var (
+	osEqualRe = regexp.MustCompile(`(?i)endpoint\.os\s*=\s*'([^']+)'`)
+	osInRe    = regexp.MustCompile(`(?i)endpoint\.os\s+in\s*\(([^)]+)\)`)
+	osValRe   = regexp.MustCompile(`'([^']+)'`)
+)
+
+func parseOSTarget(s1ql string) string {
+	seen := map[string]bool{}
+	var oses []string
+	addOS := func(os string) {
+		os = strings.ToLower(os)
+		if !seen[os] {
+			seen[os] = true
+			oses = append(oses, os)
+		}
+	}
+	for _, m := range osEqualRe.FindAllStringSubmatch(s1ql, -1) {
+		addOS(m[1])
+	}
+	for _, m := range osInRe.FindAllStringSubmatch(s1ql, -1) {
+		for _, v := range osValRe.FindAllStringSubmatch(m[1], -1) {
+			addOS(v[1])
+		}
+	}
+	if len(oses) == 0 {
+		return "any"
+	}
+	return strings.Join(oses, ",")
 }

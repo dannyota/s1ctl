@@ -16,10 +16,19 @@ Count CRITICAL alerts:
 s1ctl alerts count --severity CRITICAL
 ```
 
-Resolve alerts in bulk:
+Filter alerts by detection source:
+
+```bash
+s1ctl alerts list --status NEW --source STAR
+s1ctl alerts list --source EDR --severity CRITICAL
+```
+
+Resolve alerts in bulk by ID or name pattern:
 
 ```bash
 s1ctl alerts resolve <id1> <id2> <id3> --yes
+s1ctl alerts resolve --name "Package Manager" --yes
+s1ctl alerts resolve --source CWS --severity LOW --yes
 ```
 
 ## Investigate threats
@@ -123,6 +132,7 @@ See what a specific rule is catching:
 
 ```bash
 s1ctl rules detections "Suspicious SSH Login"
+s1ctl rules detections "Certipy" --group-by agent --all
 ```
 
 Validate rule YAML files before deploying:

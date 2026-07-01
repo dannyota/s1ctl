@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/spf13/cobra"
 
@@ -10,7 +11,7 @@ import (
 
 func newRulesDetectionsCmd() *cobra.Command {
 	var siteIDs, severity, status []string
-	var since, cursor, sortBy, sortOrder string
+	var since, cursor, sortBy, sortOrder, groupBy string
 	var limit int
 	var all bool
 
@@ -64,6 +65,10 @@ Shows what a specific rule is catching.`,
 				return err
 			}
 
+			if groupBy == "agent" {
+				return printDetectionsByAgent(cmd, alerts, total)
+			}
+
 			headers := []string{"Alert ID", "Agent", "Event", "Severity", "Status", "Reported"}
 			rows := make([][]string, len(alerts))
 			for i, a := range alerts {
@@ -88,5 +93,40 @@ Shows what a specific rule is catching.`,
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (default: id)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (default: desc)")
+	cmd.Flags().StringVar(&groupBy, "group-by", "", "group results (agent)")
 	return cmd
+}
+
+func printDetectionsByAgent(cmd *cobra.Command, alerts []mgmt.CloudDetectionAlert, total int) error {
+	type agentSummary struct {
+		Name  string `json:"name"`
+		OS    string `json:"os"`
+		Count int    `json:"count"`
+	}
+	counts := map[string]*agentSummary{}
+	for _, a := range alerts {
+		name := orDash(a.AgentDetectionInfo.Name)
+		s, ok := counts[name]
+		if !ok {
+			s = &agentSummary{Name: name, OS: orDash(a.AgentDetectionInfo.OSFamily)}
+			counts[name] = s
+		}
+		s.Count++
+	}
+	sorted := make([]*agentSummary, 0, len(counts))
+	for _, s := range counts {
+		sorted = append(sorted, s)
+	}
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Count > sorted[j].Count })
+
+	if outputFormat == "json" {
+		return printJSON(cmd.OutOrStdout(), sorted)
+	}
+
+	headers := []string{"Agent", "OS", "Detections"}
+	rows := make([][]string, len(sorted))
+	for i, s := range sorted {
+		rows[i] = []string{truncate(s.Name, 30), s.OS, fmt.Sprintf("%d", s.Count)}
+	}
+	return printOutput(cmd.OutOrStdout(), headers, rows, sorted, len(sorted), total, "agent", false)
 }

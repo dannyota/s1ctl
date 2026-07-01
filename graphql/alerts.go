@@ -18,6 +18,12 @@ type AlertAnalytics struct {
 	Name string `json:"name"`
 }
 
+// AlertAsset identifies the endpoint associated with an alert.
+type AlertAsset struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // Alert is a UAM unified alert.
 type Alert struct {
 	ID              string `json:"id"`
@@ -35,11 +41,22 @@ type Alert struct {
 
 	DetectionSource AlertDetectionSource `json:"detectionSource"`
 	Analytics       *AlertAnalytics      `json:"analytics"`
+	Assets          []AlertAsset         `json:"assets"`
 	RealTime        struct {
 		Scope ScopeInfo `json:"scope"`
 	} `json:"realTime"`
 
 	Raw json.RawMessage `json:"-"`
+}
+
+// AgentName returns the name of the first asset, or empty string.
+func (a *Alert) AgentName() string {
+	for _, asset := range a.Assets {
+		if asset.Name != "" {
+			return asset.Name
+		}
+	}
+	return ""
 }
 
 func (a *Alert) UnmarshalJSON(b []byte) error {
@@ -70,6 +87,7 @@ const alertsQuery = `query Alerts($first: Int, $after: String, $filters: [Filter
         storylineId
         detectionSource { product vendor }
         analytics { uid name }
+        assets { id name }
         realTime { scope { account { id name } site { id name } } }
       }
     }
@@ -110,6 +128,7 @@ const alertGetQuery = `query AlertGet($id: ID!) {
     storylineId
     detectionSource { product vendor }
     analytics { uid name }
+    assets { id name }
     realTime { scope { account { id name } site { id name } } }
   }
 }`
@@ -137,7 +156,7 @@ const alertTriggerActionsMutation = `mutation AlertTriggerActions($actions: [Tri
 func (c *Client) AlertsUpdateStatus(ctx context.Context, ids []string, status string) error {
 	vars := map[string]any{
 		"actions": []map[string]any{{
-			"id":      "status",
+			"id":      "S1/alert/statusUpdate",
 			"payload": map[string]any{"status": map[string]any{"value": status}},
 		}},
 		"filter": orFilterByIDs(ids),
@@ -149,7 +168,7 @@ func (c *Client) AlertsUpdateStatus(ctx context.Context, ids []string, status st
 func (c *Client) AlertsUpdateVerdict(ctx context.Context, ids []string, verdict string) error {
 	vars := map[string]any{
 		"actions": []map[string]any{{
-			"id":      "analystVerdict",
+			"id":      "S1/alert/analystVerdictUpdate",
 			"payload": map[string]any{"analystVerdict": map[string]any{"value": verdict}},
 		}},
 		"filter": orFilterByIDs(ids),

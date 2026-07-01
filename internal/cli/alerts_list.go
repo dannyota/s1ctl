@@ -25,7 +25,7 @@ func newAlertsCmd() *cobra.Command {
 }
 
 func newAlertsListCmd() *cobra.Command {
-	var severities, statuses, verdicts []string
+	var severities, statuses, verdicts, sources []string
 	var after, sortBy, sortOrder string
 	var limit int
 	var all bool
@@ -90,12 +90,28 @@ func newAlertsListCmd() *cobra.Command {
 				return err
 			}
 
-			headers := []string{"ID", "Name", "Severity", "Status", "Verdict", "Detected"}
+			if len(sources) > 0 {
+				sourceSet := make(map[string]bool, len(sources))
+				for _, s := range sources {
+					sourceSet[strings.ToUpper(s)] = true
+				}
+				filtered := alerts[:0]
+				for _, a := range alerts {
+					if sourceSet[strings.ToUpper(a.DetectionSource.Product)] {
+						filtered = append(filtered, a)
+					}
+				}
+				alerts = filtered
+			}
+
+			headers := []string{"ID", "Name", "Agent", "Severity", "Source", "Status", "Detected"}
 			rows := make([][]string, len(alerts))
 			for i, a := range alerts {
 				rows[i] = []string{
-					a.ID, truncate(orDash(a.Name), 40), a.Severity,
-					a.Status, a.AnalystVerdict, orDash(a.DetectedAt),
+					a.ID, truncate(orDash(a.Name), 35),
+					truncate(orDash(a.AgentName()), 20),
+					a.Severity, orDash(a.DetectionSource.Product),
+					a.Status, orDash(a.DetectedAt),
 				}
 			}
 			return printOutput(cmd.OutOrStdout(), headers, rows, alerts, len(alerts), int(total), "alert", all)
@@ -104,6 +120,7 @@ func newAlertsListCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
 	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, RESOLVED, etc.)")
 	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
+	cmd.Flags().StringSliceVar(&sources, "source", nil, "filter by detection source (STAR, EDR, CWS)")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&after, "after", "", "pagination cursor")
@@ -192,12 +209,13 @@ func newAlertsGetCmd() *cobra.Command {
 				{"Classification", orDash(a.Classification)},
 				{"Confidence", orDash(a.ConfidenceLevel)},
 				{"Verdict", orDash(a.AnalystVerdict)},
+				{"Agent", orDash(a.AgentName())},
 				{"Detected", orDash(a.DetectedAt)},
 				{"Created", orDash(a.CreatedAt)},
 				{"Updated", orDash(a.UpdatedAt)},
 				{"Storyline ID", orDash(a.StorylineID)},
-				{"Detection Product", orDash(a.DetectionSource.Product)},
-				{"Detection Vendor", orDash(a.DetectionSource.Vendor)},
+				{"Source", orDash(a.DetectionSource.Product)},
+				{"Vendor", orDash(a.DetectionSource.Vendor)},
 				{"Analytics UID", analyticsUID},
 				{"Account", orDash(a.RealTime.Scope.Account.Name)},
 				{"Site", orDash(a.RealTime.Scope.Site.Name)},
