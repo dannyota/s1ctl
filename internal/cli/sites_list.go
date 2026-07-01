@@ -21,8 +21,9 @@ func newSitesCmd() *cobra.Command {
 
 func newSitesListCmd() *cobra.Command {
 	var accountIDs, states []string
-	var query string
+	var query, cursor, sortBy, sortOrder string
 	var limit int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -32,34 +33,57 @@ func newSitesListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			sites, pag, err := c.SitesList(cmd.Context(), &mgmt.SiteListParams{
+			params := &mgmt.SiteListParams{
 				AccountIDs: accountIDs,
 				States:     states,
 				Query:      query,
 				Limit:      limit,
-			})
+				Cursor:     cursor,
+				SortBy:     sortBy,
+				SortOrder:  sortOrder,
+			}
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
+
+			var sites []mgmt.Site
+			var total int
+
+			if all {
+				sites, total, err = fetchAllREST("site", func(cur string) ([]mgmt.Site, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.SitesList(cmd.Context(), params)
+				})
+			} else {
+				var pag *mgmt.Pagination
+				sites, pag, err = c.SitesList(cmd.Context(), params)
+				if pag != nil {
+					total = pag.TotalItems
+				}
+			}
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
-				return printJSON(sites)
-			}
-			var rows [][]string
-			for _, s := range sites {
-				rows = append(rows, []string{
+
+			headers := []string{"ID", "Name", "State", "Type", "Licenses"}
+			rows := make([][]string, len(sites))
+			for i, s := range sites {
+				rows[i] = []string{
 					s.ID, s.Name, s.State, s.SiteType,
 					fmt.Sprintf("%d / %d", s.ActiveLicenses, s.TotalLicenses),
-				})
+				}
 			}
-			printTable([]string{"ID", "Name", "State", "Type", "Licenses"}, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(pag.TotalItems, "site"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, sites, len(sites), total, "site", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().StringSliceVar(&states, "state", nil, "filter by state")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
+	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. name, state)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -77,7 +101,7 @@ func newSitesGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(s)
 			}
 			rows := [][]string{

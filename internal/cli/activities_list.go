@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/mgmt"
@@ -20,7 +18,9 @@ func newActivitiesCmd() *cobra.Command {
 
 func newActivitiesListCmd() *cobra.Command {
 	var siteIDs []string
+	var cursor string
 	var limit int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -30,28 +30,47 @@ func newActivitiesListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			activities, pag, err := c.ActivitiesList(cmd.Context(), &mgmt.ActivityListParams{
+			params := &mgmt.ActivityListParams{
 				SiteIDs: siteIDs,
 				Limit:   limit,
-			})
+				Cursor:  cursor,
+			}
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
+
+			var activities []mgmt.Activity
+			var total int
+
+			if all {
+				activities, total, err = fetchAllREST("activity", func(cur string) ([]mgmt.Activity, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.ActivitiesList(cmd.Context(), params)
+				})
+			} else {
+				var pag *mgmt.Pagination
+				activities, pag, err = c.ActivitiesList(cmd.Context(), params)
+				if pag != nil {
+					total = pag.TotalItems
+				}
+			}
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
-				return printJSON(activities)
-			}
-			var rows [][]string
-			for _, a := range activities {
-				rows = append(rows, []string{
+
+			headers := []string{"ID", "Description", "Site", "Created"}
+			rows := make([][]string, len(activities))
+			for i, a := range activities {
+				rows[i] = []string{
 					a.ID, truncate(a.PrimaryDesc, 60), a.SiteName, a.CreatedAt,
-				})
+				}
 			}
-			printTable([]string{"ID", "Description", "Site", "Created"}, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(pag.TotalItems, "activity"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, activities, len(activities), total, "activity", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	return cmd
 }

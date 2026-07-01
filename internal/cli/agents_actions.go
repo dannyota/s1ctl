@@ -45,7 +45,7 @@ func newAgentActionCmd(verb, short string, fn agentActionFn) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(map[string]int{"affected": affected})
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", verb, pluralize(affected, "agent"))

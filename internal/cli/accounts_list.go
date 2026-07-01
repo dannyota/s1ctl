@@ -21,8 +21,9 @@ func newAccountsCmd() *cobra.Command {
 
 func newAccountsListCmd() *cobra.Command {
 	var states []string
-	var query string
+	var query, cursor string
 	var limit int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -32,33 +33,52 @@ func newAccountsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			accounts, pag, err := c.AccountsList(cmd.Context(), &mgmt.AccountListParams{
+			params := &mgmt.AccountListParams{
 				States: states,
 				Query:  query,
 				Limit:  limit,
-			})
+				Cursor: cursor,
+			}
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
+
+			var accounts []mgmt.Account
+			var total int
+
+			if all {
+				accounts, total, err = fetchAllREST("account", func(cur string) ([]mgmt.Account, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.AccountsList(cmd.Context(), params)
+				})
+			} else {
+				var pag *mgmt.Pagination
+				accounts, pag, err = c.AccountsList(cmd.Context(), params)
+				if pag != nil {
+					total = pag.TotalItems
+				}
+			}
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
-				return printJSON(accounts)
-			}
-			var rows [][]string
-			for _, a := range accounts {
-				rows = append(rows, []string{
+
+			headers := []string{"ID", "Name", "State", "Type", "Licenses", "Sites"}
+			rows := make([][]string, len(accounts))
+			for i, a := range accounts {
+				rows[i] = []string{
 					a.ID, a.Name, a.State, a.AccountType,
 					fmt.Sprintf("%d / %d", a.ActiveLicenses, a.TotalLicenses),
 					fmt.Sprint(a.NumberOfSites),
-				})
+				}
 			}
-			printTable([]string{"ID", "Name", "State", "Type", "Licenses", "Sites"}, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(pag.TotalItems, "account"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, accounts, len(accounts), total, "account", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&states, "state", nil, "filter by state")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	return cmd
 }
 
@@ -76,7 +96,7 @@ func newAccountsGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(a)
 			}
 			rows := [][]string{

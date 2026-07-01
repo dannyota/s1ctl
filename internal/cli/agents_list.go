@@ -23,8 +23,9 @@ func newAgentsCmd() *cobra.Command {
 
 func newAgentsListCmd() *cobra.Command {
 	var siteIDs, groupIDs, osTypes []string
-	var query string
+	var query, cursor, sortBy, sortOrder string
 	var limit int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -34,36 +35,59 @@ func newAgentsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			agents, pag, err := c.AgentsList(cmd.Context(), &mgmt.AgentListParams{
-				SiteIDs:  siteIDs,
-				GroupIDs: groupIDs,
-				OSTypes:  osTypes,
-				Query:    query,
-				Limit:    limit,
-			})
+			params := &mgmt.AgentListParams{
+				SiteIDs:   siteIDs,
+				GroupIDs:  groupIDs,
+				OSTypes:   osTypes,
+				Query:     query,
+				Limit:     limit,
+				Cursor:    cursor,
+				SortBy:    sortBy,
+				SortOrder: sortOrder,
+			}
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
+
+			var agents []mgmt.Agent
+			var total int
+
+			if all {
+				agents, total, err = fetchAllREST("agent", func(cur string) ([]mgmt.Agent, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.AgentsList(cmd.Context(), params)
+				})
+			} else {
+				var pag *mgmt.Pagination
+				agents, pag, err = c.AgentsList(cmd.Context(), params)
+				if pag != nil {
+					total = pag.TotalItems
+				}
+			}
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
-				return printJSON(agents)
-			}
-			var rows [][]string
-			for _, a := range agents {
-				rows = append(rows, []string{
+
+			headers := []string{"ID", "Name", "OS", "Version", "Network", "Active", "Site"}
+			rows := make([][]string, len(agents))
+			for i, a := range agents {
+				rows[i] = []string{
 					a.ID, a.ComputerName, a.OSType, a.AgentVersion,
 					a.NetworkStatus, boolIcon(a.IsActive), a.SiteName,
-				})
+				}
 			}
-			printTable([]string{"ID", "Name", "OS", "Version", "Network", "Active", "Site"}, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(pag.TotalItems, "agent"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, agents, len(agents), total, "agent", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "filter by group ID")
 	cmd.Flags().StringSliceVar(&osTypes, "os-type", nil, "filter by OS type")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
+	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. computerName, lastActiveDate)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -81,7 +105,7 @@ func newAgentsGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(agent)
 			}
 			rows := [][]string{
@@ -119,7 +143,7 @@ func newAgentsCountCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(map[string]int{"count": count})
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), count)

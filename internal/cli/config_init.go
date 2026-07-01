@@ -96,7 +96,7 @@ func runConfigShow(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if jsonOutput {
+	if outputFormat == "json" {
 		out := map[string]string{
 			"console_url": inst.ConsoleURL,
 			"token":       "(redacted)",

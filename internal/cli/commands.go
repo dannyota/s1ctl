@@ -19,7 +19,7 @@ type cmdEntry struct {
 func runCommands(cmd *cobra.Command, _ []string) error {
 	entries := collectCommands(cmd.Root(), "")
 
-	if jsonOutput {
+	if outputFormat == "json" {
 		return printJSON(entries)
 	}
 

@@ -19,7 +19,7 @@ func newVersionCmd() *cobra.Command {
 		Short: "Print version information",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(map[string]string{
 					"version": version,
 					"commit":  commit,

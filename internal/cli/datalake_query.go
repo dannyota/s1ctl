@@ -57,10 +57,16 @@ func runPowerQueryGraphQL(cmd *cobra.Command, query, startTime, endTime string) 
 		return err
 	}
 	c := sdl.NewClient(consoleURL, token)
-	resp, err := c.PowerQueryGraphQL(cmd.Context(), &sdl.PowerQueryRequest{
+	req := &sdl.PowerQueryRequest{
 		Query:     query,
 		StartTime: startTime,
 		EndTime:   endTime,
+	}
+	var resp *sdl.PowerQueryResponse
+	err = runWithSpinner("Running query...", func() error {
+		var queryErr error
+		resp, queryErr = c.PowerQueryGraphQL(cmd.Context(), req)
+		return queryErr
 	})
 	if err != nil {
 		return err
@@ -73,11 +79,17 @@ func runPowerQueryREST(cmd *cobra.Command, query, startTime, endTime, priority s
 	if err != nil {
 		return err
 	}
-	resp, err := c.PowerQuery(cmd.Context(), &sdl.PowerQueryRequest{
+	req := &sdl.PowerQueryRequest{
 		Query:     query,
 		StartTime: startTime,
 		EndTime:   endTime,
 		Priority:  priority,
+	}
+	var resp *sdl.PowerQueryResponse
+	err = runWithSpinner("Running query...", func() error {
+		var queryErr error
+		resp, queryErr = c.PowerQuery(cmd.Context(), req)
+		return queryErr
 	})
 	if err != nil {
 		return err
@@ -86,10 +98,10 @@ func runPowerQueryREST(cmd *cobra.Command, query, startTime, endTime, priority s
 }
 
 func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse) error {
-	if jsonOutput {
-		return printJSON(resp)
-	}
 	if len(resp.Columns) == 0 {
+		if outputFormat == "json" {
+			return printJSON(resp)
+		}
 		fmt.Fprintln(cmd.OutOrStdout(), "No results.")
 		return nil
 	}
@@ -97,17 +109,15 @@ func printPowerQueryResult(cmd *cobra.Command, resp *sdl.PowerQueryResponse) err
 	for i, col := range resp.Columns {
 		headers[i] = col.Name
 	}
-	var rows [][]string
-	for _, row := range resp.Values {
+	rows := make([][]string, len(resp.Values))
+	for i, row := range resp.Values {
 		cells := make([]string, len(row))
-		for i, v := range row {
-			cells[i] = truncate(fmt.Sprint(v), 60)
+		for j, v := range row {
+			cells[j] = truncate(fmt.Sprint(v), 60)
 		}
-		rows = append(rows, cells)
+		rows[i] = cells
 	}
-	printTable(headers, rows)
-	fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(len(resp.Values), "row"))
-	return nil
+	return printOutput(cmd.OutOrStdout(), headers, rows, resp, len(resp.Values), len(resp.Values), "row", true)
 }
 
 func sdlClient() (*sdl.Client, error) {

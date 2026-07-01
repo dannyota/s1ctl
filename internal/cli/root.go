@@ -7,19 +7,33 @@ import (
 )
 
 var (
-	jsonOutput bool
-	configFile string
+	outputFormat string
+	verbose      bool
+	noProgress   bool
+	configFile   string
 )
 
+const defaultPageSize = 50
+
 func newRootCmd() *cobra.Command {
+	var jsonFlag bool
+
 	cmd := &cobra.Command{
 		Use:           "s1ctl",
 		Short:         "CLI for SentinelOne Singularity Platform",
 		Long:          "Operate SentinelOne Singularity Platform as code — pull, diff, push.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		PersistentPreRun: func(_ *cobra.Command, _ []string) {
+			if jsonFlag {
+				outputFormat = "json"
+			}
+		},
 	}
-	cmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "output as JSON")
+	cmd.PersistentFlags().StringVar(&outputFormat, "output", "table", "output format (table, json, csv)")
+	cmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "shorthand for --output json")
+	cmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "show detailed error information")
+	cmd.PersistentFlags().BoolVar(&noProgress, "no-progress", false, "disable spinners and progress output")
 	cmd.PersistentFlags().StringVar(&configFile, "config", "", "config file (default ~/.s1ctl/config.yaml)")
 	return cmd
 }
@@ -35,7 +49,7 @@ func Execute() int {
 	root := newRootCmd()
 	registerCommands(root)
 	if err := root.Execute(); err != nil {
-		root.PrintErrln("Error:", err)
+		printError(root.ErrOrStderr(), err)
 		return 1
 	}
 	return 0

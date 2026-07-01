@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/mgmt"
@@ -20,8 +18,9 @@ func newUsersCmd() *cobra.Command {
 }
 
 func newUsersListCmd() *cobra.Command {
-	var query string
+	var query, cursor, sortBy, sortOrder string
 	var limit int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -31,29 +30,52 @@ func newUsersListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			users, pag, err := c.UsersList(cmd.Context(), &mgmt.UserListParams{
-				Query: query,
-				Limit: limit,
-			})
+			params := &mgmt.UserListParams{
+				Query:     query,
+				Limit:     limit,
+				Cursor:    cursor,
+				SortBy:    sortBy,
+				SortOrder: sortOrder,
+			}
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
+
+			var users []mgmt.User
+			var total int
+
+			if all {
+				users, total, err = fetchAllREST("user", func(cur string) ([]mgmt.User, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.UsersList(cmd.Context(), params)
+				})
+			} else {
+				var pag *mgmt.Pagination
+				users, pag, err = c.UsersList(cmd.Context(), params)
+				if pag != nil {
+					total = pag.TotalItems
+				}
+			}
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
-				return printJSON(users)
-			}
-			var rows [][]string
-			for _, u := range users {
-				rows = append(rows, []string{
+
+			headers := []string{"ID", "Name", "Email", "Scope", "Source"}
+			rows := make([][]string, len(users))
+			for i, u := range users {
+				rows[i] = []string{
 					u.ID, u.FullName, u.Email, u.Scope, u.Source,
-				})
+				}
 			}
-			printTable([]string{"ID", "Name", "Email", "Scope", "Source"}, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(pag.TotalItems, "user"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, users, len(users), total, "user", all)
 		},
 	}
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
+	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. fullName, email)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -71,7 +93,7 @@ func newUsersGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(u)
 			}
 			rows := [][]string{

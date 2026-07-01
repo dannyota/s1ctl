@@ -44,13 +44,13 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 		checkSDL(ctx, cfg.SDLURL, token),
 	}
 
-	if jsonOutput {
+	if outputFormat == "json" {
 		return printJSON(results)
 	}
 
 	allOK := true
 	for _, r := range results {
-		status := dimStyle.Render("ok")
+		status := "ok"
 		if !r.OK {
 			status = "FAIL"
 			allOK = false

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -22,8 +21,9 @@ func newGroupsCmd() *cobra.Command {
 
 func newGroupsListCmd() *cobra.Command {
 	var siteIDs []string
-	var query string
+	var query, cursor, sortBy, sortOrder string
 	var limit int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -33,32 +33,55 @@ func newGroupsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			groups, pag, err := c.GroupsList(cmd.Context(), &mgmt.GroupListParams{
-				SiteIDs: siteIDs,
-				Query:   query,
-				Limit:   limit,
-			})
+			params := &mgmt.GroupListParams{
+				SiteIDs:   siteIDs,
+				Query:     query,
+				Limit:     limit,
+				Cursor:    cursor,
+				SortBy:    sortBy,
+				SortOrder: sortOrder,
+			}
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
+
+			var groups []mgmt.Group
+			var total int
+
+			if all {
+				groups, total, err = fetchAllREST("group", func(cur string) ([]mgmt.Group, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.GroupsList(cmd.Context(), params)
+				})
+			} else {
+				var pag *mgmt.Pagination
+				groups, pag, err = c.GroupsList(cmd.Context(), params)
+				if pag != nil {
+					total = pag.TotalItems
+				}
+			}
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
-				return printJSON(groups)
-			}
-			var rows [][]string
-			for _, g := range groups {
-				rows = append(rows, []string{
+
+			headers := []string{"ID", "Name", "Type", "Agents", "Default", "Site"}
+			rows := make([][]string, len(groups))
+			for i, g := range groups {
+				rows[i] = []string{
 					g.ID, g.Name, g.Type, strconv.Itoa(g.TotalAgents),
 					boolIcon(g.IsDefault), g.SiteID,
-				})
+				}
 			}
-			printTable([]string{"ID", "Name", "Type", "Agents", "Default", "Site"}, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(pag.TotalItems, "group"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, groups, len(groups), total, "group", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
+	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. name, type)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -76,7 +99,7 @@ func newGroupsGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(g)
 			}
 			rows := [][]string{

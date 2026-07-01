@@ -32,6 +32,7 @@ A global `--output` flag replaces the current `--json` boolean:
 | `--all` | All list commands | Auto-paginate until exhausted |
 | `--cursor` | REST list commands | Resume from a cursor value |
 | `--after` | GraphQL list commands | Resume from an end cursor |
+| `--no-progress` | Global | Disable spinners and progress (for scripts/AI agents) |
 
 ### Footer
 
@@ -94,7 +95,10 @@ A TTY-aware spinner using bubbletea (already a dependency):
 | `--all` pagination | `Fetching <resource>... N/total` (or `N fetched` if total unknown) |
 
 Spinners render on stderr so stdout stays clean for piping. Suppressed
-entirely when stderr is not a TTY.
+entirely when stderr is not a TTY or when `--no-progress` is passed.
+
+`--no-progress` is useful when AI agents or scripts consume s1ctl output and
+need clean, predictable output without ANSI escape sequences.
 
 ## Error handling
 

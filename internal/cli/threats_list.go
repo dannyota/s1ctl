@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/mgmt"
@@ -22,8 +20,9 @@ func newThreatsCmd() *cobra.Command {
 
 func newThreatsListCmd() *cobra.Command {
 	var siteIDs, classifications, statuses, verdicts []string
-	var query string
+	var query, cursor, sortBy, sortOrder string
 	var limit int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -33,30 +32,49 @@ func newThreatsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			threats, pag, err := c.ThreatsList(cmd.Context(), &mgmt.ThreatListParams{
+			params := &mgmt.ThreatListParams{
 				SiteIDs:          siteIDs,
 				Classifications:  classifications,
 				IncidentStatuses: statuses,
 				AnalystVerdicts:  verdicts,
 				Query:            query,
 				Limit:            limit,
-			})
+				Cursor:           cursor,
+				SortBy:           sortBy,
+				SortOrder:        sortOrder,
+			}
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
+
+			var threats []mgmt.Threat
+			var total int
+
+			if all {
+				threats, total, err = fetchAllREST("threat", func(cur string) ([]mgmt.Threat, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.ThreatsList(cmd.Context(), params)
+				})
+			} else {
+				var pag *mgmt.Pagination
+				threats, pag, err = c.ThreatsList(cmd.Context(), params)
+				if pag != nil {
+					total = pag.TotalItems
+				}
+			}
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
-				return printJSON(threats)
-			}
-			var rows [][]string
-			for _, t := range threats {
-				rows = append(rows, []string{
+
+			headers := []string{"ID", "Name", "Class", "Mitigation", "Verdict", "Status"}
+			rows := make([][]string, len(threats))
+			for i, t := range threats {
+				rows[i] = []string{
 					t.ID, truncate(t.ThreatName, 40), t.Classification,
 					t.MitigationStatus, t.AnalystVerdict, t.IncidentStatus,
-				})
+				}
 			}
-			printTable([]string{"ID", "Name", "Class", "Mitigation", "Verdict", "Status"}, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(pag.TotalItems, "threat"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, threats, len(threats), total, "threat", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
@@ -64,7 +82,11 @@ func newThreatsListCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by incident status")
 	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
+	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. createdAt, classification)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -82,7 +104,7 @@ func newThreatsGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(t)
 			}
 			rows := [][]string{

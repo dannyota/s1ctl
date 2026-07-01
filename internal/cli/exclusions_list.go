@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/mgmt"
@@ -22,8 +20,9 @@ func newExclusionsCmd() *cobra.Command {
 
 func newExclusionsListCmd() *cobra.Command {
 	var siteIDs, types, osTypes []string
-	var query string
+	var query, cursor, sortBy, sortOrder string
 	var limit int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -33,35 +32,58 @@ func newExclusionsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			exclusions, pag, err := c.ExclusionsList(cmd.Context(), &mgmt.ExclusionListParams{
-				SiteIDs: siteIDs,
-				Types:   types,
-				OSTypes: osTypes,
-				Query:   query,
-				Limit:   limit,
-			})
+			params := &mgmt.ExclusionListParams{
+				SiteIDs:   siteIDs,
+				Types:     types,
+				OSTypes:   osTypes,
+				Query:     query,
+				Limit:     limit,
+				Cursor:    cursor,
+				SortBy:    sortBy,
+				SortOrder: sortOrder,
+			}
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
+
+			var exclusions []mgmt.Exclusion
+			var total int
+
+			if all {
+				exclusions, total, err = fetchAllREST("exclusion", func(cur string) ([]mgmt.Exclusion, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.ExclusionsList(cmd.Context(), params)
+				})
+			} else {
+				var pag *mgmt.Pagination
+				exclusions, pag, err = c.ExclusionsList(cmd.Context(), params)
+				if pag != nil {
+					total = pag.TotalItems
+				}
+			}
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
-				return printJSON(exclusions)
-			}
-			var rows [][]string
-			for _, e := range exclusions {
-				rows = append(rows, []string{
+
+			headers := []string{"ID", "Type", "Value", "OS", "Mode"}
+			rows := make([][]string, len(exclusions))
+			for i, e := range exclusions {
+				rows[i] = []string{
 					e.ID, e.Type, truncate(e.Value, 50), e.OSType, e.Mode,
-				})
+				}
 			}
-			printTable([]string{"ID", "Type", "Value", "OS", "Mode"}, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(pag.TotalItems, "exclusion"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, exclusions, len(exclusions), total, "exclusion", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&types, "type", nil, "filter by exclusion type")
 	cmd.Flags().StringSliceVar(&osTypes, "os-type", nil, "filter by OS type")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
+	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. type, osType)")
+	cmd.Flags().StringVar(&sortOrder, "sort-order", "asc", "sort direction (asc, desc)")
 	return cmd
 }
 
@@ -79,7 +101,7 @@ func newExclusionsGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
+			if outputFormat == "json" {
 				return printJSON(e)
 			}
 			rows := [][]string{

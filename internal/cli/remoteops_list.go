@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -21,8 +20,9 @@ func newRemoteOpsCmd() *cobra.Command {
 
 func newRemoteOpsListCmd() *cobra.Command {
 	var siteIDs []string
-	var query string
+	var query, cursor string
 	var limit int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -32,31 +32,50 @@ func newRemoteOpsListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			scripts, pag, err := c.RemoteScriptsList(cmd.Context(), &mgmt.RemoteScriptListParams{
+			params := &mgmt.RemoteScriptListParams{
 				SiteIDs: siteIDs,
 				Query:   query,
 				Limit:   limit,
-			})
+				Cursor:  cursor,
+			}
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
+
+			var scripts []mgmt.RemoteScript
+			var total int
+
+			if all {
+				scripts, total, err = fetchAllREST("script", func(cur string) ([]mgmt.RemoteScript, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.RemoteScriptsList(cmd.Context(), params)
+				})
+			} else {
+				var pag *mgmt.Pagination
+				scripts, pag, err = c.RemoteScriptsList(cmd.Context(), params)
+				if pag != nil {
+					total = pag.TotalItems
+				}
+			}
 			if err != nil {
 				return err
 			}
-			if jsonOutput {
-				return printJSON(scripts)
-			}
-			var rows [][]string
-			for _, s := range scripts {
-				rows = append(rows, []string{
+
+			headers := []string{"ID", "File", "Type", "OS", "Creator"}
+			rows := make([][]string, len(scripts))
+			for i, s := range scripts {
+				rows[i] = []string{
 					s.ID, s.FileName, s.ScriptType,
 					strings.Join(s.OSTypes, ","), s.CreatorName,
-				})
+				}
 			}
-			printTable([]string{"ID", "File", "Type", "OS", "Creator"}, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(pag.TotalItems, "script"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, scripts, len(scripts), total, "script", all)
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringVar(&query, "query", "", "free text search")
-	cmd.Flags().IntVar(&limit, "limit", 0, "max results")
+	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
+	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	return cmd
 }
