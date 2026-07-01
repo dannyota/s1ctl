@@ -8,15 +8,11 @@ Build all three SDK packages as independently importable Go libraries.
 
 | Package | Surface | Methods |
 |---------|---------|---------|
-| `mgmt/` | REST MGMT API v2.1 | 68 (CRUD + actions across 15 resources) |
+| `mgmt/` | REST MGMT API v2.1 | 72 (CRUD + actions across 15 resources) |
 | `sdl/` | SDL REST + GraphQL | 13 (query, ingest, files, powerquery, GraphQL ops) |
-| `graphql/` | GraphQL APIs (4 domains) | 16 (alerts, misconfigs, vulns, cloud policies) |
+| `graphql/` | GraphQL APIs (4 domains) | 15 (alerts, misconfigs, vulns, cloud policies) |
 | `auth/` | Token management | 2 credential types |
 | `config/` | Instance config | Load, validate, resolve |
-
-SDK codegen (oapi-codegen for REST, genqlient for GraphQL) planned for future
-coverage expansion. Current SDK is hand-written and covers all high-priority
-operations.
 
 ## Wave 2 — Foundation (complete)
 
@@ -99,7 +95,6 @@ Wire remaining SDK mutations into CLI commands.
 
 - Progress indicators (bubbletea spinners for long operations)
 - Rate limiting (x/time/rate)
-- SDK codegen (oapi-codegen + genqlient) for broader coverage
 - Release automation (goreleaser — Win/Mac/Linux x amd64/arm64)
 - Docs site updates for all new commands
 - **Release v1.0.0**

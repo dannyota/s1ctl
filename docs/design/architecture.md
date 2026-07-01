@@ -81,18 +81,14 @@ canonical diff, dry-run by default, `--yes` to apply.
 
 ## SDK strategy
 
-The SDK is currently hand-written, covering all high-priority operations (100
-public methods across 3 packages). Codegen from specs is planned for broader
-coverage:
+The SDK is hand-written, covering 100 public methods across 3 packages. Each
+method is crafted against the API reference specs under `references/`.
 
-| Surface | Current | Planned generator | Source |
-|---------|---------|-------------------|--------|
-| REST MGMT | Hand-written (72 methods) | `oapi-codegen` | `references/rest/swagger_2_1.json` |
-| GraphQL | Hand-written (15 methods) | `genqlient` | `references/graphql/*.graphql` |
-| SDL | Hand-written (13 methods) | — | `references/sdl/*.md` |
-
-When codegen is wired, generated code is never edited directly. Hand-written
-wrappers live alongside in separate files.
+| Surface | Package | Methods | Reference |
+|---------|---------|---------|-----------|
+| REST MGMT | `mgmt/` | 72 | `references/rest/swagger_2_1.json` |
+| GraphQL | `graphql/` | 15 | `references/graphql/*.graphql` |
+| SDL | `sdl/` | 13 | `references/sdl/*.md` |
 
 ## CLI structure
 

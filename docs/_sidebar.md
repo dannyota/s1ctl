@@ -4,6 +4,7 @@
   - [Install](guides/install.md)
   - [Configure](guides/configure.md)
   - [Quickstart](guides/quickstart.md)
+  - [Go SDK](guides/sdk.md)
 
 - **Design**
   - [Architecture](design/architecture.md)
