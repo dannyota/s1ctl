@@ -17,14 +17,14 @@ a surface forward.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| agents | list, get, count | isolate, connect, scan, decommission | -- | built |
-| threats | list, get | mitigate, verdict, status | -- | built |
-| alerts | list (GraphQL) | -- | -- | built |
-| sites | list, get | -- | -- | built |
-| groups | list, get | -- | -- | built |
+| agents | list, get, count | isolate, connect, scan, decommission, update-software, move-to-site, fetch-logs, restart, enable, disable, reset-config, approve/reject-uninstall, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging | -- | built |
+| threats | list, get | mitigate, verdict, status, add-to-blacklist, fetch-file | -- | built |
+| alerts | list, get (GraphQL) | status, verdict | -- | built |
+| sites | list, get | create, update, delete | -- | built |
+| groups | list, get | create, update, delete | -- | built |
 | accounts | list, get | -- | -- | built |
-| policies | get | -- | -- | built |
-| exclusions | list, get | create, delete | pull/push | built |
+| policies | get (site, account, group) | update (site, account, group) | -- | built |
+| exclusions | list, get | create, update, delete | pull/push | built |
 
 ## Detection and response
 
@@ -32,24 +32,24 @@ a surface forward.
 |---------|------|-------|----------------|--------|
 | rules | list, get | create, update, delete | pull/push | designed |
 | visibility | query | -- | -- | designed |
-| remoteops | list | -- | -- | built |
+| remoteops | list, get | -- | -- | built |
 
 ## Application and device control
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | applications | list | -- | -- | built |
-| devices | list | -- | -- | built |
-| firewall | list | -- | -- | built |
+| devices | list, get | -- | -- | built |
+| firewall | list, get | -- | -- | built |
 | network | list, get | quarantine | -- | -- |
 
 ## Cloud and vulnerability management
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| vulnerabilities | list, query, export | triage, notes | -- | designed |
-| misconfigurations | list, query, export | triage, notes | -- | designed |
-| cloud policies | list, get | create, update, delete | pull/push | designed |
+| vulnerabilities | list, get (GraphQL) | status, verdict | -- | built |
+| misconfigurations | list, get (GraphQL) | status, verdict | -- | built |
+| cloud policies | list, get (GraphQL) | -- | pull/push | built |
 | cloud onboarding | list, get | onboard, delete | -- | designed |
 | cloud compliance | -- | -- | -- | blocked |
 
@@ -57,16 +57,17 @@ a surface forward.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| datalake | powerquery | -- | -- | built |
+| datalake | powerquery (GraphQL + REST), query, facet, timeseries | addEvents, uploadLogs | -- | built |
+| files | getFile, listFiles | putFile | -- | built |
 
 ## Platform administration
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| users | list, get | -- | -- | built |
+| users | list, get | delete | -- | built |
 | settings | list, get | update | pull/push | -- |
-| updates | list | -- | -- | built |
-| tags | list | -- | -- | built |
+| updates | list, get | -- | -- | built |
+| tags | list, get | create, update, delete | -- | built |
 | activities | list | -- | -- | built |
 
 ## Automation and integration
