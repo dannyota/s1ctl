@@ -1,7 +1,8 @@
 # Catalog
 
 Implementation status for every surface. Updated in the same commit that moves
-a surface forward.
+a surface forward. Read/Write columns list the union of CLI verbs and SDK
+methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 
 ## Status legend
 
@@ -17,40 +18,44 @@ a surface forward.
 
 | Surface | Commands | Status |
 |---------|----------|--------|
-| status | health summary dashboard | built |
+| status | health summary dashboard; capabilities, enums, surfaces | built |
 | version | version info | built |
 | doctor | config diagnostics | built |
-| config | init wizard | built |
+| config | init wizard, show | built |
 | commands | list all commands | built |
+| completion | shell completions | built |
 
 ## Endpoint security
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| agents | list, get, count, outdated, versions, health | isolate, connect, scan, decommission, upgrade, move-to-site, fetch-logs, restart, enable, disable, reset-config, approve/reject-uninstall, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging | -- | built |
-| threats | list, get, count | mitigate, verdict, status, resolve, add-to-blacklist, fetch-file | -- | built |
-| alerts | list, get, count (GraphQL) | status, verdict, resolve, add-note | -- | built |
-| sites | list, get | create, update, delete | -- | built |
+| agents | list, get, count, outdated, versions, health | isolate, reconnect (by ID or filter), scan, abort-scan, decommission, uninstall, approve/reject-uninstall, upgrade (by package ID, file name, or path), move, fetch-logs, restart, shutdown, enable, disable, reset-config, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging | -- | built |
+| threats | list, get, count, notes, timeline | mitigate, verdict, status, resolve, add-note, add-to-blacklist, fetch-file | -- | built |
+| alerts | list, get, count, history, stats (GraphQL) | status, verdict, resolve, add-note | -- | built |
+| sites | list, get, count, licenses | create, update, delete | -- | built |
 | groups | list, get, count | create, update, delete | -- | built |
-| accounts | list, get | -- | -- | built |
-| policies | list, get, diff (site, account, group) | update (site, account, group) | pull/push | built |
+| accounts | list, get, count | -- | -- | built |
+| policies | list, get, diff (site, account, group scopes) | update, revert (per scope) | pull/push | built |
 | exclusions | list, get | create, update, delete | pull/push | built |
+| unified-exclusions | list, count, export | create | -- | built |
 
 ## Detection and response
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| rules | list, get, health, trends, detections, diff, validate | create, update, delete, enable, disable | pull/push | built |
+| rules | list, get, health, trends, detections, diff, validate | create, update, enable, disable | pull/push | built |
+| detection-library | list, surfaces, data-sources | enable, disable | -- | built |
+| iocs | list, config | create, delete | -- | built |
 | visibility | query | -- | -- | built |
-| remoteops | list, get | -- | -- | built |
+| remoteops | list, get, results | run | -- | built |
 
 ## Application and device control
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| applications | list | -- | -- | built |
-| devicecontrol | list, get | -- | pull/push | built |
-| firewall | list, get | -- | pull/push | built |
+| applications | list, cves, risks | -- | -- | built |
+| devicecontrol | list, get, events | create, update, delete, enable, disable, reorder, copy | pull/push | built |
+| firewall | list, get, protocols, export | create, update, delete, enable, disable, reorder, copy, import | pull/push | built |
 | network | list, get | quarantine | -- | -- |
 
 ## Cloud and vulnerability management
@@ -59,7 +64,7 @@ a surface forward.
 |---------|------|-------|----------------|--------|
 | vulnerabilities | list, get, health (GraphQL) | status, verdict | -- | built |
 | misconfigurations | list, get (GraphQL) | status, verdict | -- | built |
-| cloud policies | list, get (GraphQL) | -- | pull/push | built |
+| cloud policies | list, get (GraphQL) | enable, disable, delete | -- | built |
 | cloud onboarding | list, get | onboard, delete | -- | designed |
 | cloud compliance | -- | -- | -- | blocked |
 
@@ -75,10 +80,14 @@ a surface forward.
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | users | list, get | delete | -- | built |
-| settings | list, get | update | pull/push | -- |
+| settings | list, get | update, test | -- | built |
 | updates | list, get | -- | -- | built |
+| upgrade-policies | list, get, packages | create, update, delete, activate, deactivate | -- | built |
 | tags | list, get | create, update, delete | -- | built |
-| activities | list | -- | -- | built |
+| activities | list, count, export, types | -- | -- | built |
+| audit | list (local mutation log) | -- | -- | built |
+| reports | list, tasks, types, download | create | -- | built |
+| system | info | -- | -- | built |
 
 ## Automation and integration
 
@@ -91,10 +100,12 @@ a surface forward.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
+| assets (XDR) | overview, categories | -- | -- | built |
 | inventory | list, get (all types) | tags, actions | -- | -- |
 
 ## Identity
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
+| ranger-ad | status, exposures, affected-objects | assess | -- | built |
 | identity | list, get | configure | -- | -- |
