@@ -43,17 +43,12 @@ func runStatusEnums(cmd *cobra.Command, filter string) error {
 		groups = filtered
 	}
 
-	if outputFormat == "json" {
-		return printJSON(cmd.OutOrStdout(), groups)
-	}
-
 	headers := []string{"Group", "Field", "Values"}
 	rows := make([][]string, len(groups))
 	for i, g := range groups {
 		rows[i] = []string{g.Group, g.Field, strings.Join(g.Values, ", ")}
 	}
-	printTable(headers, rows)
-	return nil
+	return printOutput(cmd.OutOrStdout(), headers, rows, groups, len(groups), len(groups), "enum group", true)
 }
 
 func allEnumGroups() []enumGroup {

@@ -248,6 +248,9 @@ is given, new rules are created at the global (tenant) scope.`,
 					}
 					updated++
 				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"created": created, "updated": updated})
+				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
 					pluralize(created, "device rule"),
 					pluralize(updated, "device rule"))

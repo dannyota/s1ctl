@@ -25,7 +25,7 @@ Export activities as CSV
 s1ctl activities export [flags]
 ```
 
-Bulk export the activity log as CSV. Output goes to stdout by default, or to a file with --output.
+Bulk export the activity log as CSV. Output goes to stdout by default, or to a file with --out.
 
 **Flags**
 
@@ -35,7 +35,7 @@ Bulk export the activity log as CSV. Output goes to stdout by default, or to a f
 | `--activity-type` | intSlice | - | filter by activity type ID |
 | `--end` | string | - | activities before this timestamp (ISO 8601) |
 | `--group-id` | stringSlice | - | filter by group ID |
-| `-o, --output` | string | - | write to file instead of stdout |
+| `--out` | string | - | write to file instead of stdout |
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--start` | string | - | activities after this timestamp (ISO 8601) |
 

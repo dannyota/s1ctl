@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -46,9 +45,6 @@ detectionSource.product, assets.name.`,
 			for _, edge := range conn.Edges {
 				groups = append(groups, edge.Node)
 			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), groups)
-			}
 			headers := []string{"Value", "Count"}
 			rows := make([][]string, len(groups))
 			for i, g := range groups {
@@ -58,9 +54,7 @@ detectionSource.product, assets.name.`,
 				}
 				rows[i] = []string{val, strconv.FormatInt(g.Count, 10)}
 			}
-			printTable(headers, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\ngrouped by %s (%s)\n", groupBy, pluralize(len(groups), "group"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, groups, len(groups), len(groups), groupBy+" group", true)
 		},
 	}
 	cmd.Flags().StringVar(&groupBy, "group-by", "severity", "field to group by (e.g. severity, status, analystVerdict)")

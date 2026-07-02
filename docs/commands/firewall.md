@@ -14,6 +14,7 @@ Copy firewall rules from a source scope to a target scope.
 
 Use --source-site-id or --source-account-id to define the source, and
 --target-site-id, --target-account-id, or --target-group-id for the destination.
+At least one target flag is required.
 Dry-run by default — pass --yes to apply.
 
 **Flags**

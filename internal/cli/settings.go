@@ -181,9 +181,9 @@ func settingsGetSyslog(cmd *cobra.Command, c *mgmt.Client, params *mgmt.Settings
 		return printJSON(cmd.OutOrStdout(), redacted)
 	}
 
-	token := orDash(s.Token)
-	if s.Token != "" && len(s.Token) > 8 {
-		token = s.Token[:8] + "..."
+	token := "-"
+	if s.Token != "" {
+		token = redactToken(s.Token)
 	}
 
 	rows := [][]string{

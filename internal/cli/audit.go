@@ -65,16 +65,12 @@ func newAuditListCmd() *cobra.Command {
 			}
 			visible := records[start:]
 
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), visible)
+			headers := []string{"Timestamp", "Command", "Action", "Target", "Result"}
+			rows := make([][]string, len(visible))
+			for i, r := range visible {
+				rows[i] = []string{r.Timestamp, r.Command, r.Action, r.Target, r.Result}
 			}
-
-			var rows [][]string
-			for _, r := range visible {
-				rows = append(rows, []string{r.Timestamp, r.Command, r.Action, r.Target, r.Result})
-			}
-			printTable([]string{"Timestamp", "Command", "Action", "Target", "Result"}, rows)
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, visible, len(visible), len(visible), "audit entry", true)
 		},
 	}
 	cmd.Flags().IntVar(&last, "last", 25, "number of recent entries to show")

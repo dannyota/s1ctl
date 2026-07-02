@@ -73,14 +73,12 @@ func newAssetsOverviewCmd() *cobra.Command {
 				{"Workstation", cat.Workstation.Count},
 			}
 
-			headers := []string{"Category", "Count"}
 			var rows [][]string
 			for _, r := range catRows {
 				if r.count > 0 {
 					rows = append(rows, []string{r.name, strconv.Itoa(r.count)})
 				}
 			}
-			printTable(headers, rows)
 
 			surf := counts.Surfaces
 			surfRows := []struct {
@@ -93,12 +91,24 @@ func newAssetsOverviewCmd() *cobra.Command {
 				{"Network", surf.Network.Count},
 				{"Network Discovery", surf.NetworkDiscovery.Count},
 			}
-
-			fmt.Fprintln(w)
 			var srows [][]string
 			for _, r := range surfRows {
 				srows = append(srows, []string{r.name, strconv.Itoa(r.count)})
 			}
+
+			if outputFormat == "csv" {
+				var crows [][]string
+				for _, r := range rows {
+					crows = append(crows, append([]string{"category"}, r...))
+				}
+				for _, r := range srows {
+					crows = append(crows, append([]string{"surface"}, r...))
+				}
+				return printCSV(w, []string{"Type", "Name", "Count"}, crows)
+			}
+
+			printTable([]string{"Category", "Count"}, rows)
+			fmt.Fprintln(w)
 			printTable([]string{"Surface", "Count"}, srows)
 
 			return nil

@@ -143,11 +143,27 @@ func newFirewallCopyCmd() *cobra.Command {
 
 Use --source-site-id or --source-account-id to define the source, and
 --target-site-id, --target-account-id, or --target-group-id for the destination.
+At least one target flag is required.
 Dry-run by default — pass --yes to apply.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			var targets []string
+			if targetSiteID != "" {
+				targets = append(targets, "site "+targetSiteID)
+			}
+			if targetAccountID != "" {
+				targets = append(targets, "account "+targetAccountID)
+			}
+			if targetGroupID != "" {
+				targets = append(targets, "group "+targetGroupID)
+			}
+			if len(targets) == 0 {
+				return fmt.Errorf("at least one of --target-site-id, --target-account-id, or --target-group-id is required")
+			}
+			targetDesc := strings.Join(targets, ", ")
+
 			return guard(cmd.OutOrStdout(), "firewall copy",
-				"copy firewall rules to target scope",
-				"target scope", yes, func() error {
+				"copy firewall rules to "+targetDesc,
+				targetDesc, yes, func() error {
 					c, err := mgmtClient()
 					if err != nil {
 						return err

@@ -140,8 +140,8 @@ The API requires scope and OS filters even for a single lookup.`,
 
 			targetID := args[0]
 
-			// The API has no GET-by-ID endpoint; list and filter client-side.
-			policies, _, err := c.UpgradePoliciesList(cmd.Context(), &mgmt.UpgradePolicyListParams{
+			// The API has no GET-by-ID endpoint; fetch all pages and filter client-side.
+			policies, _, err := fetchAllUpgradePolicies(cmd, c, &mgmt.UpgradePolicyListParams{
 				ScopeLevel: scopeLevel,
 				ScopeID:    scopeID,
 				OSType:     osType,

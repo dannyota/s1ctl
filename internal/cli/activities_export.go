@@ -17,7 +17,7 @@ func newActivitiesExportCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "export",
 		Short: "Export activities as CSV",
-		Long:  "Bulk export the activity log as CSV. Output goes to stdout by default, or to a file with --output.",
+		Long:  "Bulk export the activity log as CSV. Output goes to stdout by default, or to a file with --out.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			c, err := mgmtClient()
 			if err != nil {
@@ -54,6 +54,6 @@ func newActivitiesExportCmd() *cobra.Command {
 	cmd.Flags().IntSliceVar(&activityTypes, "activity-type", nil, "filter by activity type ID")
 	cmd.Flags().StringVar(&start, "start", "", "activities after this timestamp (ISO 8601)")
 	cmd.Flags().StringVar(&end, "end", "", "activities before this timestamp (ISO 8601)")
-	cmd.Flags().StringVarP(&output, "output", "o", "", "write to file instead of stdout")
+	cmd.Flags().StringVar(&output, "out", "", "write to file instead of stdout")
 	return cmd
 }

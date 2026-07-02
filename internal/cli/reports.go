@@ -343,6 +343,6 @@ func newReportDownloadCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&format, "format", "pdf", "report format (pdf, html)")
-	cmd.Flags().StringVar(&output, "output", "", "output file path (default: report-<id>.<format>)")
+	cmd.Flags().StringVar(&output, "out", "", "output file path (default: report-<id>.<format>)")
 	return cmd
 }

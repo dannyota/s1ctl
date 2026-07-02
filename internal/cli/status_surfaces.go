@@ -47,15 +47,10 @@ func runStatusSurfaces(cmd *cobra.Command, _ []string) error {
 		{"datalake", "SDL", []string{"query", "saved"}},
 	}
 
-	if outputFormat == "json" {
-		return printJSON(cmd.OutOrStdout(), surfaces)
-	}
-
 	headers := []string{"Surface", "API", "Operations"}
 	rows := make([][]string, len(surfaces))
 	for i, s := range surfaces {
 		rows[i] = []string{s.Name, s.API, strings.Join(s.Operations, ", ")}
 	}
-	printTable(headers, rows)
-	return nil
+	return printOutput(cmd.OutOrStdout(), headers, rows, surfaces, len(surfaces), len(surfaces), "surface", true)
 }

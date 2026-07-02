@@ -50,10 +50,6 @@ when creating an upgrade policy (--file-id).`,
 				return err
 			}
 
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), pkgs)
-			}
-
 			headers := []string{"Version", "Display Name", "File ID", "File Name"}
 			var rows [][]string
 			for _, p := range pkgs {
@@ -66,13 +62,14 @@ when creating an upgrade policy (--file-id).`,
 					rows = append(rows, []string{ver, p.DisplayName, f.ID, truncate(f.Name, 50)})
 				}
 			}
-			if len(rows) == 0 {
+			if outputFormat == "table" && len(rows) == 0 {
 				fmt.Fprintln(cmd.OutOrStdout(), "No packages found.")
 				return nil
 			}
 
-			printTable(headers, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(len(pkgs), "package"))
+			if err := printOutput(cmd.OutOrStdout(), headers, rows, pkgs, len(pkgs), len(pkgs), "package", true); err != nil {
+				return err
+			}
 
 			if outputFormat == "table" {
 				var fileIDs []string

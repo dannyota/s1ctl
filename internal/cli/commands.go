@@ -1,9 +1,6 @@
 package cli
 
 import (
-	"slices"
-	"strings"
-
 	"github.com/spf13/cobra"
 )
 
@@ -37,16 +34,10 @@ func runCommands(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-var mutationVerbs = []string{
-	"create", "delete", "update", "push", "resolve",
-	"enable", "disable", "upgrade", "revert", "isolate",
-	"decommission", "run", "sync", "init", "note",
-}
-
-func commandKind(name string) string {
-	parts := strings.Fields(name)
-	verb := parts[len(parts)-1]
-	if slices.Contains(mutationVerbs, verb) {
+// commandKind classifies a command as a mutation iff it declares a --yes
+// flag; every mutation registers one via the guard pattern.
+func commandKind(cmd *cobra.Command) string {
+	if cmd.Flags().Lookup("yes") != nil {
 		return "mutation"
 	}
 	return "read"
@@ -65,7 +56,7 @@ func collectCommands(cmd *cobra.Command, prefix string) []cmdEntry {
 			entries = append(entries, cmdEntry{
 				Name:  name,
 				Short: c.Short,
-				Kind:  commandKind(name),
+				Kind:  commandKind(c),
 			})
 		}
 	}

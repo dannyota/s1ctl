@@ -25,10 +25,27 @@ func isReadOnly() bool {
 
 func guard(w io.Writer, command, action, target string, yes bool, fn func() error) error {
 	if isReadOnly() {
+		if outputFormat == "json" {
+			return printJSON(w, struct {
+				Blocked bool   `json:"blocked"`
+				Reason  string `json:"reason"`
+				Command string `json:"command"`
+				Action  string `json:"action"`
+				Target  string `json:"target"`
+			}{true, "read-only mode", command, action, target})
+		}
 		fmt.Fprintf(w, "Read-only mode: would %s\n", action)
 		return nil
 	}
 	if !yes {
+		if outputFormat == "json" {
+			return printJSON(w, struct {
+				DryRun  bool   `json:"dryRun"`
+				Command string `json:"command"`
+				Action  string `json:"action"`
+				Target  string `json:"target"`
+			}{true, command, action, target})
+		}
 		fmt.Fprintf(w, "Would %s. Pass --yes to apply.\n", action)
 		return nil
 	}

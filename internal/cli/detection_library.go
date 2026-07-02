@@ -126,16 +126,12 @@ func newDLSurfacesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), surfaces)
-			}
 			headers := []string{"Key", "Value"}
 			rows := make([][]string, len(surfaces))
 			for i, s := range surfaces {
 				rows[i] = []string{s.Key, s.Value}
 			}
-			printTable(headers, rows)
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, surfaces, len(surfaces), len(surfaces), "surface", true)
 		},
 	}
 }
@@ -153,16 +149,12 @@ func newDLDataSourcesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), sources)
-			}
 			headers := []string{"Key", "Value"}
 			rows := make([][]string, len(sources))
 			for i, s := range sources {
 				rows[i] = []string{s.Key, s.Value}
 			}
-			printTable(headers, rows)
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, sources, len(sources), len(sources), "data source", true)
 		},
 	}
 }
@@ -293,7 +285,7 @@ func resolveDLScope(cmd *cobra.Command, c *mgmt.Client, ruleIDs []string, scopeL
 					filter.ScopeID = scopeUp
 				}
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Rule inherited from %s scope (auto-detected)\n", resolved)
+			fmt.Fprintf(cmd.ErrOrStderr(), "Rule inherited from %s scope (auto-detected)\n", resolved)
 		}
 		return filter, nil
 	}

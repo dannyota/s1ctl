@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -20,17 +19,12 @@ func newActivitiesTypesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), types)
-			}
 			headers := []string{"ID", "Description"}
 			rows := make([][]string, len(types))
 			for i, t := range types {
 				rows[i] = []string{strconv.Itoa(t.ID), truncate(t.Description, 80)}
 			}
-			printTable(headers, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(len(types), "activity type"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, types, len(types), len(types), "activity type", true)
 		},
 	}
 }

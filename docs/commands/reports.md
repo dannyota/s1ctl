@@ -51,7 +51,7 @@ s1ctl reports download <report-id> [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--format` | string | pdf | report format (pdf, html) |
-| `--output` | string | - | output file path (default: report-<id>.<format>) |
+| `--out` | string | - | output file path (default: report-<id>.<format>) |
 
 ## reports list
 
