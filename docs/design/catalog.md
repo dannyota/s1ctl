@@ -31,7 +31,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 |---------|------|-------|----------------|--------|
 | agents | list, get, count, outdated, versions, health, passphrases, local-upgrade-status | isolate, reconnect (by ID or filter), scan, abort-scan, decommission, uninstall, approve/reject-uninstall, upgrade (by package ID, file name, or path), move, fetch-logs, restart, shutdown, enable, disable, reset-config, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging, broadcast, reset-passphrase, ranger, fetch-installed-apps, fetch-firewall-rules, fetch-files, local-upgrade | -- | built |
 | threats | list, get, count, notes, timeline, quarantined-files, exclusion-options, export | mitigate, verdict, status, resolve, add-note, blacklist, fetch-file, add-to-exclusions, mitigate-alerts, set-ticket | -- | built |
-| alerts | list, get, count, history, stats (GraphQL) | status, verdict, resolve, add-note | -- | built |
+| alerts | list, get, count, history, stats, notes, timeline, counts, export (GraphQL) | status, verdict, resolve, add-note, note-update, note-delete | -- | built |
 | sites | list, get, count, licenses, token | create, update, delete, reactivate, expire, duplicate, regenerate-key | pull/push | built |
 | groups | list, get, count | create, update, delete | pull/push | built |
 | accounts | list, get, count, uninstall-password | reactivate, expire, uninstall-password generate/revoke | -- | built |
