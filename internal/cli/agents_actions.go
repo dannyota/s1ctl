@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -11,16 +12,31 @@ import (
 func addAgentActions(parent *cobra.Command) {
 	parent.AddCommand(newAgentsIsolateCmd())
 	parent.AddCommand(newAgentsReconnectCmd())
-	parent.AddCommand(newAgentActionCmd("scan", "Start full disk scan", func(c *mgmt.Client, cmd *cobra.Command, f mgmt.ActionFilter) (int, error) {
-		return c.AgentsInitiateScan(cmd.Context(), f)
-	}))
-	parent.AddCommand(newAgentActionCmd("decommission", "Decommission an agent", func(c *mgmt.Client, cmd *cobra.Command, f mgmt.ActionFilter) (int, error) {
-		return c.AgentsDecommission(cmd.Context(), f)
-	}))
-	parent.AddCommand(newAgentActionCmd("uninstall", "Uninstall an agent", func(c *mgmt.Client, cmd *cobra.Command, f mgmt.ActionFilter) (int, error) {
-		return c.AgentsUninstall(cmd.Context(), f)
-	}))
 	parent.AddCommand(newAgentMoveCmd())
+	plain := []struct {
+		verb, short string
+		call        func(*mgmt.Client, context.Context, mgmt.ActionFilter) (int, error)
+	}{
+		{"scan", "Start full disk scan", (*mgmt.Client).AgentsInitiateScan},
+		{"abort-scan", "Abort a running disk scan", (*mgmt.Client).AgentsAbortScan},
+		{"decommission", "Decommission an agent", (*mgmt.Client).AgentsDecommission},
+		{"uninstall", "Uninstall an agent", (*mgmt.Client).AgentsUninstall},
+		{"shutdown", "Shut down the endpoint", (*mgmt.Client).AgentsShutdown},
+		{"restart", "Restart the endpoint", (*mgmt.Client).AgentsRestartMachine},
+		{"fetch-logs", "Fetch agent logs to the console", (*mgmt.Client).AgentsFetchLogs},
+		{"enable", "Enable a disabled agent", (*mgmt.Client).AgentsEnableAgent},
+		{"disable", "Disable an agent", (*mgmt.Client).AgentsDisableAgent},
+		{"reset-config", "Reset agent local configuration", (*mgmt.Client).AgentsResetLocalConfig},
+		{"approve-uninstall", "Approve a pending uninstall request", (*mgmt.Client).AgentsApproveUninstall},
+		{"reject-uninstall", "Reject a pending uninstall request", (*mgmt.Client).AgentsRejectUninstall},
+		{"mark-up-to-date", "Mark an agent as up to date", (*mgmt.Client).AgentsMarkUpToDate},
+		{"randomize-uuid", "Randomize the agent UUID", (*mgmt.Client).AgentsRandomizeUUID},
+	}
+	for _, a := range plain {
+		parent.AddCommand(newAgentActionCmd(a.verb, a.short, func(c *mgmt.Client, cmd *cobra.Command, f mgmt.ActionFilter) (int, error) {
+			return a.call(c, cmd.Context(), f)
+		}))
+	}
 }
 
 type agentActionFn func(*mgmt.Client, *cobra.Command, mgmt.ActionFilter) (int, error)
