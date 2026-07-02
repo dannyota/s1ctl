@@ -48,7 +48,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | detection-library | list, surfaces, data-sources | enable, disable | -- | built |
 | iocs | list, config | create, delete | -- | built |
 | visibility | query | -- | -- | built |
-| remoteops | list, get, results | run | -- | built |
+| remoteops | list, get, results, content, upload-limits, pending, guardrails | run, update, pending approve/decline, guardrails set/delete/check | -- | built |
 
 ## Application and device control
 

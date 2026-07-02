@@ -18,6 +18,11 @@ func newRemoteOpsCmd() *cobra.Command {
 	cmd.AddCommand(newRemoteOpsGetCmd())
 	cmd.AddCommand(newRemoteOpsRunCmd())
 	cmd.AddCommand(newRemoteOpsResultsCmd())
+	cmd.AddCommand(newRemoteOpsUpdateCmd())
+	cmd.AddCommand(newRemoteOpsContentCmd())
+	cmd.AddCommand(newRemoteOpsUploadLimitsCmd())
+	cmd.AddCommand(newRemoteOpsPendingCmd())
+	cmd.AddCommand(newRemoteOpsGuardrailsCmd())
 	return cmd
 }
 
