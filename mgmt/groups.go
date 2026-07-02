@@ -114,5 +114,5 @@ func (c *Client) GroupsUpdate(ctx context.Context, id string, data GroupUpdate) 
 
 // GroupsDelete deletes a group.
 func (c *Client) GroupsDelete(ctx context.Context, id string) error {
-	return c.delete(ctx, fmt.Sprintf("/groups/%s", url.PathEscape(id)), nil, nil)
+	return c.delete(ctx, fmt.Sprintf("/groups/%s", url.PathEscape(id)))
 }

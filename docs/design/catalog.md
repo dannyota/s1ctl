@@ -80,7 +80,8 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| users | list, get | delete | -- | built |
+| users | list, get, token-details | update, delete, generate-token, revoke-token, 2fa | -- | built |
+| service-users | list, get, export | create, update, delete, bulk-delete, generate-token | -- | built |
 | settings | list, get | update, test | -- | built |
 | updates | list, get | -- | -- | built |
 | upgrade-policies | list, get, packages | create, update, delete, activate, deactivate | -- | built |

@@ -92,5 +92,5 @@ func (c *Client) TagsUpdate(ctx context.Context, id string, data TagUpdate) (*Ta
 
 // TagsDelete deletes a tag.
 func (c *Client) TagsDelete(ctx context.Context, id string) error {
-	return c.delete(ctx, fmt.Sprintf("/tags/%s", url.PathEscape(id)), nil, nil)
+	return c.delete(ctx, fmt.Sprintf("/tags/%s", url.PathEscape(id)))
 }

@@ -79,3 +79,95 @@ func (c *Client) UsersDelete(ctx context.Context, id string) error {
 	}
 	return c.post(ctx, "/users/delete", req, nil)
 }
+
+// UserUpdate is the payload for updating a user. All fields are optional; only
+// provided fields change. Pointer fields distinguish "unset" from "false".
+type UserUpdate struct {
+	FullName            string `json:"fullName,omitempty"`
+	Email               string `json:"email,omitempty"`
+	Scope               string `json:"scope,omitempty"`
+	CanGenerateAPIToken *bool  `json:"canGenerateApiToken,omitempty"`
+	AllowRemoteShell    *bool  `json:"allowRemoteShell,omitempty"`
+}
+
+// UsersUpdate updates a user and returns the updated resource.
+func (c *Client) UsersUpdate(ctx context.Context, id string, data UserUpdate) (*User, error) {
+	return update[User](c, ctx, "/users/"+url.PathEscape(id), data)
+}
+
+// UsersGenerateToken generates an API token for the authenticated user and
+// returns it. The token is shown only once. forceLegacy requests a legacy token
+// even when the auth-tokens switch is on.
+func (c *Client) UsersGenerateToken(ctx context.Context, forceLegacy bool) (string, error) {
+	data := map[string]any{}
+	if forceLegacy {
+		data["forceLegacy"] = true
+	}
+	req := map[string]any{"data": data}
+	var resp struct {
+		Data struct {
+			Token string `json:"token"`
+		} `json:"data"`
+	}
+	if err := c.post(ctx, "/users/generate-api-token", req, &resp); err != nil {
+		return "", err
+	}
+	return resp.Data.Token, nil
+}
+
+// UsersRevokeToken revokes the API token of the user with the given ID.
+func (c *Client) UsersRevokeToken(ctx context.Context, id string) error {
+	req := map[string]any{"data": map[string]any{"id": id}}
+	return c.post(ctx, "/users/revoke-api-token", req, nil)
+}
+
+// UserTokenDetails is API-token metadata. The endpoints return only timestamps;
+// Token is defensive — if the API ever echoes the secret it is captured here so
+// callers can redact it rather than print it.
+type UserTokenDetails struct {
+	CreatedAt string `json:"createdAt"`
+	ExpiresAt string `json:"expiresAt"`
+	Token     string `json:"token"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (d *UserTokenDetails) UnmarshalJSON(b []byte) error {
+	type alias UserTokenDetails
+	if err := json.Unmarshal(b, (*alias)(d)); err != nil {
+		return err
+	}
+	d.Raw = append(d.Raw[:0:0], b...)
+	return nil
+}
+
+// UsersTokenDetails returns the API-token metadata for the authenticated user.
+func (c *Client) UsersTokenDetails(ctx context.Context) (*UserTokenDetails, error) {
+	req := map[string]any{"data": map[string]any{}}
+	var resp singleResponse[UserTokenDetails]
+	if err := c.post(ctx, "/users/api-token-details", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// UsersTokenDetailsByID returns the API-token metadata for a specific user.
+func (c *Client) UsersTokenDetailsByID(ctx context.Context, id string) (*UserTokenDetails, error) {
+	var resp singleResponse[UserTokenDetails]
+	if err := c.get(ctx, "/users/"+url.PathEscape(id)+"/api-token-details", nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// Users2FAEnable enables two-factor authentication for the user with the given ID.
+func (c *Client) Users2FAEnable(ctx context.Context, id string) error {
+	req := map[string]any{"data": map[string]any{"id": id}}
+	return c.post(ctx, "/users/2fa/enable", req, nil)
+}
+
+// Users2FADisable disables two-factor authentication for the user with the given ID.
+func (c *Client) Users2FADisable(ctx context.Context, id string) error {
+	req := map[string]any{"data": map[string]any{"id": id}}
+	return c.post(ctx, "/users/2fa/disable", req, nil)
+}

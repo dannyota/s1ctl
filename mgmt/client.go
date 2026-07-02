@@ -73,8 +73,8 @@ func (c *Client) put(ctx context.Context, path string, body, dst any) error {
 	return c.jsonRequest(ctx, http.MethodPut, path, body, dst)
 }
 
-func (c *Client) delete(ctx context.Context, path string, params url.Values, dst any) error {
-	return c.queryRequest(ctx, http.MethodDelete, path, params, dst)
+func (c *Client) delete(ctx context.Context, path string) error {
+	return c.queryRequest(ctx, http.MethodDelete, path, nil, nil)
 }
 
 // queryRequest sends a request with query parameters and no body (GET, DELETE).

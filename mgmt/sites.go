@@ -144,5 +144,5 @@ func (c *Client) SitesUpdate(ctx context.Context, id string, data SiteUpdate) (*
 
 // SitesDelete deletes a site.
 func (c *Client) SitesDelete(ctx context.Context, id string) error {
-	return c.delete(ctx, fmt.Sprintf("/sites/%s", url.PathEscape(id)), nil, nil)
+	return c.delete(ctx, fmt.Sprintf("/sites/%s", url.PathEscape(id)))
 }
