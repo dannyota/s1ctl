@@ -15,6 +15,10 @@ func newTagsCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newTagsListCmd())
+	cmd.AddCommand(newTagsGetCmd())
+	cmd.AddCommand(newTagsCreateCmd())
+	cmd.AddCommand(newTagsUpdateCmd())
+	cmd.AddCommand(newTagsDeleteCmd())
 	return cmd
 }
 
