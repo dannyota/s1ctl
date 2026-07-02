@@ -18,6 +18,9 @@ func newSitesCmd() *cobra.Command {
 	cmd.AddCommand(newSitesCountCmd())
 	cmd.AddCommand(newSitesGetCmd())
 	cmd.AddCommand(newSitesLicensesCmd())
+	cmd.AddCommand(newSitesCreateCmd())
+	cmd.AddCommand(newSitesUpdateCmd())
+	cmd.AddCommand(newSitesDeleteCmd())
 	return cmd
 }
 
