@@ -18,6 +18,7 @@ func newSettingsCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newSettingsListCmd())
 	cmd.AddCommand(newSettingsGetCmd())
+	cmd.AddCommand(newSettingsUpdateCmd())
 	cmd.AddCommand(newSettingsTestCmd())
 	return cmd
 }
