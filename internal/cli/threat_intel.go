@@ -2,12 +2,48 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/mgmt"
 )
+
+// iocSeverityNames maps friendly severity names to OCSF scores (0-7).
+var iocSeverityNames = map[string]mgmt.IOCSeverity{
+	"unknown":       mgmt.IOCSeverityUnknown,
+	"informational": mgmt.IOCSeverityInformational,
+	"low":           mgmt.IOCSeverityLow,
+	"medium":        mgmt.IOCSeverityMedium,
+	"high":          mgmt.IOCSeverityHigh,
+	"critical":      mgmt.IOCSeverityCritical,
+	"fatal":         mgmt.IOCSeverityFatal,
+}
+
+// parseIOCSeverity accepts a severity name (case-insensitive) or a raw OCSF
+// score (0-7) and returns the typed severity.
+func parseIOCSeverity(s string) (mgmt.IOCSeverity, error) {
+	if sev, ok := iocSeverityNames[strings.ToLower(s)]; ok {
+		return sev, nil
+	}
+	if n, err := strconv.Atoi(s); err == nil && n >= 0 && n <= 7 {
+		return mgmt.IOCSeverity(n), nil
+	}
+	return 0, fmt.Errorf("invalid severity %q (use Unknown, Informational, Low, Medium, High, Critical, Fatal, or 0-7)", s)
+}
+
+func parseIOCSeverities(vals []string) ([]mgmt.IOCSeverity, error) {
+	sevs := make([]mgmt.IOCSeverity, 0, len(vals))
+	for _, s := range vals {
+		sev, err := parseIOCSeverity(s)
+		if err != nil {
+			return nil, err
+		}
+		sevs = append(sevs, sev)
+	}
+	return sevs, nil
+}
 
 func newIOCsCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -23,8 +59,8 @@ func newIOCsCmd() *cobra.Command {
 }
 
 func newIOCsListCmd() *cobra.Command {
-	var types, severities, sources []string
-	var value, cursor, sortBy, sortOrder string
+	var severities, sources, creators []string
+	var iocType, value, cursor, sortBy, sortOrder string
 	var limit int
 	var all bool
 
@@ -32,14 +68,19 @@ func newIOCsListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List threat intelligence IOCs",
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			sevs, err := parseIOCSeverities(severities)
+			if err != nil {
+				return err
+			}
 			c, err := mgmtClient()
 			if err != nil {
 				return err
 			}
 			params := &mgmt.IOCListParams{
-				Types:      types,
-				Severities: severities,
+				Type:       mgmt.IOCType(iocType),
+				Severities: sevs,
 				Sources:    sources,
+				Creators:   creators,
 				Value:      value,
 				Limit:      limit,
 				Cursor:     cursor,
@@ -69,14 +110,14 @@ func newIOCsListCmd() *cobra.Command {
 				return err
 			}
 
-			headers := []string{"ID", "Type", "Value", "Severity", "Source", "Created"}
+			headers := []string{"UUID", "Type", "Value", "Severity", "Source", "Created"}
 			rows := make([][]string, len(iocs))
 			for i, ioc := range iocs {
 				rows[i] = []string{
-					ioc.ID,
+					ioc.UUID,
 					string(ioc.Type),
 					truncate(ioc.Value, 50),
-					string(ioc.Severity),
+					ioc.Severity.String(),
 					orDash(ioc.Source),
 					orDash(ioc.CreationTime),
 				}
@@ -84,14 +125,15 @@ func newIOCsListCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, iocs, len(iocs), total, "IOC", all)
 		},
 	}
-	cmd.Flags().StringSliceVar(&types, "type", nil, "filter by IOC type (DNS, IPV4, IPV6, MD5, SHA1, SHA256, URL)")
-	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (Low, Medium, High)")
+	cmd.Flags().StringVar(&iocType, "type", "", "filter by IOC type (DNS, IPV4, IPV6, MD5, SHA1, SHA256, URL)")
+	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (Unknown, Informational, Low, Medium, High, Critical, Fatal, or 0-7)")
 	cmd.Flags().StringSliceVar(&sources, "source", nil, "filter by source")
+	cmd.Flags().StringSliceVar(&creators, "creator", nil, "filter by creator (substring match)")
 	cmd.Flags().StringVar(&value, "value", "", "filter by IOC value")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field")
+	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (id, creationTime, uploadTime, updatedAt, source, type)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
 	return cmd
 }
@@ -116,7 +158,7 @@ func newIOCsCreateCmd() *cobra.Command {
 		Long: `Create a new threat intelligence indicator of compromise.
 
 Types: DNS, IPV4, IPV6, MD5, SHA1, SHA256, URL
-Severities: Low, Medium, High
+Severities: Unknown, Informational, Low, Medium, High, Critical, Fatal (OCSF scores 0-7)
 
 Dry-run by default; pass --yes to apply.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -126,17 +168,26 @@ Dry-run by default; pass --yes to apply.`,
 			if value == "" {
 				return fmt.Errorf("--value is required")
 			}
+			if source == "" {
+				return fmt.Errorf("--source is required")
+			}
 
 			ioc := mgmt.IOCCreateInput{
 				Type:        mgmt.IOCType(iocType),
 				Value:       value,
 				Source:      source,
-				Severity:    mgmt.IOCSeverity(severity),
 				Method:      method,
 				Name:        name,
 				Description: description,
 				ExternalID:  externalID,
 				ValidUntil:  validUntil,
+			}
+			if severity != "" {
+				sev, err := parseIOCSeverity(severity)
+				if err != nil {
+					return err
+				}
+				ioc.Severity = &sev
 			}
 
 			return guard(cmd.OutOrStdout(), "iocs create", fmt.Sprintf("create %s IOC for %q", iocType, value), value, yes, func() error {
@@ -144,14 +195,17 @@ Dry-run by default; pass --yes to apply.`,
 				if err != nil {
 					return err
 				}
-				affected, err := c.IOCsCreate(cmd.Context(), []mgmt.IOCCreateInput{ioc})
+				created, err := c.IOCsCreate(cmd.Context(), []mgmt.IOCCreateInput{ioc})
 				if err != nil {
 					return err
 				}
 				if outputFormat == "json" {
-					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+					return printJSON(cmd.OutOrStdout(), created)
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", pluralize(affected, "IOC"))
+				fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", pluralize(len(created), "IOC"))
+				for _, ind := range created {
+					fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", ind.UUID)
+				}
 				return nil
 			})
 		},
@@ -159,8 +213,8 @@ Dry-run by default; pass --yes to apply.`,
 	cmd.Flags().StringVar(&iocType, "type", "", "IOC type (DNS, IPV4, IPV6, MD5, SHA1, SHA256, URL)")
 	cmd.Flags().StringVar(&value, "value", "", "indicator value")
 	cmd.Flags().StringVar(&source, "source", "", "intelligence source")
-	cmd.Flags().StringVar(&severity, "severity", "", "severity (Low, Medium, High)")
-	cmd.Flags().StringVar(&method, "method", "", "detection method")
+	cmd.Flags().StringVar(&severity, "severity", "", "severity (Unknown, Informational, Low, Medium, High, Critical, Fatal, or 0-7)")
+	cmd.Flags().StringVar(&method, "method", "", "comparison method (EQUALS; server default when empty)")
 	cmd.Flags().StringVar(&name, "name", "", "IOC name")
 	cmd.Flags().StringVar(&description, "description", "", "IOC description")
 	cmd.Flags().StringVar(&externalID, "external-id", "", "external reference ID")
@@ -173,9 +227,9 @@ func newIOCsDeleteCmd() *cobra.Command {
 	var yes bool
 
 	cmd := &cobra.Command{
-		Use:   "delete <ioc-id...>",
+		Use:   "delete <ioc-uuid...>",
 		Short: "Delete threat intelligence IOCs",
-		Long: `Delete one or more threat intelligence IOCs by ID.
+		Long: `Delete one or more threat intelligence IOCs by UUID.
 
 Dry-run by default; pass --yes to apply.`,
 		Args: cobra.MinimumNArgs(1),
@@ -210,19 +264,24 @@ func newIOCsConfigCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cfg, err := c.ThreatIntelConfig(cmd.Context())
+			cfgs, err := c.ThreatIntelConfigs(cmd.Context())
 			if err != nil {
 				return err
 			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), cfg)
+			headers := []string{"Scope", "Scope ID", "Min Score", "Threat Disabled", "RetroHunt Disabled", "XDR Matching", "Updated"}
+			rows := make([][]string, len(cfgs))
+			for i, cfg := range cfgs {
+				rows[i] = []string{
+					orDash(string(cfg.ScopeLevel)),
+					orDash(cfg.ScopeID),
+					strconv.Itoa(cfg.ThreatMinScore),
+					boolIcon(cfg.DisableThreat),
+					boolIcon(cfg.DisableRH),
+					boolIcon(cfg.EnableXDRMatching),
+					orDash(cfg.UpdatedAt),
+				}
 			}
-			rows := [][]string{
-				{"Total IOCs", fmt.Sprintf("%d", cfg.TotalIOCs)},
-				{"Max IOCs", fmt.Sprintf("%d", cfg.MaxIOCs)},
-			}
-			printTable([]string{"Field", "Value"}, rows)
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, cfgs, len(cfgs), len(cfgs), "config", false)
 		},
 	}
 }
