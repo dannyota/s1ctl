@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6C2BD9"/>
+      <stop offset="100%" stop-color="#3B1198"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="300" rx="16" fill="url(#bg)"/>
+  <!-- Shield icon -->
+  <g transform="translate(80,55)">
+    <path d="M95 10 L175 45 V115 C175 155 145 185 95 200 C45 185 15 155 15 115 V45 Z" fill="url(#accent)" opacity="0.9"/>
+    <path d="M70 105 L90 125 L125 85" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+  <!-- Title -->
+  <text x="290" y="135" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="82" font-weight="800" fill="white" letter-spacing="-2">s1ctl</text>
+  <!-- Subtitle -->
+  <text x="290" y="185" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="26" fill="#C4B5FD" letter-spacing="0.5">Operate SentinelOne Singularity Platform as code</text>
+  <!-- Stats pills -->
+  <g transform="translate(290,215)">
+    <rect width="140" height="34" rx="17" fill="white" opacity="0.15"/>
+    <text x="70" y="23" font-family="system-ui,sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="600">370+ commands</text>
+    <rect x="155" width="120" height="34" rx="17" fill="white" opacity="0.15"/>
+    <text x="215" y="23" font-family="system-ui,sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="600">3 API surfaces</text>
+    <rect x="290" width="115" height="34" rx="17" fill="white" opacity="0.15"/>
+    <text x="347" y="23" font-family="system-ui,sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="600">Go SDK + CLI</text>
+    <rect x="420" width="160" height="34" rx="17" fill="white" opacity="0.15"/>
+    <text x="500" y="23" font-family="system-ui,sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="600">config-as-code + drift</text>
+  </g>
+</svg>
