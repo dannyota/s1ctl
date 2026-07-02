@@ -1,20 +1,20 @@
 package cli
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	"danny.vn/s1/internal/reconcile"
 	"danny.vn/s1/mgmt"
 )
 
 func addFirewallSyncCmds(parent *cobra.Command) {
-	parent.AddCommand(newFirewallPullCmd())
-	parent.AddCommand(newFirewallPushCmd())
+	spec := firewallSpec()
+	parent.AddCommand(newEnginePullCmd(spec))
+	parent.AddCommand(newEnginePushCmd(spec))
 }
 
 // firewallHostFile is the YAML representation of a host matcher.
@@ -123,166 +123,107 @@ func (ff firewallFile) toCreate() mgmt.FirewallRuleCreate {
 	return c
 }
 
-func newFirewallPullCmd() *cobra.Command {
-	var siteIDs []string
-	var outDir string
-
-	cmd := &cobra.Command{
-		Use:   "pull",
-		Short: "Pull firewall rules to local YAML files",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			params := &mgmt.FirewallRuleListParams{
-				SiteIDs: siteIDs,
-				Limit:   1000,
-			}
-			rules, _, err := fetchAllREST("firewall rule", func(cur string) ([]mgmt.FirewallRule, *mgmt.Pagination, error) {
-				params.Cursor = cur
-				return c.FirewallRulesList(cmd.Context(), params)
-			})
-			if err != nil {
-				return err
-			}
-
-			if err := os.MkdirAll(outDir, 0o750); err != nil {
-				return err
-			}
-
-			// Track used filenames to avoid collisions.
-			used := make(map[string]int)
-			for _, r := range rules {
-				stem := sanitizeFilename(r.Name)
-				if n := used[stem]; n > 0 {
-					stem = fmt.Sprintf("%s-%d", stem, n)
-				}
-				used[sanitizeFilename(r.Name)]++
-
-				ff := firewallToFile(r)
-				data, mErr := yaml.Marshal(ff)
-				if mErr != nil {
-					return fmt.Errorf("marshal rule %s: %w", r.Name, mErr)
-				}
-				path := filepath.Join(outDir, stem+".yaml")
-				if wErr := os.WriteFile(path, data, 0o644); wErr != nil {
-					return wErr
-				}
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Pulled %s to %s\n", pluralize(len(rules), "firewall rule"), outDir)
-			return nil
-		},
+// decodeFirewall maps one local file to a canonical Object: it validates the
+// rule name and re-marshals through firewallFile so bodies are byte-equal to
+// the ones List produces.
+func decodeFirewall(data []byte) (reconcile.Object, error) {
+	var ff firewallFile
+	if err := yaml.Unmarshal(data, &ff); err != nil {
+		return reconcile.Object{}, err
 	}
-	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	cmd.Flags().StringVar(&outDir, "out", "firewall", "output directory")
-	return cmd
+	if ff.Name == "" {
+		return reconcile.Object{}, fmt.Errorf("firewall rule has no name")
+	}
+	body, err := yaml.Marshal(ff)
+	if err != nil {
+		return reconcile.Object{}, err
+	}
+	return reconcile.Object{Name: ff.Name, Body: body}, nil
 }
 
-func newFirewallPushCmd() *cobra.Command {
-	var inDir string
-	var siteIDs []string
-	var yes bool
-
-	cmd := &cobra.Command{
-		Use:   "push",
-		Short: "Push firewall rules from local YAML files",
-		Long: `Read firewall rule YAML files from a directory and sync them to SentinelOne.
-Rules are matched by name: existing rules are updated, new rules are created.
-Dry-run by default — pass --yes to apply changes.`,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			entries, err := os.ReadDir(inDir)
-			if err != nil {
-				return fmt.Errorf("read %s: %w", inDir, err)
-			}
-
-			var localRules []firewallFile
-			for _, e := range entries {
-				if e.IsDir() || (!strings.HasSuffix(e.Name(), ".yaml") && !strings.HasSuffix(e.Name(), ".yml")) {
-					continue
-				}
-				data, rErr := os.ReadFile(filepath.Join(inDir, e.Name()))
-				if rErr != nil {
-					return fmt.Errorf("read %s: %w", e.Name(), rErr)
-				}
-				var ff firewallFile
-				if uErr := yaml.Unmarshal(data, &ff); uErr != nil {
-					return fmt.Errorf("parse %s: %w", e.Name(), uErr)
-				}
-				if ff.Name == "" {
-					return fmt.Errorf("rule in %s has no name", e.Name())
-				}
-				localRules = append(localRules, ff)
-			}
-			if len(localRules) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "No firewall rule files found.")
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			// Fetch all remote rules to match by name.
-			params := &mgmt.FirewallRuleListParams{SiteIDs: siteIDs, Limit: 1000}
-			remoteRules, _, err := fetchAllREST("firewall rule", func(cur string) ([]mgmt.FirewallRule, *mgmt.Pagination, error) {
-				params.Cursor = cur
-				return c.FirewallRulesList(cmd.Context(), params)
-			})
-			if err != nil {
-				return err
-			}
-			byName := make(map[string]mgmt.FirewallRule, len(remoteRules))
-			for _, r := range remoteRules {
-				byName[r.Name] = r
-			}
-
-			var toCreate, toUpdate []firewallFile
-			var updateIDs []string
-			for _, lr := range localRules {
-				if existing, ok := byName[lr.Name]; ok {
-					toUpdate = append(toUpdate, lr)
-					updateIDs = append(updateIDs, existing.ID)
-				} else {
-					toCreate = append(toCreate, lr)
-				}
-			}
-
-			action := fmt.Sprintf("create %s, update %s from %s",
-				pluralize(len(toCreate), "firewall rule"),
-				pluralize(len(toUpdate), "firewall rule"),
-				inDir)
-			return guard(cmd.OutOrStdout(), "firewall push", action, inDir, yes, func() error {
-				scope := mgmt.FirewallRuleScope{SiteIDs: siteIDs}
-				var created, updated int
-				for _, lr := range toCreate {
-					if _, cErr := c.FirewallRulesCreate(cmd.Context(), scope, lr.toCreate()); cErr != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "warning: create %s: %v\n", lr.Name, cErr)
-						continue
+// firewallSpec adapts firewall rules to the shared sync builders.
+func firewallSpec() surfaceSpec {
+	return surfaceSpec{
+		Noun:       "firewall rule",
+		Command:    "firewall",
+		DefaultDir: "firewall",
+		PullShort:  "Pull firewall rules to local YAML files",
+		PushShort:  "Push firewall rules from local YAML files",
+		PushLong: `Read firewall rule YAML files from a directory and sync them to SentinelOne.
+Rules are matched by name: existing rules are updated, new rules are created,
+and unchanged rules are skipped. Dry-run by default — pass --yes to apply changes.`,
+		RegisterPullFlags: func(cmd *cobra.Command, scope *scopeFlags) {
+			cmd.Flags().StringSliceVar(&scope.SiteIDs, "site-id", nil, "filter by site ID")
+		},
+		RegisterPushFlags: func(cmd *cobra.Command, scope *scopeFlags) {
+			cmd.Flags().StringSliceVar(&scope.SiteIDs, "site-id", nil, "target site IDs")
+		},
+		Build: func(_ *cobra.Command, scope scopeFlags) (reconcile.Surface, error) {
+			var client *mgmt.Client
+			getClient := func() (*mgmt.Client, error) {
+				if client == nil {
+					c, err := mgmtClient()
+					if err != nil {
+						return nil, err
 					}
-					created++
+					client = c
 				}
-				for i, lr := range toUpdate {
-					if _, uErr := c.FirewallRulesUpdate(cmd.Context(), updateIDs[i], lr.toCreate()); uErr != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "warning: update %s: %v\n", lr.Name, uErr)
-						continue
+				return client, nil
+			}
+
+			return reconcile.Surface{
+				Name:    "firewall rule",
+				Command: "firewall",
+				Decode:  decodeFirewall,
+				List: func(ctx context.Context) ([]reconcile.Object, error) {
+					c, err := getClient()
+					if err != nil {
+						return nil, err
 					}
-					updated++
-				}
-				if outputFormat == "json" {
-					return printJSON(cmd.OutOrStdout(), map[string]int{"created": created, "updated": updated})
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
-					pluralize(created, "firewall rule"),
-					pluralize(updated, "firewall rule"))
-				return nil
-			})
+					// Both pull and push scope the list by --site-id (legacy).
+					params := &mgmt.FirewallRuleListParams{SiteIDs: scope.SiteIDs, Limit: 1000}
+					rules, _, lErr := fetchAllREST("firewall rule", func(cur string) ([]mgmt.FirewallRule, *mgmt.Pagination, error) {
+						params.Cursor = cur
+						return c.FirewallRulesList(ctx, params)
+					})
+					if lErr != nil {
+						return nil, lErr
+					}
+					objs := make([]reconcile.Object, 0, len(rules))
+					for _, r := range rules {
+						body, mErr := yaml.Marshal(firewallToFile(r))
+						if mErr != nil {
+							return nil, fmt.Errorf("marshal firewall rule %s: %w", r.Name, mErr)
+						}
+						objs = append(objs, reconcile.Object{Name: r.Name, ID: r.ID, Body: body})
+					}
+					return objs, nil
+				},
+				Create: func(ctx context.Context, local reconcile.Object) error {
+					c, err := getClient()
+					if err != nil {
+						return err
+					}
+					var ff firewallFile
+					if uErr := yaml.Unmarshal(local.Body, &ff); uErr != nil {
+						return uErr
+					}
+					_, cErr := c.FirewallRulesCreate(ctx, mgmt.FirewallRuleScope{SiteIDs: scope.SiteIDs}, ff.toCreate())
+					return cErr
+				},
+				Update: func(ctx context.Context, id string, local reconcile.Object) error {
+					c, err := getClient()
+					if err != nil {
+						return err
+					}
+					var ff firewallFile
+					if uErr := yaml.Unmarshal(local.Body, &ff); uErr != nil {
+						return uErr
+					}
+					_, uErr := c.FirewallRulesUpdate(ctx, id, ff.toCreate())
+					return uErr
+				},
+			}, nil
 		},
 	}
-	cmd.Flags().StringVar(&inDir, "dir", "firewall", "directory containing firewall rule YAML files")
-	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "target site IDs")
-	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
 }

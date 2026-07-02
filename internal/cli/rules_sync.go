@@ -1,21 +1,22 @@
 package cli
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	"danny.vn/s1/internal/reconcile"
 	"danny.vn/s1/mgmt"
 )
 
 func addRuleSyncCmds(parent *cobra.Command) {
-	parent.AddCommand(newRulesPullCmd())
-	parent.AddCommand(newRulesPushCmd())
+	spec := rulesSpec()
+	parent.AddCommand(newEnginePullCmd(spec))
+	parent.AddCommand(newEnginePushCmd(spec))
 }
 
 // ruleFile is the YAML representation of a custom detection rule on disk.
@@ -80,163 +81,110 @@ func sanitizeFilename(name string) string {
 	return s
 }
 
-func newRulesPullCmd() *cobra.Command {
-	var siteIDs []string
-	var outDir string
-
-	cmd := &cobra.Command{
-		Use:   "pull",
-		Short: "Pull custom detection rules to local YAML files",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			params := &mgmt.RuleListParams{
-				SiteIDs: siteIDs,
-				Limit:   1000,
-			}
-			rules, _, err := fetchAllREST("rule", func(cur string) ([]mgmt.Rule, *mgmt.Pagination, error) {
-				params.Cursor = cur
-				return c.RulesList(cmd.Context(), params)
-			})
-			if err != nil {
-				return err
-			}
-
-			if err := os.MkdirAll(outDir, 0o750); err != nil {
-				return err
-			}
-
-			// Track used filenames to avoid collisions.
-			used := make(map[string]int)
-			for _, r := range rules {
-				stem := sanitizeFilename(r.Name)
-				if n := used[stem]; n > 0 {
-					stem = fmt.Sprintf("%s-%d", stem, n)
-				}
-				used[sanitizeFilename(r.Name)]++
-
-				rf := ruleToFile(r)
-				data, mErr := yaml.Marshal(rf)
-				if mErr != nil {
-					return fmt.Errorf("marshal rule %s: %w", r.Name, mErr)
-				}
-				path := filepath.Join(outDir, stem+".yaml")
-				if wErr := os.WriteFile(path, data, 0o644); wErr != nil {
-					return wErr
-				}
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Pulled %s to %s\n", pluralize(len(rules), "rule"), outDir)
-			return nil
-		},
+// decodeRule maps one local file to a canonical Object: it validates the rule
+// name and re-marshals through ruleFile so bodies are byte-equal to the ones
+// List produces.
+func decodeRule(data []byte) (reconcile.Object, error) {
+	var rf ruleFile
+	if err := yaml.Unmarshal(data, &rf); err != nil {
+		return reconcile.Object{}, err
 	}
-	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	cmd.Flags().StringVar(&outDir, "out", "rules", "output directory")
-	return cmd
+	if rf.Name == "" {
+		return reconcile.Object{}, fmt.Errorf("rule has no name")
+	}
+	body, err := yaml.Marshal(rf)
+	if err != nil {
+		return reconcile.Object{}, err
+	}
+	return reconcile.Object{Name: rf.Name, Body: body}, nil
 }
 
-func newRulesPushCmd() *cobra.Command {
-	var inDir string
-	var yes bool
-
-	cmd := &cobra.Command{
-		Use:   "push",
-		Short: "Push custom detection rules from local YAML files",
-		Long: `Read rule YAML files from a directory and sync them to SentinelOne.
-Rules are matched by name: existing rules are updated, new rules are created.
-Dry-run by default — pass --yes to apply changes.`,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			entries, err := os.ReadDir(inDir)
-			if err != nil {
-				return fmt.Errorf("read %s: %w", inDir, err)
-			}
-
-			var localRules []ruleFile
-			for _, e := range entries {
-				if e.IsDir() || (!strings.HasSuffix(e.Name(), ".yaml") && !strings.HasSuffix(e.Name(), ".yml")) {
-					continue
-				}
-				data, rErr := os.ReadFile(filepath.Join(inDir, e.Name()))
-				if rErr != nil {
-					return fmt.Errorf("read %s: %w", e.Name(), rErr)
-				}
-				var rf ruleFile
-				if uErr := yaml.Unmarshal(data, &rf); uErr != nil {
-					return fmt.Errorf("parse %s: %w", e.Name(), uErr)
-				}
-				if rf.Name == "" {
-					return fmt.Errorf("rule in %s has no name", e.Name())
-				}
-				localRules = append(localRules, rf)
-			}
-			if len(localRules) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "No rule files found.")
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			// Fetch all remote rules to match by name.
-			params := &mgmt.RuleListParams{Limit: 1000}
-			remoteRules, _, err := fetchAllREST("rule", func(cur string) ([]mgmt.Rule, *mgmt.Pagination, error) {
-				params.Cursor = cur
-				return c.RulesList(cmd.Context(), params)
-			})
-			if err != nil {
-				return err
-			}
-			byName := make(map[string]mgmt.Rule, len(remoteRules))
-			for _, r := range remoteRules {
-				byName[r.Name] = r
-			}
-
-			var toCreate, toUpdate []ruleFile
-			var updateIDs []string
-			for _, lr := range localRules {
-				if existing, ok := byName[lr.Name]; ok {
-					toUpdate = append(toUpdate, lr)
-					updateIDs = append(updateIDs, existing.ID)
-				} else {
-					toCreate = append(toCreate, lr)
-				}
-			}
-
-			action := fmt.Sprintf("create %s, update %s from %s",
-				pluralize(len(toCreate), "rule"),
-				pluralize(len(toUpdate), "rule"),
-				inDir)
-			return guard(cmd.OutOrStdout(), "rules push", action, inDir, yes, func() error {
-				var created, updated int
-				for _, lr := range toCreate {
-					if _, cErr := c.RulesCreate(cmd.Context(), lr.toCreate()); cErr != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "warning: create %s: %v\n", lr.Name, cErr)
-						continue
+// rulesSpec adapts custom detection rules to the shared sync builders. Rules
+// have no create-time scope flag; the file's Scope field is informational only
+// (ruleFile.toCreate omits it), so create and update send the same payload.
+func rulesSpec() surfaceSpec {
+	return surfaceSpec{
+		Noun:       "rule",
+		Command:    "rules",
+		DefaultDir: "rules",
+		PullShort:  "Pull custom detection rules to local YAML files",
+		PushShort:  "Push custom detection rules from local YAML files",
+		PushLong: `Read rule YAML files from a directory and sync them to SentinelOne.
+Rules are matched by name: existing rules are updated, new rules are created,
+and unchanged rules are skipped. Dry-run by default — pass --yes to apply changes.`,
+		RegisterPullFlags: func(cmd *cobra.Command, scope *scopeFlags) {
+			cmd.Flags().StringSliceVar(&scope.SiteIDs, "site-id", nil, "filter by site ID")
+		},
+		Build: func(_ *cobra.Command, scope scopeFlags) (reconcile.Surface, error) {
+			var client *mgmt.Client
+			getClient := func() (*mgmt.Client, error) {
+				if client == nil {
+					c, err := mgmtClient()
+					if err != nil {
+						return nil, err
 					}
-					created++
+					client = c
 				}
-				for i, lr := range toUpdate {
-					if _, uErr := c.RulesUpdate(cmd.Context(), updateIDs[i], lr.toCreate()); uErr != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "warning: update %s: %v\n", lr.Name, uErr)
-						continue
+				return client, nil
+			}
+
+			return reconcile.Surface{
+				Name:    "rule",
+				Command: "rules",
+				Decode:  decodeRule,
+				List: func(ctx context.Context) ([]reconcile.Object, error) {
+					c, err := getClient()
+					if err != nil {
+						return nil, err
 					}
-					updated++
-				}
-				if outputFormat == "json" {
-					return printJSON(cmd.OutOrStdout(), map[string]int{"created": created, "updated": updated})
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
-					pluralize(created, "rule"),
-					pluralize(updated, "rule"))
-				return nil
-			})
+					// Pull filters by --site-id; push lists every rule so
+					// matching spans the whole tenant.
+					params := &mgmt.RuleListParams{Limit: 1000}
+					if !scope.push {
+						params.SiteIDs = scope.SiteIDs
+					}
+					rules, _, lErr := fetchAllREST("rule", func(cur string) ([]mgmt.Rule, *mgmt.Pagination, error) {
+						params.Cursor = cur
+						return c.RulesList(ctx, params)
+					})
+					if lErr != nil {
+						return nil, lErr
+					}
+					objs := make([]reconcile.Object, 0, len(rules))
+					for _, r := range rules {
+						body, mErr := yaml.Marshal(ruleToFile(r))
+						if mErr != nil {
+							return nil, fmt.Errorf("marshal rule %s: %w", r.Name, mErr)
+						}
+						objs = append(objs, reconcile.Object{Name: r.Name, ID: r.ID, Body: body})
+					}
+					return objs, nil
+				},
+				Create: func(ctx context.Context, local reconcile.Object) error {
+					c, err := getClient()
+					if err != nil {
+						return err
+					}
+					var rf ruleFile
+					if uErr := yaml.Unmarshal(local.Body, &rf); uErr != nil {
+						return uErr
+					}
+					_, cErr := c.RulesCreate(ctx, rf.toCreate())
+					return cErr
+				},
+				Update: func(ctx context.Context, id string, local reconcile.Object) error {
+					c, err := getClient()
+					if err != nil {
+						return err
+					}
+					var rf ruleFile
+					if uErr := yaml.Unmarshal(local.Body, &rf); uErr != nil {
+						return uErr
+					}
+					_, uErr := c.RulesUpdate(ctx, id, rf.toCreate())
+					return uErr
+				},
+			}, nil
 		},
 	}
-	cmd.Flags().StringVar(&inDir, "dir", "rules", "directory containing rule YAML files")
-	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
 }

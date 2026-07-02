@@ -1,20 +1,20 @@
 package cli
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	"danny.vn/s1/internal/reconcile"
 	"danny.vn/s1/mgmt"
 )
 
 func addDeviceControlSyncCmds(parent *cobra.Command) {
-	parent.AddCommand(newDeviceControlPullCmd())
-	parent.AddCommand(newDeviceControlPushCmd())
+	spec := deviceControlSpec()
+	parent.AddCommand(newEnginePullCmd(spec))
+	parent.AddCommand(newEnginePushCmd(spec))
 }
 
 // deviceRuleFile is the YAML representation of a device control rule on disk.
@@ -82,184 +82,127 @@ func (rf deviceRuleFile) toCreate() mgmt.DeviceRuleCreate {
 	}
 }
 
-func newDeviceControlPullCmd() *cobra.Command {
-	var siteIDs, accountIDs []string
-	var outDir string
+// decodeDeviceRule maps one local file to a canonical Object: it validates the
+// rule name and re-marshals through deviceRuleFile so bodies are byte-equal to
+// the ones List produces.
+func decodeDeviceRule(data []byte) (reconcile.Object, error) {
+	var rf deviceRuleFile
+	if err := yaml.Unmarshal(data, &rf); err != nil {
+		return reconcile.Object{}, err
+	}
+	if rf.RuleName == "" {
+		return reconcile.Object{}, fmt.Errorf("device rule has no ruleName")
+	}
+	body, err := yaml.Marshal(rf)
+	if err != nil {
+		return reconcile.Object{}, err
+	}
+	return reconcile.Object{Name: rf.RuleName, Body: body}, nil
+}
 
-	cmd := &cobra.Command{
-		Use:   "pull",
-		Short: "Pull device control rules to local YAML files",
-		Long: `Fetch all device control rules and write them as YAML files.
+// deviceControlSpec adapts device control rules to the shared sync builders.
+func deviceControlSpec() surfaceSpec {
+	return surfaceSpec{
+		Noun:       "device rule",
+		Command:    "devicecontrol",
+		DefaultDir: "devicecontrol",
+		PullShort:  "Pull device control rules to local YAML files",
+		PullLong: `Fetch all device control rules and write them as YAML files.
 
 Each rule produces one file named by its sanitized rule name (e.g. block-usb-storage.yaml).
 Server-only metadata (ID, scope, timestamps) is omitted from the YAML so the files
 contain only the declarative rule definition.`,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
+		PushShort: "Push device control rules from local YAML files",
+		PushLong: `Read device control rule YAML files from a directory and sync them to SentinelOne.
 
-			params := &mgmt.DeviceRuleListParams{
-				SiteIDs:    siteIDs,
-				AccountIDs: accountIDs,
-				Limit:      1000,
-			}
-			rules, _, err := fetchAllREST("device rule", func(cur string) ([]mgmt.DeviceRule, *mgmt.Pagination, error) {
-				params.Cursor = cur
-				return c.DeviceRulesList(cmd.Context(), params)
-			})
-			if err != nil {
-				return err
-			}
-
-			if err := os.MkdirAll(outDir, 0o750); err != nil {
-				return err
-			}
-
-			used := make(map[string]int)
-			for _, r := range rules {
-				stem := sanitizeFilename(r.RuleName)
-				if n := used[stem]; n > 0 {
-					stem = fmt.Sprintf("%s-%d", stem, n)
-				}
-				used[sanitizeFilename(r.RuleName)]++
-
-				rf := deviceRuleToFile(r)
-				data, mErr := yaml.Marshal(rf)
-				if mErr != nil {
-					return fmt.Errorf("marshal rule %s: %w", r.RuleName, mErr)
-				}
-				path := filepath.Join(outDir, stem+".yaml")
-				if wErr := os.WriteFile(path, data, 0o644); wErr != nil {
-					return wErr
-				}
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Pulled %s to %s\n",
-				pluralize(len(rules), "device rule"), outDir)
-			return nil
-		},
-	}
-	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
-	cmd.Flags().StringVar(&outDir, "out", "devicecontrol", "output directory")
-	return cmd
-}
-
-func newDeviceControlPushCmd() *cobra.Command {
-	var inDir string
-	var siteIDs []string
-	var yes bool
-
-	cmd := &cobra.Command{
-		Use:   "push",
-		Short: "Push device control rules from local YAML files",
-		Long: `Read device control rule YAML files from a directory and sync them to SentinelOne.
-
-Rules are matched by name: existing rules are updated, new rules are created.
-Dry-run by default — pass --yes to apply changes.
+Rules are matched by name: existing rules are updated, new rules are created,
+and unchanged rules are skipped. Dry-run by default — pass --yes to apply changes.
 
 New rules are created at the scope specified by --site-id. If no scope flag
 is given, new rules are created at the global (tenant) scope.`,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			entries, err := os.ReadDir(inDir)
-			if err != nil {
-				return fmt.Errorf("read %s: %w", inDir, err)
-			}
-
-			var localRules []deviceRuleFile
-			for _, e := range entries {
-				if e.IsDir() || (!strings.HasSuffix(e.Name(), ".yaml") && !strings.HasSuffix(e.Name(), ".yml")) {
-					continue
-				}
-				data, rErr := os.ReadFile(filepath.Join(inDir, e.Name()))
-				if rErr != nil {
-					return fmt.Errorf("read %s: %w", e.Name(), rErr)
-				}
-				var rf deviceRuleFile
-				if uErr := yaml.Unmarshal(data, &rf); uErr != nil {
-					return fmt.Errorf("parse %s: %w", e.Name(), uErr)
-				}
-				if rf.RuleName == "" {
-					return fmt.Errorf("rule in %s has no ruleName", e.Name())
-				}
-				localRules = append(localRules, rf)
-			}
-			if len(localRules) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "No device rule files found.")
-				return nil
-			}
-
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-
-			// Fetch all remote rules to match by name.
-			params := &mgmt.DeviceRuleListParams{Limit: 1000}
-			remoteRules, _, err := fetchAllREST("device rule", func(cur string) ([]mgmt.DeviceRule, *mgmt.Pagination, error) {
-				params.Cursor = cur
-				return c.DeviceRulesList(cmd.Context(), params)
-			})
-			if err != nil {
-				return err
-			}
-			byName := make(map[string]mgmt.DeviceRule, len(remoteRules))
-			for _, r := range remoteRules {
-				byName[r.RuleName] = r
-			}
-
-			var toCreate, toUpdate []deviceRuleFile
-			var updateIDs []string
-			for _, lr := range localRules {
-				if existing, ok := byName[lr.RuleName]; ok {
-					toUpdate = append(toUpdate, lr)
-					updateIDs = append(updateIDs, existing.ID)
-				} else {
-					toCreate = append(toCreate, lr)
-				}
-			}
-
-			action := fmt.Sprintf("create %s, update %s from %s",
-				pluralize(len(toCreate), "device rule"),
-				pluralize(len(toUpdate), "device rule"),
-				inDir)
-			return guard(cmd.OutOrStdout(), "devicecontrol push", action, inDir, yes, func() error {
-				// Build scope filter for new rules.
-				filter := mgmt.DeviceRuleScopeFilter{
-					SiteIDs: siteIDs,
-				}
-				if len(siteIDs) == 0 {
-					t := true
-					filter.Tenant = &t
-				}
-				var created, updated int
-				for _, lr := range toCreate {
-					if _, cErr := c.DeviceRulesCreate(cmd.Context(), lr.toCreate(), filter); cErr != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "warning: create %s: %v\n", lr.RuleName, cErr)
-						continue
+		RegisterPullFlags: func(cmd *cobra.Command, scope *scopeFlags) {
+			cmd.Flags().StringSliceVar(&scope.SiteIDs, "site-id", nil, "filter by site ID")
+			cmd.Flags().StringSliceVar(&scope.AccountIDs, "account-id", nil, "filter by account ID")
+		},
+		RegisterPushFlags: func(cmd *cobra.Command, scope *scopeFlags) {
+			cmd.Flags().StringSliceVar(&scope.SiteIDs, "site-id", nil, "scope for new rules (default: global/tenant)")
+		},
+		Build: func(_ *cobra.Command, scope scopeFlags) (reconcile.Surface, error) {
+			var client *mgmt.Client
+			getClient := func() (*mgmt.Client, error) {
+				if client == nil {
+					c, err := mgmtClient()
+					if err != nil {
+						return nil, err
 					}
-					created++
+					client = c
 				}
-				for i, lr := range toUpdate {
-					if _, uErr := c.DeviceRulesUpdate(cmd.Context(), updateIDs[i], lr.toCreate()); uErr != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "warning: update %s: %v\n", lr.RuleName, uErr)
-						continue
+				return client, nil
+			}
+
+			return reconcile.Surface{
+				Name:    "device rule",
+				Command: "devicecontrol",
+				Decode:  decodeDeviceRule,
+				List: func(ctx context.Context) ([]reconcile.Object, error) {
+					c, err := getClient()
+					if err != nil {
+						return nil, err
 					}
-					updated++
-				}
-				if outputFormat == "json" {
-					return printJSON(cmd.OutOrStdout(), map[string]int{"created": created, "updated": updated})
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Created %s, updated %s\n",
-					pluralize(created, "device rule"),
-					pluralize(updated, "device rule"))
-				return nil
-			})
+					// Pull filters by scope; push lists every rule so matching
+					// spans the whole tenant (--site-id is the create scope).
+					params := &mgmt.DeviceRuleListParams{Limit: 1000}
+					if !scope.push {
+						params.SiteIDs = scope.SiteIDs
+						params.AccountIDs = scope.AccountIDs
+					}
+					rules, _, lErr := fetchAllREST("device rule", func(cur string) ([]mgmt.DeviceRule, *mgmt.Pagination, error) {
+						params.Cursor = cur
+						return c.DeviceRulesList(ctx, params)
+					})
+					if lErr != nil {
+						return nil, lErr
+					}
+					objs := make([]reconcile.Object, 0, len(rules))
+					for _, r := range rules {
+						body, mErr := yaml.Marshal(deviceRuleToFile(r))
+						if mErr != nil {
+							return nil, fmt.Errorf("marshal device rule %s: %w", r.RuleName, mErr)
+						}
+						objs = append(objs, reconcile.Object{Name: r.RuleName, ID: r.ID, Body: body})
+					}
+					return objs, nil
+				},
+				Create: func(ctx context.Context, local reconcile.Object) error {
+					c, err := getClient()
+					if err != nil {
+						return err
+					}
+					var rf deviceRuleFile
+					if uErr := yaml.Unmarshal(local.Body, &rf); uErr != nil {
+						return uErr
+					}
+					filter := mgmt.DeviceRuleScopeFilter{SiteIDs: scope.SiteIDs}
+					if len(scope.SiteIDs) == 0 {
+						tenant := true
+						filter.Tenant = &tenant
+					}
+					_, cErr := c.DeviceRulesCreate(ctx, rf.toCreate(), filter)
+					return cErr
+				},
+				Update: func(ctx context.Context, id string, local reconcile.Object) error {
+					c, err := getClient()
+					if err != nil {
+						return err
+					}
+					var rf deviceRuleFile
+					if uErr := yaml.Unmarshal(local.Body, &rf); uErr != nil {
+						return uErr
+					}
+					_, uErr := c.DeviceRulesUpdate(ctx, id, rf.toCreate())
+					return uErr
+				},
+			}, nil
 		},
 	}
-	cmd.Flags().StringVar(&inDir, "dir", "devicecontrol", "directory containing device rule YAML files")
-	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "scope for new rules (default: global/tenant)")
-	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
 }
