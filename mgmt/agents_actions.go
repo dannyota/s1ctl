@@ -124,8 +124,8 @@ func (c *Client) AgentsFirewallLogging(ctx context.Context, enable bool, filter 
 // AgentsMoveToGroup moves agents to a different group within the same site.
 // The group ID is the target group; the filter selects which agents to move.
 func (c *Client) AgentsMoveToGroup(ctx context.Context, groupID string, filter ActionFilter) (int, error) {
-	if len(filter.IDs) == 0 && len(filter.SiteIDs) == 0 && filter.Query == "" {
-		return 0, fmt.Errorf("mgmt: action requires at least one filter (ids, siteIds, or query)")
+	if filter.isEmpty() {
+		return 0, fmt.Errorf("mgmt: action requires at least one filter (ids, siteIds, groupIds, or query)")
 	}
 	req := actionRequest{Filter: filter}
 	var resp struct {

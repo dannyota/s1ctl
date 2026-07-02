@@ -30,12 +30,13 @@ Specify agent IDs as arguments, or use --site-id / --group-id / --query
 to target agents by filter. Dry-run by default.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			filter := mgmt.ActionFilter{
-				IDs:     args,
-				SiteIDs: siteIDs,
-				Query:   query,
+				IDs:      args,
+				SiteIDs:  siteIDs,
+				GroupIDs: groupIDs,
+				Query:    query,
 			}
-			if len(filter.IDs) == 0 && len(filter.SiteIDs) == 0 && filter.Query == "" {
-				return fmt.Errorf("specify agent IDs or --site-id / --query")
+			if len(filter.IDs) == 0 && len(filter.SiteIDs) == 0 && len(filter.GroupIDs) == 0 && filter.Query == "" {
+				return fmt.Errorf("specify agent IDs or --site-id / --group-id / --query")
 			}
 			set := 0
 			for _, s := range []string{packageID, fileName, path} {
@@ -48,6 +49,9 @@ to target agents by filter. Dry-run by default.`,
 			}
 			if set > 1 {
 				return fmt.Errorf("only one of --package-id, --file-name, or --path may be specified")
+			}
+			if fileName != "" && osType == "" {
+				return fmt.Errorf("--file-name requires --os-type")
 			}
 			data := mgmt.UpdateSoftwareData{
 				PackageID:   packageID,
@@ -65,7 +69,6 @@ to target agents by filter. Dry-run by default.`,
 			if cmd.Flags().Changed("scheduled") {
 				data.IsScheduled = &scheduled
 			}
-			_ = groupIDs
 			return guard(cmd.OutOrStdout(), "agents upgrade", "trigger upgrade on "+describeFilter(filter), describeFilter(filter), yes, func() error {
 				c, err := mgmtClient()
 				if err != nil {
@@ -244,6 +247,9 @@ func describeFilter(f mgmt.ActionFilter) string {
 	}
 	if len(f.SiteIDs) > 0 {
 		parts = append(parts, fmt.Sprintf("site %s", strings.Join(f.SiteIDs, ",")))
+	}
+	if len(f.GroupIDs) > 0 {
+		parts = append(parts, fmt.Sprintf("group %s", strings.Join(f.GroupIDs, ",")))
 	}
 	if f.Query != "" {
 		parts = append(parts, fmt.Sprintf("query %q", f.Query))

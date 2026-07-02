@@ -70,9 +70,15 @@ type affectedResponse struct {
 
 // ActionFilter identifies which resources to act on.
 type ActionFilter struct {
-	IDs     []string `json:"ids,omitempty"`
-	SiteIDs []string `json:"siteIds,omitempty"`
-	Query   string   `json:"query,omitempty"`
+	IDs      []string `json:"ids,omitempty"`
+	SiteIDs  []string `json:"siteIds,omitempty"`
+	GroupIDs []string `json:"groupIds,omitempty"`
+	Query    string   `json:"query,omitempty"`
+}
+
+// isEmpty reports whether the filter selects nothing.
+func (f ActionFilter) isEmpty() bool {
+	return len(f.IDs) == 0 && len(f.SiteIDs) == 0 && len(f.GroupIDs) == 0 && f.Query == ""
 }
 
 type actionRequest struct {
@@ -82,8 +88,8 @@ type actionRequest struct {
 
 // doAction posts a mutation action and returns the affected count.
 func doAction(c *Client, ctx context.Context, path string, filter ActionFilter, data any) (int, error) { //nolint:unparam
-	if len(filter.IDs) == 0 && len(filter.SiteIDs) == 0 && filter.Query == "" {
-		return 0, fmt.Errorf("mgmt: action requires at least one filter (ids, siteIds, or query)")
+	if filter.isEmpty() {
+		return 0, fmt.Errorf("mgmt: action requires at least one filter (ids, siteIds, groupIds, or query)")
 	}
 	req := actionRequest{Filter: filter, Data: data}
 	var resp affectedResponse
