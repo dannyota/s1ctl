@@ -58,6 +58,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | devicecontrol | list, get, events | create, update, delete, enable, disable, reorder, copy | pull/push | built |
 | firewall | list, get, protocols, export | create, update, delete, enable, disable, reorder, copy, import | pull/push | built |
 | network | list, get, protocols, configuration, export | create, update, delete, enable, disable, reorder, copy, import, set-location, move, tags | pull/push | built |
+| locations | list | create, update, delete | pull/push | built |
 
 ## Cloud and vulnerability management
 
@@ -87,6 +88,8 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | updates | list, get | -- | -- | built |
 | upgrade-policies | list, get, packages | create, update, delete, activate, deactivate | -- | built |
 | tags | list, get | create, update, delete | pull/push | built |
+| filters | list | create, update, delete | -- | built |
+| maintenance | get, get-flexible, export | set, set-flexible | -- | built |
 | activities | list, count, export, types | -- | -- | built |
 | audit | list (local mutation log) | -- | -- | built |
 | drift | drift summary (all sync surfaces) | -- | -- | built |
@@ -105,6 +108,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | assets (XDR) | overview, categories | -- | -- | built |
+| tag-rules | list, test | create, update, delete | -- | built |
 | inventory | list, get (all types) | tags, actions | -- | -- |
 
 ## Identity

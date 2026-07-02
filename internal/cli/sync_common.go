@@ -63,6 +63,7 @@ func syncSurfaceSpecs() []surfaceSpec {
 		exclusionsSpec(),
 		firewallSpec(),
 		networkQuarantineSpec(),
+		locationsSpec(),
 		groupsSpec(),
 		rulesSpec(),
 		sitesSpec(),

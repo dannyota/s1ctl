@@ -33,14 +33,18 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newServiceUsersCmd())
 	root.AddCommand(newRolesCmd())
 	root.AddCommand(newTagsCmd())
+	root.AddCommand(newTagRulesCmd())
 	root.AddCommand(newRemoteOpsCmd())
 	root.AddCommand(newApplicationsCmd())
 	root.AddCommand(newDeviceControlCmd())
 	root.AddCommand(newFirewallCmd())
 	root.AddCommand(newNetworkCmd())
+	root.AddCommand(newLocationsCmd())
+	root.AddCommand(newFiltersCmd())
 	root.AddCommand(newUpdatesCmd())
 	root.AddCommand(newReportsCmd())
 	root.AddCommand(newSettingsCmd())
+	root.AddCommand(newMaintenanceCmd())
 	root.AddCommand(newUpgradePoliciesCmd())
 
 	// Threat intelligence
