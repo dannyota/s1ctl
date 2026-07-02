@@ -42,7 +42,7 @@ fi
 if git diff --cached --name-only | grep -qE '^docs/.*\.md$'; then
   if [ -x scripts/gen-seo.sh ]; then
     bash scripts/gen-seo.sh >/dev/null 2>&1
-    if ! git diff --quiet docs/sitemap.xml docs/llms.txt docs/llms-full.txt 2>/dev/null; then
+    if ! git diff -I '<lastmod>' --quiet docs/sitemap.xml docs/llms.txt docs/llms-full.txt 2>/dev/null; then
       {
         echo "commit blocked: SEO files are stale (scripts/gen-seo.sh)."
         echo "Run: bash scripts/gen-seo.sh && git add docs/sitemap.xml docs/llms.txt docs/llms-full.txt"

@@ -5,7 +5,7 @@ root="$(git rev-parse --show-toplevel)"
 docs="$root/docs"
 sidebar="$docs/_sidebar.md"
 base="https://s1.danny.vn"
-today="$(date +%Y-%m-%d)"
+today="$(git log -1 --format=%cd --date=short 2>/dev/null || date +%Y-%m-%d)"
 
 [ -f "$sidebar" ] || { echo "error: $sidebar not found" >&2; exit 1; }
 

@@ -60,4 +60,5 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: bash scripts/gen-seo.sh
-      - run: git diff --exit-code docs/sitemap.xml docs/llms.txt docs/llms-full.txt
+      - name: Check for structural drift (ignore lastmod dates)
+        run: git diff -I '<lastmod>' --exit-code docs/sitemap.xml docs/llms.txt docs/llms-full.txt
