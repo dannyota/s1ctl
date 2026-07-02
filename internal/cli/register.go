@@ -55,6 +55,7 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newDatalakeCmd())
 
 	// Tooling
+	root.AddCommand(newDriftCmd())
 	root.AddCommand(newDocsCmd())
 	root.AddCommand(newAuditCmd())
 }
