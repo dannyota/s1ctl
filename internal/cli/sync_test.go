@@ -9,6 +9,7 @@ import (
 // TestSyncSurfaceSpecs asserts the registry the drift command will iterate.
 func TestSyncSurfaceSpecs(t *testing.T) {
 	want := map[string]string{
+		"blocklist":      "blocklist",
 		"cloud-policies": "cloud-policies",
 		"devicecontrol":  "devicecontrol",
 		"exclusions":     "exclusions",

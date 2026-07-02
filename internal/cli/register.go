@@ -23,6 +23,7 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newPoliciesCmd())
 	root.AddCommand(newExclusionsCmd())
 	root.AddCommand(newUnifiedExclusionsCmd())
+	root.AddCommand(newBlocklistCmd())
 	root.AddCommand(newActivitiesCmd())
 	root.AddCommand(newCloudPoliciesCmd())
 	root.AddCommand(newRulesCmd())

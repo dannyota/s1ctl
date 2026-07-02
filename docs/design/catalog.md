@@ -38,6 +38,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | policies | list, get, diff (site, account, group scopes) | update, revert (per scope) | pull/push | built |
 | exclusions | list, get | create, update, delete | pull/push | built |
 | unified-exclusions | list, count, export | create | -- | built |
+| blocklist | list, export | create, update, delete, validate | pull/push | built |
 
 ## Detection and response
 
