@@ -13,6 +13,9 @@ func addAgentActions(parent *cobra.Command) {
 	parent.AddCommand(newAgentsIsolateCmd())
 	parent.AddCommand(newAgentsReconnectCmd())
 	parent.AddCommand(newAgentMoveCmd())
+	parent.AddCommand(newAgentMoveToSiteCmd())
+	parent.AddCommand(newAgentSetExternalIDCmd())
+	parent.AddCommand(newAgentFirewallLoggingCmd())
 	plain := []struct {
 		verb, short string
 		call        func(*mgmt.Client, context.Context, mgmt.ActionFilter) (int, error)
@@ -102,6 +105,108 @@ func newAgentMoveCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&groupID, "group-id", "", "target group ID (required)")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
+}
+
+func newAgentMoveToSiteCmd() *cobra.Command {
+	var siteID string
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "move-to-site <agent-id> --site-id <target-site-id>",
+		Short: "Move an agent to a different site",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if siteID == "" {
+				return fmt.Errorf("--site-id is required")
+			}
+			return guard(cmd.OutOrStdout(), "agents move-to-site", "move agent "+args[0]+" to site "+siteID, args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.AgentsMoveToSite(cmd.Context(), siteID, mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "move-to-site: %s affected\n", pluralize(affected, "agent"))
+				return nil
+			})
+		},
+	}
+	cmd.Flags().StringVar(&siteID, "site-id", "", "target site ID (required)")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
+}
+
+func newAgentSetExternalIDCmd() *cobra.Command {
+	var externalID string
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "set-external-id <agent-id> --external-id <value>",
+		Short: "Set the external ID on an agent",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if externalID == "" {
+				return fmt.Errorf("--external-id is required")
+			}
+			return guard(cmd.OutOrStdout(), "agents set-external-id", "set external ID "+externalID+" on agent "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.AgentsSetExternalID(cmd.Context(), externalID, mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "set-external-id: %s affected\n", pluralize(affected, "agent"))
+				return nil
+			})
+		},
+	}
+	cmd.Flags().StringVar(&externalID, "external-id", "", "external ID value (required)")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
+}
+
+func newAgentFirewallLoggingCmd() *cobra.Command {
+	var state string
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "firewall-logging <agent-id> --state on|off",
+		Short: "Enable or disable firewall logging on an agent",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if state != "on" && state != "off" {
+				return fmt.Errorf(`--state must be "on" or "off"`)
+			}
+			return guard(cmd.OutOrStdout(), "agents firewall-logging", "turn firewall logging "+state+" for agent "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.AgentsFirewallLogging(cmd.Context(), state == "on", mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "firewall-logging %s: %s affected\n", state, pluralize(affected, "agent"))
+				return nil
+			})
+		},
+	}
+	cmd.Flags().StringVar(&state, "state", "", `"on" or "off" (required)`)
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
 	return cmd
 }
