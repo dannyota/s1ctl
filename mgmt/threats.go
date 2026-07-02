@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 )
 
@@ -151,4 +152,85 @@ func (c *Client) ThreatsCount(ctx context.Context, params *ThreatListParams) (in
 // ThreatsGet returns a single threat by ID.
 func (c *Client) ThreatsGet(ctx context.Context, id string) (*Threat, error) {
 	return getByID[Threat](c, ctx, "/threats", "threat", id)
+}
+
+// ThreatsExport exports threats matching the filter as CSV bytes.
+func (c *Client) ThreatsExport(ctx context.Context, params *ThreatListParams) ([]byte, error) {
+	return c.getRaw(ctx, "/threats/export", params.values())
+}
+
+// QuarantinedFile is a file quarantined for a threat.
+type QuarantinedFile struct {
+	FilePath string `json:"filePath"`
+	FileName string `json:"fileName"`
+	FileSize int64  `json:"fileSize"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (f QuarantinedFile) MarshalJSON() ([]byte, error) {
+	if f.Raw != nil {
+		return f.Raw, nil
+	}
+	type alias QuarantinedFile
+	return json.Marshal(alias(f))
+}
+
+func (f *QuarantinedFile) UnmarshalJSON(b []byte) error {
+	type alias QuarantinedFile
+	if err := json.Unmarshal(b, (*alias)(f)); err != nil {
+		return err
+	}
+	f.Raw = append(f.Raw[:0:0], b...)
+	return nil
+}
+
+// ThreatsQuarantinedFiles returns the files quarantined for a threat.
+func (c *Client) ThreatsQuarantinedFiles(ctx context.Context, threatID string) ([]QuarantinedFile, error) {
+	if threatID == "" {
+		return nil, fmt.Errorf("mgmt: threat ID is required")
+	}
+	path := fmt.Sprintf("/threats/%s/quarantined-files", url.PathEscape(threatID))
+	items, _, err := list[QuarantinedFile](c, ctx, path, nil)
+	return items, err
+}
+
+// WhiteningOptions describes the exclusion ("whitening") options available
+// for a threat.
+type WhiteningOptions struct {
+	WhiteningOptions []string `json:"whiteningOptions"`
+	ThreatType       []string `json:"threatType"`
+	ThreatPolicy     string   `json:"threatPolicy"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (o WhiteningOptions) MarshalJSON() ([]byte, error) {
+	if o.Raw != nil {
+		return o.Raw, nil
+	}
+	type alias WhiteningOptions
+	return json.Marshal(alias(o))
+}
+
+func (o *WhiteningOptions) UnmarshalJSON(b []byte) error {
+	type alias WhiteningOptions
+	if err := json.Unmarshal(b, (*alias)(o)); err != nil {
+		return err
+	}
+	o.Raw = append(o.Raw[:0:0], b...)
+	return nil
+}
+
+// ThreatsWhiteningOptions returns the exclusion options available for a threat.
+func (c *Client) ThreatsWhiteningOptions(ctx context.Context, threatID string) (*WhiteningOptions, error) {
+	if threatID == "" {
+		return nil, fmt.Errorf("mgmt: threat ID is required")
+	}
+	path := fmt.Sprintf("/threats/%s/whitening-options", url.PathEscape(threatID))
+	var resp singleResponse[WhiteningOptions]
+	if err := c.get(ctx, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
 }
