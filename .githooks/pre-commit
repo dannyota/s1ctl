@@ -41,14 +41,12 @@ fi
 # Check if SEO files are stale when docs change
 if git diff --cached --name-only | grep -qE '^docs/.*\.md$'; then
   if [ -x scripts/gen-seo.sh ]; then
-    bash scripts/gen-seo.sh >/dev/null 2>&1
-    if ! git diff -I '<lastmod>' --quiet docs/sitemap.xml docs/llms.txt docs/llms-full.txt 2>/dev/null; then
+    if ! bash scripts/gen-seo.sh --check 2>&1 | grep -q '^ok:'; then
       {
-        echo "commit blocked: SEO files are stale (scripts/gen-seo.sh)."
+        echo "commit blocked: SEO files are stale (scripts/gen-seo.sh --check)."
         echo "Run: bash scripts/gen-seo.sh && git add docs/sitemap.xml docs/llms.txt docs/llms-full.txt"
         echo "Override: git commit --no-verify"
       } >&2
-      git checkout -- docs/sitemap.xml docs/llms.txt docs/llms-full.txt 2>/dev/null
       exit 1
     fi
   fi

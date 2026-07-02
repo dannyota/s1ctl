@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+check=false
+[ "${1:-}" = "--check" ] && check=true
+
 root="$(git rev-parse --show-toplevel)"
 docs="$root/docs"
 sidebar="$docs/_sidebar.md"
@@ -8,6 +11,13 @@ base="https://s1.danny.vn"
 today="$(git log -1 --format=%cd --date=short 2>/dev/null || date +%Y-%m-%d)"
 
 [ -f "$sidebar" ] || { echo "error: $sidebar not found" >&2; exit 1; }
+
+if $check; then
+  outdir="$(mktemp -d)"
+  trap 'rm -rf "$outdir"' EXIT
+else
+  outdir="$docs"
+fi
 
 # Extract first paragraph from a markdown file (for llms.txt descriptions).
 first_para() {
@@ -24,7 +34,7 @@ first_para() {
 
 # --- sitemap.xml -----------------------------------------------------------
 
-sitemap="$docs/sitemap.xml"
+sitemap="$outdir/sitemap.xml"
 {
   echo '<?xml version="1.0" encoding="UTF-8"?>'
   echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
@@ -53,7 +63,7 @@ sitemap="$docs/sitemap.xml"
 
 # --- llms.txt ---------------------------------------------------------------
 
-llms="$docs/llms.txt"
+llms="$outdir/llms.txt"
 {
   echo "# s1ctl"
   echo ""
@@ -107,7 +117,7 @@ llms="$docs/llms.txt"
 
 # --- llms-full.txt ----------------------------------------------------------
 
-llmsfull="$docs/llms-full.txt"
+llmsfull="$outdir/llms-full.txt"
 {
   echo "# s1ctl — full documentation"
   echo ""
@@ -135,4 +145,19 @@ llmsfull="$docs/llms-full.txt"
   echo ""
 } > "$llmsfull"
 
-echo "generated: sitemap.xml ($(grep -c '<url>' "$sitemap") URLs), llms.txt ($(wc -l < "$llms") lines), llms-full.txt ($(wc -c < "$llmsfull") bytes)"
+if $check; then
+  stale=false
+  for f in sitemap.xml llms.txt llms-full.txt; do
+    if ! diff -I '<lastmod>' -q "$outdir/$f" "$docs/$f" >/dev/null 2>&1; then
+      echo "stale: $f" >&2
+      stale=true
+    fi
+  done
+  if $stale; then
+    echo "Run: bash scripts/gen-seo.sh && git add docs/sitemap.xml docs/llms.txt docs/llms-full.txt" >&2
+    exit 1
+  fi
+  echo "ok: SEO files up-to-date"
+else
+  echo "generated: sitemap.xml ($(grep -c '<url>' "$sitemap") URLs), llms.txt ($(wc -l < "$llms") lines), llms-full.txt ($(wc -c < "$llmsfull") bytes)"
+fi
