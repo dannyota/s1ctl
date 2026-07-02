@@ -53,6 +53,12 @@ func newDatalakeIngestEventsCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
+				if resp.Status != "success" {
+					if resp.Message != "" {
+						return fmt.Errorf("ingest events: %s: %s", resp.Status, resp.Message)
+					}
+					return fmt.Errorf("ingest events: %s", resp.Status)
+				}
 				if outputFormat == "json" {
 					return printJSON(cmd.OutOrStdout(), resp)
 				}
@@ -72,7 +78,7 @@ func newDatalakeIngestLogsCmd() *cobra.Command {
 	var yes bool
 
 	cmd := &cobra.Command{
-		Use:   "logs --file <app.log> --parser <name>",
+		Use:   "logs --file <app.log> [--parser <name>]",
 		Short: "Ingest a plain-text log file (uploadLogs)",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if file == "" {
@@ -96,6 +102,12 @@ func newDatalakeIngestLogsCmd() *cobra.Command {
 				})
 				if err != nil {
 					return err
+				}
+				if resp.Status != "success" {
+					if resp.Message != "" {
+						return fmt.Errorf("upload logs: %s: %s", resp.Status, resp.Message)
+					}
+					return fmt.Errorf("upload logs: %s", resp.Status)
 				}
 				if outputFormat == "json" {
 					return printJSON(cmd.OutOrStdout(), resp)

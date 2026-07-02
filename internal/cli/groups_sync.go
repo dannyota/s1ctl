@@ -73,7 +73,7 @@ func newGroupsPushCmd() *cobra.Command {
 			if err := json.Unmarshal(data, &groups); err != nil {
 				return fmt.Errorf("parse %s: %w", inFile, err)
 			}
-			return guard(cmd.OutOrStdout(), "groups push", fmt.Sprintf("push %s from %s", pluralize(len(groups), "group"), inFile), inFile, yes, func() error {
+			return guard(cmd.OutOrStdout(), "groups push", fmt.Sprintf("create %s from %s", pluralize(len(groups), "group"), inFile), inFile, yes, func() error {
 				c, err := mgmtClient()
 				if err != nil {
 					return err

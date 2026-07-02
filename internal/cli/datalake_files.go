@@ -63,6 +63,9 @@ func newDatalakeFilesGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if resp.Status != "success" && resp.Status != "success/unchanged" {
+				return fmt.Errorf("get %s: %s", args[0], resp.Status)
+			}
 			if outFile != "" {
 				if err := os.WriteFile(outFile, []byte(resp.Content), 0o644); err != nil {
 					return err
@@ -117,6 +120,9 @@ func newDatalakeFilesPutCmd() *cobra.Command {
 				})
 				if err != nil {
 					return err
+				}
+				if resp.Status != "success" {
+					return fmt.Errorf("put %s: %s", args[0], resp.Status)
 				}
 				if outputFormat == "json" {
 					return printJSON(cmd.OutOrStdout(), resp)

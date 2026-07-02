@@ -45,7 +45,11 @@ func newCloudPoliciesPullCmd() *cobra.Command {
 			if err := os.WriteFile(path, data, 0o644); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Pulled %d cloud policies to %s\n", len(policies), path)
+			noun := "cloud policies"
+			if len(policies) == 1 {
+				noun = "cloud policy"
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Pulled %d %s to %s\n", len(policies), noun, path)
 			return nil
 		},
 	}
