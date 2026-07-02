@@ -20,6 +20,17 @@ func newVulnerabilitiesCmd() *cobra.Command {
 	cmd.AddCommand(newVulnerabilitiesStatusCmd())
 	cmd.AddCommand(newVulnerabilitiesVerdictCmd())
 	cmd.AddCommand(newVulnerabilitiesHealthCmd())
+	cmd.AddCommand(newVulnerabilitiesNotesCmd())
+	cmd.AddCommand(newVulnerabilitiesNoteAddCmd())
+	cmd.AddCommand(newVulnerabilitiesNoteUpdateCmd())
+	cmd.AddCommand(newVulnerabilitiesNoteDeleteCmd())
+	cmd.AddCommand(newVulnerabilitiesAssignCmd())
+	cmd.AddCommand(newVulnerabilitiesHistoryCmd())
+	cmd.AddCommand(newVulnerabilitiesRelatedAssetsCmd())
+	cmd.AddCommand(newVulnerabilitiesExportCmd())
+	cmd.AddCommand(newVulnerabilitiesCvesCmd())
+	cmd.AddCommand(newVulnerabilitiesCveCmd())
+	cmd.AddCommand(newVulnerabilitiesStatsCmd())
 	return cmd
 }
 

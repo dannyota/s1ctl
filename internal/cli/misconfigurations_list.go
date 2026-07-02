@@ -19,6 +19,14 @@ func newMisconfigurationsCmd() *cobra.Command {
 	cmd.AddCommand(newMisconfigurationsGetCmd())
 	cmd.AddCommand(newMisconfigurationsStatusCmd())
 	cmd.AddCommand(newMisconfigurationsVerdictCmd())
+	cmd.AddCommand(newMisconfigurationsNotesCmd())
+	cmd.AddCommand(newMisconfigurationsNoteAddCmd())
+	cmd.AddCommand(newMisconfigurationsNoteUpdateCmd())
+	cmd.AddCommand(newMisconfigurationsNoteDeleteCmd())
+	cmd.AddCommand(newMisconfigurationsAssignCmd())
+	cmd.AddCommand(newMisconfigurationsHistoryCmd())
+	cmd.AddCommand(newMisconfigurationsRelatedAssetsCmd())
+	cmd.AddCommand(newMisconfigurationsExportCmd())
 	return cmd
 }
 
