@@ -17,6 +17,7 @@ func newExclusionsCmd() *cobra.Command {
 	cmd.AddCommand(newExclusionsListCmd())
 	cmd.AddCommand(newExclusionsGetCmd())
 	cmd.AddCommand(newExclusionsCreateCmd())
+	cmd.AddCommand(newExclusionsUpdateCmd())
 	cmd.AddCommand(newExclusionsDeleteCmd())
 	addExclusionSyncCmds(cmd)
 	return cmd

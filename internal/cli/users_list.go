@@ -14,6 +14,7 @@ func newUsersCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newUsersListCmd())
 	cmd.AddCommand(newUsersGetCmd())
+	cmd.AddCommand(newUsersDeleteCmd())
 	return cmd
 }
 
