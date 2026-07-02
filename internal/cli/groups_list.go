@@ -21,6 +21,7 @@ func newGroupsCmd() *cobra.Command {
 	cmd.AddCommand(newGroupsCreateCmd())
 	cmd.AddCommand(newGroupsUpdateCmd())
 	cmd.AddCommand(newGroupsDeleteCmd())
+	addGroupSyncCmds(cmd)
 	return cmd
 }
 

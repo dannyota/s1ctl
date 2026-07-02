@@ -19,6 +19,7 @@ func newTagsCmd() *cobra.Command {
 	cmd.AddCommand(newTagsCreateCmd())
 	cmd.AddCommand(newTagsUpdateCmd())
 	cmd.AddCommand(newTagsDeleteCmd())
+	addTagSyncCmds(cmd)
 	return cmd
 }
 
