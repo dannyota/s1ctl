@@ -7,23 +7,50 @@ import (
 	"net/url"
 )
 
+// ReportScope is the scope a report covers.
+type ReportScope string
+
+const (
+	ReportScopeGroup   ReportScope = "group"
+	ReportScopeSite    ReportScope = "site"
+	ReportScopeAccount ReportScope = "account"
+	ReportScopeTenant  ReportScope = "tenant"
+)
+
+// ReportFrequency is how often a scheduled report runs.
+type ReportFrequency string
+
+const (
+	ReportFrequencyManually ReportFrequency = "manually"
+	ReportFrequencyWeekly   ReportFrequency = "weekly"
+	ReportFrequencyMonthly  ReportFrequency = "monthly"
+)
+
+// ReportScheduleType distinguishes scheduled reports from one-off runs.
+type ReportScheduleType string
+
+const (
+	ReportScheduleManually  ReportScheduleType = "manually"
+	ReportScheduleScheduled ReportScheduleType = "scheduled"
+)
+
 // Report is a generated SentinelOne report.
 type Report struct {
-	ID              string          `json:"id"`
-	Name            string          `json:"name"`
-	Scope           string          `json:"scope"`
-	Frequency       string          `json:"frequency"`
-	Interval        string          `json:"interval"`
-	ScheduleType    string          `json:"scheduleType"`
-	CreatorID       string          `json:"creatorId"`
-	CreatorName     string          `json:"creatorName"`
-	CreatedAt       string          `json:"createdAt"`
-	FromDate        string          `json:"fromDate"`
-	ToDate          string          `json:"toDate"`
-	InsightTypes    json.RawMessage `json:"insightTypes"`
-	AttachmentTypes []string        `json:"attachmentTypes"`
-	Status          string          `json:"status"`
-	Sites           string          `json:"sites"`
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	Scope           ReportScope        `json:"scope"`
+	Frequency       ReportFrequency    `json:"frequency"`
+	Interval        string             `json:"interval"`
+	ScheduleType    ReportScheduleType `json:"scheduleType"`
+	CreatorID       string             `json:"creatorId"`
+	CreatorName     string             `json:"creatorName"`
+	CreatedAt       string             `json:"createdAt"`
+	FromDate        string             `json:"fromDate"`
+	ToDate          string             `json:"toDate"`
+	InsightTypes    json.RawMessage    `json:"insightTypes"`
+	AttachmentTypes []string           `json:"attachmentTypes"`
+	Status          string             `json:"status"`
+	Sites           string             `json:"sites"`
 
 	Raw json.RawMessage `json:"-"`
 }
@@ -43,9 +70,9 @@ type ReportListParams struct {
 	AccountIDs   []string
 	IDs          []string
 	Name         string
-	Scope        string
-	Frequency    string
-	ScheduleType string
+	Scope        ReportScope
+	Frequency    ReportFrequency
+	ScheduleType ReportScheduleType
 	Query        string
 	TaskID       string
 	Limit        int
@@ -63,9 +90,9 @@ func (p *ReportListParams) values() url.Values {
 	addCSV(v, "accountIds", p.AccountIDs)
 	addCSV(v, "ids", p.IDs)
 	addString(v, "name", p.Name)
-	addString(v, "scope", p.Scope)
-	addString(v, "frequency", p.Frequency)
-	addString(v, "scheduleType", p.ScheduleType)
+	addString(v, "scope", string(p.Scope))
+	addString(v, "frequency", string(p.Frequency))
+	addString(v, "scheduleType", string(p.ScheduleType))
 	addString(v, "query", p.Query)
 	addString(v, "taskId", p.TaskID)
 	addInt(v, "limit", p.Limit)
@@ -82,21 +109,21 @@ func (c *Client) ReportsList(ctx context.Context, params *ReportListParams) ([]R
 
 // ReportTask is a SentinelOne report task or schedule.
 type ReportTask struct {
-	ID              string          `json:"id"`
-	Name            string          `json:"name"`
-	Scope           string          `json:"scope"`
-	Frequency       string          `json:"frequency"`
-	Day             string          `json:"day"`
-	ScheduleType    string          `json:"scheduleType"`
-	CreatorID       string          `json:"creatorId"`
-	CreatorName     string          `json:"creatorName"`
-	InsightTypes    json.RawMessage `json:"insightTypes"`
-	AttachmentTypes []string        `json:"attachmentTypes"`
-	Sites           string          `json:"sites"`
-	FromDate        string          `json:"fromDate"`
-	ToDate          string          `json:"toDate"`
-	Recipients      []string        `json:"recipients"`
-	IsTrend         bool            `json:"isTrend"`
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	Scope           ReportScope        `json:"scope"`
+	Frequency       ReportFrequency    `json:"frequency"`
+	Day             string             `json:"day"`
+	ScheduleType    ReportScheduleType `json:"scheduleType"`
+	CreatorID       string             `json:"creatorId"`
+	CreatorName     string             `json:"creatorName"`
+	InsightTypes    json.RawMessage    `json:"insightTypes"`
+	AttachmentTypes []string           `json:"attachmentTypes"`
+	Sites           string             `json:"sites"`
+	FromDate        string             `json:"fromDate"`
+	ToDate          string             `json:"toDate"`
+	Recipients      []string           `json:"recipients"`
+	IsTrend         bool               `json:"isTrend"`
 
 	Raw json.RawMessage `json:"-"`
 }
@@ -116,9 +143,9 @@ type ReportTaskListParams struct {
 	AccountIDs   []string
 	IDs          []string
 	Name         string
-	Scope        string
-	Frequency    string
-	ScheduleType string
+	Scope        ReportScope
+	Frequency    ReportFrequency
+	ScheduleType ReportScheduleType
 	Query        string
 	Limit        int
 	Cursor       string
@@ -135,9 +162,9 @@ func (p *ReportTaskListParams) values() url.Values {
 	addCSV(v, "accountIds", p.AccountIDs)
 	addCSV(v, "ids", p.IDs)
 	addString(v, "name", p.Name)
-	addString(v, "scope", p.Scope)
-	addString(v, "frequency", p.Frequency)
-	addString(v, "scheduleType", p.ScheduleType)
+	addString(v, "scope", string(p.Scope))
+	addString(v, "frequency", string(p.Frequency))
+	addString(v, "scheduleType", string(p.ScheduleType))
 	addString(v, "query", p.Query)
 	addInt(v, "limit", p.Limit)
 	addString(v, "cursor", p.Cursor)
@@ -153,29 +180,29 @@ func (c *Client) ReportTasksList(ctx context.Context, params *ReportTaskListPara
 
 // ReportTaskCreate is the input for creating a report task.
 type ReportTaskCreate struct {
-	Name            string          `json:"name"`
-	ScheduleType    string          `json:"scheduleType"`
-	InsightTypes    json.RawMessage `json:"insightTypes"`
-	Frequency       string          `json:"frequency,omitempty"`
-	Day             string          `json:"day,omitempty"`
-	FromDate        string          `json:"fromDate,omitempty"`
-	ToDate          string          `json:"toDate,omitempty"`
-	AttachmentTypes []string        `json:"attachmentTypes,omitempty"`
-	Recipients      []string        `json:"recipients,omitempty"`
-	IsTrend         *bool           `json:"isTrend,omitempty"`
+	Name            string             `json:"name"`
+	ScheduleType    ReportScheduleType `json:"scheduleType"`
+	InsightTypes    json.RawMessage    `json:"insightTypes"`
+	Frequency       ReportFrequency    `json:"frequency,omitempty"`
+	Day             string             `json:"day,omitempty"`
+	FromDate        string             `json:"fromDate,omitempty"`
+	ToDate          string             `json:"toDate,omitempty"`
+	AttachmentTypes []string           `json:"attachmentTypes,omitempty"`
+	Recipients      []string           `json:"recipients,omitempty"`
+	IsTrend         *bool              `json:"isTrend,omitempty"`
 }
 
 type reportTaskCreateRequest struct {
 	Filter struct {
-		SiteIDs    []string `json:"siteIds,omitempty"`
-		AccountIDs []string `json:"accountIds,omitempty"`
-		Scope      string   `json:"scope,omitempty"`
+		SiteIDs    []string    `json:"siteIds,omitempty"`
+		AccountIDs []string    `json:"accountIds,omitempty"`
+		Scope      ReportScope `json:"scope,omitempty"`
 	} `json:"filter"`
 	Data ReportTaskCreate `json:"data"`
 }
 
 // ReportTasksCreate creates a new report task.
-func (c *Client) ReportTasksCreate(ctx context.Context, siteIDs, accountIDs []string, scope string, task ReportTaskCreate) error {
+func (c *Client) ReportTasksCreate(ctx context.Context, siteIDs, accountIDs []string, scope ReportScope, task ReportTaskCreate) error {
 	req := reportTaskCreateRequest{Data: task}
 	req.Filter.SiteIDs = siteIDs
 	req.Filter.AccountIDs = accountIDs

@@ -48,9 +48,9 @@ func newReportsListCmd() *cobra.Command {
 			}
 			params := &mgmt.ReportListParams{
 				SiteIDs:      siteIDs,
-				Scope:        scope,
-				Frequency:    frequency,
-				ScheduleType: scheduleType,
+				Scope:        mgmt.ReportScope(scope),
+				Frequency:    mgmt.ReportFrequency(frequency),
+				ScheduleType: mgmt.ReportScheduleType(scheduleType),
 				Query:        query,
 				Limit:        limit,
 				Cursor:       cursor,
@@ -84,8 +84,8 @@ func newReportsListCmd() *cobra.Command {
 			rows := make([][]string, len(reports))
 			for i, r := range reports {
 				rows[i] = []string{
-					r.ID, truncate(r.Name, 40), r.Scope,
-					r.ScheduleType, orDash(r.Status), orDash(r.CreatedAt),
+					r.ID, truncate(r.Name, 40), string(r.Scope),
+					string(r.ScheduleType), orDash(r.Status), orDash(r.CreatedAt),
 				}
 			}
 			return printOutput(cmd.OutOrStdout(), headers, rows, reports, len(reports), total, "report", all)
@@ -128,9 +128,9 @@ func newReportTasksListCmd() *cobra.Command {
 			}
 			params := &mgmt.ReportTaskListParams{
 				SiteIDs:      siteIDs,
-				Scope:        scope,
-				Frequency:    frequency,
-				ScheduleType: scheduleType,
+				Scope:        mgmt.ReportScope(scope),
+				Frequency:    mgmt.ReportFrequency(frequency),
+				ScheduleType: mgmt.ReportScheduleType(scheduleType),
 				Query:        query,
 				Limit:        limit,
 				Cursor:       cursor,
@@ -164,8 +164,8 @@ func newReportTasksListCmd() *cobra.Command {
 			rows := make([][]string, len(tasks))
 			for i, t := range tasks {
 				rows[i] = []string{
-					t.ID, truncate(t.Name, 40), t.Scope,
-					t.Frequency, t.ScheduleType, orDash(t.Day),
+					t.ID, truncate(t.Name, 40), string(t.Scope),
+					string(t.Frequency), string(t.ScheduleType), orDash(t.Day),
 				}
 			}
 			return printOutput(cmd.OutOrStdout(), headers, rows, tasks, len(tasks), total, "task", all)
@@ -261,9 +261,9 @@ as a JSON array via --insight-types.`,
 
 			task := mgmt.ReportTaskCreate{
 				Name:            name,
-				ScheduleType:    scheduleType,
+				ScheduleType:    mgmt.ReportScheduleType(scheduleType),
 				InsightTypes:    insightTypes,
-				Frequency:       frequency,
+				Frequency:       mgmt.ReportFrequency(frequency),
 				Day:             day,
 				FromDate:        fromDate,
 				ToDate:          toDate,
@@ -279,7 +279,7 @@ as a JSON array via --insight-types.`,
 				if err != nil {
 					return err
 				}
-				if err := c.ReportTasksCreate(cmd.Context(), siteIDs, accountIDs, scope, task); err != nil {
+				if err := c.ReportTasksCreate(cmd.Context(), siteIDs, accountIDs, mgmt.ReportScope(scope), task); err != nil {
 					return err
 				}
 				if outputFormat == "json" {
