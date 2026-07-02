@@ -16,6 +16,12 @@ func addAgentActions(parent *cobra.Command) {
 	parent.AddCommand(newAgentMoveToSiteCmd())
 	parent.AddCommand(newAgentSetExternalIDCmd())
 	parent.AddCommand(newAgentFirewallLoggingCmd())
+	parent.AddCommand(newAgentBroadcastCmd())
+	parent.AddCommand(newAgentFetchFilesCmd())
+	parent.AddCommand(newAgentRangerCmd())
+	parent.AddCommand(newAgentLocalUpgradeCmd())
+	parent.AddCommand(newAgentLocalUpgradeStatusCmd())
+	parent.AddCommand(newAgentsPassphrasesCmd())
 	plain := []struct {
 		verb, short string
 		call        func(*mgmt.Client, context.Context, mgmt.ActionFilter) (int, error)
@@ -34,6 +40,9 @@ func addAgentActions(parent *cobra.Command) {
 		{"reject-uninstall", "Reject a pending uninstall request", (*mgmt.Client).AgentsRejectUninstall},
 		{"mark-up-to-date", "Mark an agent as up to date", (*mgmt.Client).AgentsMarkUpToDate},
 		{"randomize-uuid", "Randomize the agent UUID", (*mgmt.Client).AgentsRandomizeUUID},
+		{"reset-passphrase", "Reset the agent maintenance passphrase", (*mgmt.Client).AgentsResetPassphrase},
+		{"fetch-installed-apps", "Fetch the installed-applications inventory", (*mgmt.Client).AgentsFetchInstalledApps},
+		{"fetch-firewall-rules", "Fetch the current firewall-rules inventory", (*mgmt.Client).AgentsFetchFirewallRules},
 	}
 	for _, a := range plain {
 		parent.AddCommand(newAgentActionCmd(a.verb, a.short, func(c *mgmt.Client, cmd *cobra.Command, f mgmt.ActionFilter) (int, error) {
@@ -207,6 +216,166 @@ func newAgentFirewallLoggingCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&state, "state", "", `"on" or "off" (required)`)
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
+}
+
+func newAgentBroadcastCmd() *cobra.Command {
+	var message string
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "broadcast <agent-id> --message <text>",
+		Short: "Display a broadcast message on an agent's endpoint",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if message == "" {
+				return fmt.Errorf("--message is required")
+			}
+			return guard(cmd.OutOrStdout(), "agents broadcast", "broadcast a message to agent "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.AgentsBroadcast(cmd.Context(), message, mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "broadcast: %s affected\n", pluralize(affected, "agent"))
+				return nil
+			})
+		},
+	}
+	cmd.Flags().StringVar(&message, "message", "", "message text to broadcast (required)")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
+}
+
+func newAgentFetchFilesCmd() *cobra.Command {
+	var paths []string
+	var password string
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "fetch-files <agent-id> --path <file> [--path <file>...] [--password <pw>]",
+		Short: "Fetch specific files from an agent to the console",
+		Long: `Fetch up to 10 files from a single agent. The files are uploaded to the
+console encrypted with --password (required by the platform to open the
+resulting archive). The password is never written to the audit log.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(paths) == 0 {
+				return fmt.Errorf("--path is required")
+			}
+			// The action string is deliberately generic: the file password
+			// must never reach the audit log.
+			return guard(cmd.OutOrStdout(), "agents fetch-files", "fetch files from agent "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				ok, err := c.AgentsFetchFiles(cmd.Context(), args[0], paths, password)
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]bool{"success": ok})
+				}
+				status := "request accepted"
+				if !ok {
+					status = "request not accepted"
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "fetch-files: %s\n", status)
+				return nil
+			})
+		},
+	}
+	cmd.Flags().StringArrayVar(&paths, "path", nil, "absolute file path to fetch (repeatable, up to 10) (required)")
+	cmd.Flags().StringVar(&password, "password", "", "archive encryption password")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
+}
+
+func newAgentRangerCmd() *cobra.Command {
+	var state string
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "ranger <agent-id> --state on|off",
+		Short: "Enable or disable Ranger network discovery on an agent",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if state != "on" && state != "off" {
+				return fmt.Errorf(`--state must be "on" or "off"`)
+			}
+			return guard(cmd.OutOrStdout(), "agents ranger", "turn Ranger "+state+" for agent "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.AgentsRanger(cmd.Context(), state == "on", mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "ranger %s: %s affected\n", state, pluralize(affected, "agent"))
+				return nil
+			})
+		},
+	}
+	cmd.Flags().StringVar(&state, "state", "", `"on" or "off" (required)`)
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
+}
+
+func newAgentLocalUpgradeCmd() *cobra.Command {
+	var state, until string
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "local-upgrade <agent-id> --state on|off [--until <timestamp>]",
+		Short: "Authorize or revoke local upgrade/downgrade on an agent",
+		Long: `Set an agent's local upgrade/downgrade authorization.
+
+--state on authorizes local upgrades until the --until expiration timestamp
+(RFC3339, e.g. 2030-01-01T00:00:00Z), which is required. --state off revokes
+the authorization.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if state != "on" && state != "off" {
+				return fmt.Errorf(`--state must be "on" or "off"`)
+			}
+			if state == "on" && until == "" {
+				return fmt.Errorf("--until is required when --state is on")
+			}
+			authorization := ""
+			if state == "on" {
+				authorization = until
+			}
+			return guard(cmd.OutOrStdout(), "agents local-upgrade", "set local upgrade authorization "+state+" for agent "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := c.AgentsLocalUpgradeAuthorization(cmd.Context(), mgmt.ActionFilter{IDs: []string{args[0]}}, authorization)
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "local-upgrade %s: %s affected\n", state, pluralize(affected, "agent"))
+				return nil
+			})
+		},
+	}
+	cmd.Flags().StringVar(&state, "state", "", `"on" or "off" (required)`)
+	cmd.Flags().StringVar(&until, "until", "", "authorization expiration timestamp (RFC3339); required with --state on")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
 	return cmd
 }
