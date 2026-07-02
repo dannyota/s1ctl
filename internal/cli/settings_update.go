@@ -21,6 +21,10 @@ func newSettingsUpdateCmd() *cobra.Command {
 	cmd.AddCommand(newSettingsUpdateSubCmd("sso", "Update SSO settings", (*mgmt.Client).SettingsSSOUpdate))
 	cmd.AddCommand(newSettingsUpdateSubCmd("smtp", "Update SMTP settings", (*mgmt.Client).SettingsSMTPUpdate))
 	cmd.AddCommand(newSettingsUpdateSubCmd("syslog", "Update syslog settings", (*mgmt.Client).SettingsSyslogUpdate))
+	cmd.AddCommand(newSettingsUpdateSubCmd("sms", "Update SMS settings", (*mgmt.Client).SettingsSMSUpdate))
+	cmd.AddCommand(newSettingsUpdateSubCmd("recipients", "Set a notification recipient", (*mgmt.Client).SettingsRecipientsUpdate))
+	cmd.AddCommand(newSettingsUpdateSubCmd("ad", "Update Active Directory settings", (*mgmt.Client).SettingsADUpdate))
+	cmd.AddCommand(newSettingsUpdateSubCmd("ad-scope-mapping", "Update Active Directory scope mapping", (*mgmt.Client).SettingsADScopeMappingUpdate))
 	return cmd
 }
 

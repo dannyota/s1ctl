@@ -466,6 +466,424 @@ func TestSettingsSyslogTest(t *testing.T) {
 	}
 }
 
+func TestSettingsSMSGet(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/sms" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"enabled": true},
+		})
+	})
+	c := testClient(t, handler)
+	sms, err := c.SettingsSMSGet(context.Background(), &SettingsParams{
+		SiteIDs: []string{"225494730938493804"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !sms.Enabled {
+		t.Fatal("expected enabled=true")
+	}
+	if sms.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
+func TestSettingsSMSUpdate(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Fatalf("expected PUT, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/sms" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var body struct {
+			Data   map[string]any `json:"data"`
+			Filter map[string]any `json:"filter"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		if body.Data["enabled"] != true {
+			t.Fatalf("unexpected enabled in body: %v", body.Data["enabled"])
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"enabled": true},
+		})
+	})
+	c := testClient(t, handler)
+	sms, err := c.SettingsSMSUpdate(context.Background(),
+		&SettingsParams{SiteIDs: []string{"225494730938493804"}},
+		SMSSettings{Enabled: true},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !sms.Enabled {
+		t.Fatal("expected enabled=true")
+	}
+	if sms.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
+func TestSettingsRecipientsGet(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/recipients" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{
+				"recipients": []map[string]any{
+					{"id": "111", "name": "Ops", "email": "ops@example.com", "sms": "+10000000000"},
+					{"id": "222", "name": "SecTeam", "email": "sec@example.com"},
+				},
+			},
+		})
+	})
+	c := testClient(t, handler)
+	rs, err := c.SettingsRecipientsGet(context.Background(), &SettingsParams{
+		SiteIDs: []string{"225494730938493804"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(rs) != 2 {
+		t.Fatalf("expected 2 recipients, got %d", len(rs))
+	}
+	if rs[0].ID != "111" || rs[0].Email != "ops@example.com" {
+		t.Fatalf("unexpected first recipient: %+v", rs[0])
+	}
+	if rs[0].Raw == nil {
+		t.Fatal("expected recipient Raw to be populated")
+	}
+}
+
+func TestSettingsRecipientsUpdate(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Fatalf("expected PUT, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/recipients" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var body struct {
+			Data   map[string]any `json:"data"`
+			Filter map[string]any `json:"filter"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		if body.Data["email"] != "new@example.com" {
+			t.Fatalf("unexpected email in body: %v", body.Data["email"])
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"id": "333", "name": "New", "email": "new@example.com"},
+		})
+	})
+	c := testClient(t, handler)
+	rec, err := c.SettingsRecipientsUpdate(context.Background(),
+		&SettingsParams{SiteIDs: []string{"225494730938493804"}},
+		NotificationRecipient{Name: "New", Email: "new@example.com"},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if rec.ID != "333" {
+		t.Fatalf("unexpected id: %s", rec.ID)
+	}
+	if rec.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
+func TestSettingsRecipientDelete(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			t.Fatalf("expected DELETE, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/recipients/999" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"success": true},
+		})
+	})
+	c := testClient(t, handler)
+	if err := c.SettingsRecipientDelete(context.Background(), "999"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestSettingsADGet(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/active-directory" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{
+				"enabled":  true,
+				"host":     "ad.example.com",
+				"port":     636,
+				"username": "svc-bind",
+				"rootDn":   "dc=example,dc=com",
+				"ssl":      true,
+			},
+		})
+	})
+	c := testClient(t, handler)
+	ad, err := c.SettingsADGet(context.Background(), &SettingsParams{
+		AccountIDs: []string{"225494730938493804"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !ad.Enabled || ad.Host != "ad.example.com" || ad.Port != 636 {
+		t.Fatalf("unexpected AD settings: %+v", ad)
+	}
+	if ad.Username != "svc-bind" || ad.RootDN != "dc=example,dc=com" || !ad.SSL {
+		t.Fatalf("unexpected AD settings: %+v", ad)
+	}
+	if ad.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
+func TestSettingsADUpdate(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Fatalf("expected PUT, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/active-directory" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var body struct {
+			Data   map[string]any `json:"data"`
+			Filter map[string]any `json:"filter"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		if body.Data["host"] != "new-ad.example.com" {
+			t.Fatalf("unexpected host: %v", body.Data["host"])
+		}
+		if body.Data["password"] != "bind-secret-placeholder" {
+			t.Fatalf("expected password to be sent on update, got %v", body.Data["password"])
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"enabled": true, "host": "new-ad.example.com"},
+		})
+	})
+	c := testClient(t, handler)
+	ad, err := c.SettingsADUpdate(context.Background(),
+		&SettingsParams{SiteIDs: []string{"225494730938493804"}},
+		ADSettings{Enabled: true, Host: "new-ad.example.com", Password: "bind-secret-placeholder"},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ad.Host != "new-ad.example.com" {
+		t.Fatalf("unexpected host: %s", ad.Host)
+	}
+	if ad.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
+func TestSettingsADTest(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("expected POST, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/active-directory/test" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"status": true},
+		})
+	})
+	c := testClient(t, handler)
+	result, err := c.SettingsADTest(context.Background(),
+		&SettingsParams{SiteIDs: []string{"225494730938493804"}},
+		ADSettings{Host: "ad.example.com"},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.Status {
+		t.Fatal("expected status=true")
+	}
+	if result.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
+func TestSettingsADScopeMappingGet(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/active-directory/scope-mapping" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{
+				"admin":  []string{"cn=admins,dc=example,dc=com"},
+				"viewer": []string{"cn=viewers,dc=example,dc=com"},
+			},
+		})
+	})
+	c := testClient(t, handler)
+	sm, err := c.SettingsADScopeMappingGet(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(sm.Admin) != 1 || sm.Admin[0] != "cn=admins,dc=example,dc=com" {
+		t.Fatalf("unexpected admin mapping: %v", sm.Admin)
+	}
+	if len(sm.Viewer) != 1 {
+		t.Fatalf("unexpected viewer mapping: %v", sm.Viewer)
+	}
+	if sm.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
+func TestSettingsADScopeMappingUpdate(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Fatalf("expected PUT, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/active-directory/scope-mapping" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var body struct {
+			Data   map[string]any `json:"data"`
+			Filter map[string]any `json:"filter"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		admin, _ := body.Data["admin"].([]any)
+		if len(admin) != 1 || admin[0] != "cn=admins,dc=example,dc=com" {
+			t.Fatalf("unexpected admin in body: %v", body.Data["admin"])
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"admin": []string{"cn=admins,dc=example,dc=com"}},
+		})
+	})
+	c := testClient(t, handler)
+	sm, err := c.SettingsADScopeMappingUpdate(context.Background(),
+		&SettingsParams{SiteIDs: []string{"225494730938493804"}},
+		ADScopeMapping{Admin: []string{"cn=admins,dc=example,dc=com"}},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(sm.Admin) != 1 {
+		t.Fatalf("unexpected admin mapping: %v", sm.Admin)
+	}
+	if sm.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
+func TestSettingsSSOCert(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/sso/sp-cert" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{
+				"fileName":  "sp-cert.pem",
+				"pem":       "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----",
+				"issuedAt":  "2025-01-01T00:00:00Z",
+				"expiresAt": "2027-01-01T00:00:00Z",
+			},
+		})
+	})
+	c := testClient(t, handler)
+	cert, err := c.SettingsSSOCert(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cert.FileName != "sp-cert.pem" {
+		t.Fatalf("unexpected fileName: %s", cert.FileName)
+	}
+	if cert.PEM == "" {
+		t.Fatal("expected pem to be populated")
+	}
+	if cert.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
+func TestSettingsSSOCertDownload(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/sso/sp-cert/download" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.Write([]byte("-----BEGIN CERTIFICATE-----\ncert-bytes\n-----END CERTIFICATE-----"))
+	})
+	c := testClient(t, handler)
+	data, err := c.SettingsSSOCertDownload(context.Background(), &SettingsParams{
+		SiteIDs: []string{"225494730938493804"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected certificate bytes")
+	}
+}
+
+func TestSettingsCancelPendingEmails(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("expected POST, got %s", r.Method)
+		}
+		if r.URL.Path != "/settings/notifications/cancel-pending-emails" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var body struct {
+			Data   map[string]any `json:"data"`
+			Filter map[string]any `json:"filter"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		if body.Data != nil {
+			t.Fatalf("expected no data field in cancel body, got %v", body.Data)
+		}
+		siteIDs, _ := body.Filter["siteIds"].([]any)
+		if len(siteIDs) != 1 || siteIDs[0] != "225494730938493804" {
+			t.Fatalf("unexpected filter siteIds: %v", body.Filter["siteIds"])
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"canceled": 7},
+		})
+	})
+	c := testClient(t, handler)
+	result, err := c.SettingsCancelPendingEmails(context.Background(),
+		&SettingsParams{SiteIDs: []string{"225494730938493804"}},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Canceled != 7 {
+		t.Fatalf("expected canceled=7, got %d", result.Canceled)
+	}
+	if result.Raw == nil {
+		t.Fatal("expected Raw to be populated")
+	}
+}
+
 func TestSettingsNilParams(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.RawQuery != "" {

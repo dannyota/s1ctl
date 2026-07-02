@@ -283,3 +283,244 @@ func (c *Client) SettingsSyslogTest(ctx context.Context, params *SettingsParams,
 	}
 	return &resp.Data, nil
 }
+
+// SMSSettings is the SMS notification service configuration for a site or
+// account. Per the spec the only field the API exposes is the enabled flag.
+type SMSSettings struct {
+	Enabled bool `json:"enabled"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (s *SMSSettings) UnmarshalJSON(b []byte) error {
+	type alias SMSSettings
+	if err := json.Unmarshal(b, (*alias)(s)); err != nil {
+		return err
+	}
+	s.Raw = append(s.Raw[:0:0], b...)
+	return nil
+}
+
+// SettingsSMSGet returns the SMS settings.
+func (c *Client) SettingsSMSGet(ctx context.Context, params *SettingsParams) (*SMSSettings, error) {
+	var resp singleResponse[SMSSettings]
+	if err := c.get(ctx, "/settings/sms", params.values(), &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SettingsSMSUpdate updates the SMS settings.
+func (c *Client) SettingsSMSUpdate(ctx context.Context, params *SettingsParams, data SMSSettings) (*SMSSettings, error) {
+	req := settingsRequest{Data: data, Filter: params.filter()}
+	var resp singleResponse[SMSSettings]
+	if err := c.put(ctx, "/settings/sms", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// NotificationRecipient is a single notification recipient. The GET endpoint
+// returns a list of these; PUT sets (creates or updates) one at a time.
+type NotificationRecipient struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	SMS       string `json:"sms"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (r *NotificationRecipient) UnmarshalJSON(b []byte) error {
+	type alias NotificationRecipient
+	if err := json.Unmarshal(b, (*alias)(r)); err != nil {
+		return err
+	}
+	r.Raw = append(r.Raw[:0:0], b...)
+	return nil
+}
+
+// recipientsData is the GET /settings/recipients response data envelope.
+type recipientsData struct {
+	Recipients []NotificationRecipient `json:"recipients"`
+}
+
+// SettingsRecipientsGet returns the configured notification recipients.
+func (c *Client) SettingsRecipientsGet(ctx context.Context, params *SettingsParams) ([]NotificationRecipient, error) {
+	var resp singleResponse[recipientsData]
+	if err := c.get(ctx, "/settings/recipients", params.values(), &resp); err != nil {
+		return nil, err
+	}
+	return resp.Data.Recipients, nil
+}
+
+// SettingsRecipientsUpdate sets (creates or updates) a single notification
+// recipient and returns the stored recipient.
+func (c *Client) SettingsRecipientsUpdate(ctx context.Context, params *SettingsParams, data NotificationRecipient) (*NotificationRecipient, error) {
+	req := settingsRequest{Data: data, Filter: params.filter()}
+	var resp singleResponse[NotificationRecipient]
+	if err := c.put(ctx, "/settings/recipients", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SettingsRecipientDelete removes a notification recipient by ID.
+func (c *Client) SettingsRecipientDelete(ctx context.Context, id string) error {
+	return c.delete(ctx, "/settings/recipients/"+url.PathEscape(id))
+}
+
+// ADSettings is the Active Directory integration configuration. Password is a
+// secret (the bind account credential); the GET endpoint does not echo it, but
+// it is accepted on update. Never print Password to --json or the audit log.
+type ADSettings struct {
+	Enabled  bool   `json:"enabled"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Username string `json:"username"`
+	RootDN   string `json:"rootDn"`
+	SSL      bool   `json:"ssl"`
+	Password string `json:"password"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (a *ADSettings) UnmarshalJSON(b []byte) error {
+	type alias ADSettings
+	if err := json.Unmarshal(b, (*alias)(a)); err != nil {
+		return err
+	}
+	a.Raw = append(a.Raw[:0:0], b...)
+	return nil
+}
+
+// SettingsADGet returns the Active Directory settings.
+func (c *Client) SettingsADGet(ctx context.Context, params *SettingsParams) (*ADSettings, error) {
+	var resp singleResponse[ADSettings]
+	if err := c.get(ctx, "/settings/active-directory", params.values(), &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SettingsADUpdate updates the Active Directory settings.
+func (c *Client) SettingsADUpdate(ctx context.Context, params *SettingsParams, data ADSettings) (*ADSettings, error) {
+	req := settingsRequest{Data: data, Filter: params.filter()}
+	var resp singleResponse[ADSettings]
+	if err := c.put(ctx, "/settings/active-directory", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SettingsADTest probes connectivity using the provided Active Directory settings.
+func (c *Client) SettingsADTest(ctx context.Context, params *SettingsParams, data ADSettings) (*SettingsTestResult, error) {
+	req := settingsRequest{Data: data, Filter: params.filter()}
+	var resp singleResponse[SettingsTestResult]
+	if err := c.post(ctx, "/settings/active-directory/test", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// ADScopeMapping maps Active Directory groups to admin and viewer scopes.
+type ADScopeMapping struct {
+	Admin  []string `json:"admin"`
+	Viewer []string `json:"viewer"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (m *ADScopeMapping) UnmarshalJSON(b []byte) error {
+	type alias ADScopeMapping
+	if err := json.Unmarshal(b, (*alias)(m)); err != nil {
+		return err
+	}
+	m.Raw = append(m.Raw[:0:0], b...)
+	return nil
+}
+
+// SettingsADScopeMappingGet returns the Active Directory scope mapping.
+func (c *Client) SettingsADScopeMappingGet(ctx context.Context, params *SettingsParams) (*ADScopeMapping, error) {
+	var resp singleResponse[ADScopeMapping]
+	if err := c.get(ctx, "/settings/active-directory/scope-mapping", params.values(), &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SettingsADScopeMappingUpdate updates the Active Directory scope mapping.
+func (c *Client) SettingsADScopeMappingUpdate(ctx context.Context, params *SettingsParams, data ADScopeMapping) (*ADScopeMapping, error) {
+	req := settingsRequest{Data: data, Filter: params.filter()}
+	var resp singleResponse[ADScopeMapping]
+	if err := c.put(ctx, "/settings/active-directory/scope-mapping", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SSOServiceProviderCert is the SAML service-provider signing certificate. The
+// PEM is public key material (safe to print), not a secret.
+type SSOServiceProviderCert struct {
+	FileName  string `json:"fileName"`
+	PEM       string `json:"pem"`
+	IssuedAt  string `json:"issuedAt"`
+	ExpiresAt string `json:"expiresAt"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (s *SSOServiceProviderCert) UnmarshalJSON(b []byte) error {
+	type alias SSOServiceProviderCert
+	if err := json.Unmarshal(b, (*alias)(s)); err != nil {
+		return err
+	}
+	s.Raw = append(s.Raw[:0:0], b...)
+	return nil
+}
+
+// SettingsSSOCert returns the SSO service-provider signing certificate metadata
+// and PEM.
+func (c *Client) SettingsSSOCert(ctx context.Context, params *SettingsParams) (*SSOServiceProviderCert, error) {
+	var resp singleResponse[SSOServiceProviderCert]
+	if err := c.get(ctx, "/settings/sso/sp-cert", params.values(), &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SettingsSSOCertDownload returns the raw SSO service-provider certificate file.
+func (c *Client) SettingsSSOCertDownload(ctx context.Context, params *SettingsParams) ([]byte, error) {
+	return c.getRaw(ctx, "/settings/sso/sp-cert/download", params.values())
+}
+
+// CancelPendingEmailsResult reports how many pending emails were cancelled.
+type CancelPendingEmailsResult struct {
+	Canceled int `json:"canceled"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (r *CancelPendingEmailsResult) UnmarshalJSON(b []byte) error {
+	type alias CancelPendingEmailsResult
+	if err := json.Unmarshal(b, (*alias)(r)); err != nil {
+		return err
+	}
+	r.Raw = append(r.Raw[:0:0], b...)
+	return nil
+}
+
+// SettingsCancelPendingEmails clears queued pending email notifications. The
+// request body carries only a filter (no data envelope), per the spec.
+func (c *Client) SettingsCancelPendingEmails(ctx context.Context, params *SettingsParams) (*CancelPendingEmailsResult, error) {
+	req := struct {
+		Filter settingsFilter `json:"filter"`
+	}{Filter: params.filter()}
+	var resp singleResponse[CancelPendingEmailsResult]
+	if err := c.post(ctx, "/settings/notifications/cancel-pending-emails", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
