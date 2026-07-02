@@ -87,10 +87,10 @@ func (c *Client) TagsCreate(ctx context.Context, data TagCreate) (*Tag, error) {
 
 // TagsUpdate updates a tag.
 func (c *Client) TagsUpdate(ctx context.Context, id string, data TagUpdate) (*Tag, error) {
-	return update[Tag](c, ctx, fmt.Sprintf("/tags/%s", id), data)
+	return update[Tag](c, ctx, fmt.Sprintf("/tags/%s", url.PathEscape(id)), data)
 }
 
 // TagsDelete deletes a tag.
 func (c *Client) TagsDelete(ctx context.Context, id string) error {
-	return c.delete(ctx, fmt.Sprintf("/tags/%s", id), nil, nil)
+	return c.delete(ctx, fmt.Sprintf("/tags/%s", url.PathEscape(id)), nil, nil)
 }

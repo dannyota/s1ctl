@@ -109,10 +109,10 @@ func (c *Client) GroupsCreate(ctx context.Context, siteID string, data GroupCrea
 
 // GroupsUpdate updates a group.
 func (c *Client) GroupsUpdate(ctx context.Context, id string, data GroupUpdate) (*Group, error) {
-	return update[Group](c, ctx, fmt.Sprintf("/groups/%s", id), data)
+	return update[Group](c, ctx, fmt.Sprintf("/groups/%s", url.PathEscape(id)), data)
 }
 
 // GroupsDelete deletes a group.
 func (c *Client) GroupsDelete(ctx context.Context, id string) error {
-	return c.delete(ctx, fmt.Sprintf("/groups/%s", id), nil, nil)
+	return c.delete(ctx, fmt.Sprintf("/groups/%s", url.PathEscape(id)), nil, nil)
 }

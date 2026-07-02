@@ -85,7 +85,7 @@ func (c *Client) AccountsCount(ctx context.Context, params *AccountListParams) (
 
 // AccountsGet returns a single account by ID (uses path param, not ?ids=).
 func (c *Client) AccountsGet(ctx context.Context, id string) (*Account, error) {
-	items, _, err := list[Account](c, ctx, fmt.Sprintf("/accounts/%s", id), nil)
+	items, _, err := list[Account](c, ctx, fmt.Sprintf("/accounts/%s", url.PathEscape(id)), nil)
 	if err != nil {
 		return nil, err
 	}

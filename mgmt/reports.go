@@ -220,6 +220,6 @@ func (c *Client) ReportsInsightTypes(ctx context.Context, params *InsightTypesPa
 
 // ReportDownload downloads a report in the specified format (pdf or html).
 func (c *Client) ReportDownload(ctx context.Context, reportID, format string) ([]byte, error) {
-	path := fmt.Sprintf("/reports/%s/%s", reportID, format)
+	path := fmt.Sprintf("/reports/%s/%s", url.PathEscape(reportID), url.PathEscape(format))
 	return c.getRaw(ctx, path, nil)
 }

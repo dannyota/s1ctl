@@ -72,6 +72,6 @@ func (c *Client) ThreatTimeline(ctx context.Context, threatID string, params *Th
 	if threatID == "" {
 		return nil, nil, fmt.Errorf("mgmt: threat ID is required")
 	}
-	path := fmt.Sprintf("/threats/%s/timeline", threatID)
+	path := fmt.Sprintf("/threats/%s/timeline", url.PathEscape(threatID))
 	return list[ThreatTimelineEntry](c, ctx, path, params.values())
 }

@@ -62,7 +62,7 @@ func (c *Client) ThreatNotesList(ctx context.Context, threatID string, params *T
 	if threatID == "" {
 		return nil, nil, fmt.Errorf("mgmt: threat ID is required")
 	}
-	path := fmt.Sprintf("/threats/%s/notes", threatID)
+	path := fmt.Sprintf("/threats/%s/notes", url.PathEscape(threatID))
 	return list[ThreatNote](c, ctx, path, params.values())
 }
 

@@ -256,7 +256,7 @@ func (c *Client) FirewallRulesCreate(ctx context.Context, scope FirewallRuleScop
 
 // FirewallRulesUpdate updates a firewall rule by ID.
 func (c *Client) FirewallRulesUpdate(ctx context.Context, id string, data FirewallRuleCreate) (*FirewallRule, error) {
-	return update[FirewallRule](c, ctx, fmt.Sprintf("/firewall-control/%s", id), data)
+	return update[FirewallRule](c, ctx, fmt.Sprintf("/firewall-control/%s", url.PathEscape(id)), data)
 }
 
 // FirewallRuleScope identifies the scope for creating a firewall rule.

@@ -139,10 +139,10 @@ func (c *Client) SitesCreate(ctx context.Context, data SiteCreate) (*Site, error
 
 // SitesUpdate updates a site.
 func (c *Client) SitesUpdate(ctx context.Context, id string, data SiteUpdate) (*Site, error) {
-	return update[Site](c, ctx, fmt.Sprintf("/sites/%s", id), data)
+	return update[Site](c, ctx, fmt.Sprintf("/sites/%s", url.PathEscape(id)), data)
 }
 
 // SitesDelete deletes a site.
 func (c *Client) SitesDelete(ctx context.Context, id string) error {
-	return c.delete(ctx, fmt.Sprintf("/sites/%s", id), nil, nil)
+	return c.delete(ctx, fmt.Sprintf("/sites/%s", url.PathEscape(id)), nil, nil)
 }

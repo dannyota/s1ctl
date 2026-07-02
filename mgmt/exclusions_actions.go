@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"fmt"
+	"net/url"
 )
 
 // ExclusionCreate is the request body for creating an exclusion.
@@ -40,7 +41,7 @@ func (c *Client) ExclusionsCreate(ctx context.Context, siteIDs []string, excl Ex
 
 // ExclusionsUpdate updates an exclusion.
 func (c *Client) ExclusionsUpdate(ctx context.Context, id string, data ExclusionCreate) (*Exclusion, error) {
-	return update[Exclusion](c, ctx, fmt.Sprintf("/exclusions/%s", id), data)
+	return update[Exclusion](c, ctx, fmt.Sprintf("/exclusions/%s", url.PathEscape(id)), data)
 }
 
 // ExclusionsDelete deletes exclusions by ID.

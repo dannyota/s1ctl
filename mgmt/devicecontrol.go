@@ -186,5 +186,5 @@ func (c *Client) DeviceRulesCreate(ctx context.Context, data DeviceRuleCreate, f
 
 // DeviceRulesUpdate updates a device control rule by ID.
 func (c *Client) DeviceRulesUpdate(ctx context.Context, id string, data DeviceRuleCreate) (*DeviceRule, error) {
-	return update[DeviceRule](c, ctx, fmt.Sprintf("/device-control/%s", id), data)
+	return update[DeviceRule](c, ctx, fmt.Sprintf("/device-control/%s", url.PathEscape(id)), data)
 }

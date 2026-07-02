@@ -182,7 +182,7 @@ func (c *Client) RulesCreate(ctx context.Context, data RuleCreate) (*Rule, error
 
 // RulesUpdate updates a custom detection rule by ID.
 func (c *Client) RulesUpdate(ctx context.Context, id string, data RuleCreate) (*Rule, error) {
-	return update[Rule](c, ctx, fmt.Sprintf("/cloud-detection/rules/%s", id), data)
+	return update[Rule](c, ctx, fmt.Sprintf("/cloud-detection/rules/%s", url.PathEscape(id)), data)
 }
 
 // RuleActionFilter selects which rules to enable or disable.

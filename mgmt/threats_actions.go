@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"fmt"
+	"net/url"
 )
 
 // ThreatsMitigate applies a mitigation action to threats.
@@ -10,7 +11,7 @@ func (c *Client) ThreatsMitigate(ctx context.Context, action string, filter Acti
 	if action == "" {
 		return 0, fmt.Errorf("mgmt: mitigation action is required")
 	}
-	return doAction(c, ctx, fmt.Sprintf("/threats/mitigate/%s", action), filter, nil)
+	return doAction(c, ctx, fmt.Sprintf("/threats/mitigate/%s", url.PathEscape(action)), filter, nil)
 }
 
 // ThreatsUpdateVerdict updates the analyst verdict on threats.
