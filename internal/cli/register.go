@@ -67,5 +67,6 @@ func registerCommands(root *cobra.Command) {
 	// Tooling
 	root.AddCommand(newDriftCmd())
 	root.AddCommand(newDocsCmd())
+	root.AddCommand(newSkillCmd())
 	root.AddCommand(newAuditCmd())
 }
