@@ -14,6 +14,7 @@ func TestSyncSurfaceSpecs(t *testing.T) {
 		"devicecontrol":  "devicecontrol",
 		"exclusions":     "exclusions",
 		"firewall":       "firewall",
+		"network":        "network-quarantine",
 		"groups":         "groups",
 		"rules":          "rules",
 		"sites":          "sites",

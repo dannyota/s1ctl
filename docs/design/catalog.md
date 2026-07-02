@@ -57,7 +57,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | applications | list, cves, risks | -- | -- | built |
 | devicecontrol | list, get, events | create, update, delete, enable, disable, reorder, copy | pull/push | built |
 | firewall | list, get, protocols, export | create, update, delete, enable, disable, reorder, copy, import | pull/push | built |
-| network | list, get | quarantine | -- | -- |
+| network | list, get, protocols, configuration, export | create, update, delete, enable, disable, reorder, copy, import, set-location, move, tags | pull/push | built |
 
 ## Cloud and vulnerability management
 

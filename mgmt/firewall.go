@@ -3,9 +3,32 @@ package mgmt
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
 )
+
+// FirewallCategory selects a rule category within the shared firewall-control
+// endpoint family. The default (empty or "firewall") targets the standard
+// firewall; "network-quarantine" targets Network Quarantine, which is the same
+// operations addressed under an extra path segment.
+type FirewallCategory string
+
+const (
+	// FirewallCategoryFirewall is the default category (bare /firewall-control paths).
+	FirewallCategoryFirewall FirewallCategory = "firewall"
+	// FirewallCategoryNetworkQuarantine addresses Network Quarantine rules.
+	FirewallCategoryNetworkQuarantine FirewallCategory = "network-quarantine"
+)
+
+// firewallPath builds a firewall-control path for the given category. The
+// default/firewall category yields the bare "/firewall-control" paths; any
+// other category inserts its segment, e.g. "/firewall-control/network-quarantine".
+func firewallPath(cat FirewallCategory, suffix string) string {
+	base := "/firewall-control"
+	if cat != "" && cat != FirewallCategoryFirewall {
+		base += "/" + string(cat)
+	}
+	return base + suffix
+}
 
 // FirewallDirection is the traffic direction of a firewall rule.
 type FirewallDirection string
@@ -206,12 +229,20 @@ func (p *FirewallRuleListParams) values() url.Values {
 
 // FirewallRulesList returns a paginated list of firewall rules.
 func (c *Client) FirewallRulesList(ctx context.Context, params *FirewallRuleListParams) ([]FirewallRule, *Pagination, error) {
-	return list[FirewallRule](c, ctx, "/firewall-control", params.values())
+	return c.firewallRulesList(ctx, FirewallCategoryFirewall, params)
+}
+
+func (c *Client) firewallRulesList(ctx context.Context, cat FirewallCategory, params *FirewallRuleListParams) ([]FirewallRule, *Pagination, error) {
+	return list[FirewallRule](c, ctx, firewallPath(cat, ""), params.values())
 }
 
 // FirewallRulesGet returns a single firewall rule by ID.
 func (c *Client) FirewallRulesGet(ctx context.Context, id string) (*FirewallRule, error) {
-	return getByID[FirewallRule](c, ctx, "/firewall-control", "firewall rule", id)
+	return c.firewallRulesGet(ctx, FirewallCategoryFirewall, id)
+}
+
+func (c *Client) firewallRulesGet(ctx context.Context, cat FirewallCategory, id string) (*FirewallRule, error) {
+	return getByID[FirewallRule](c, ctx, firewallPath(cat, ""), "firewall rule", id)
 }
 
 // FirewallRuleCreate is the request body for creating or updating a firewall rule.
@@ -243,12 +274,16 @@ type firewallCreateRequest struct {
 
 // FirewallRulesCreate creates a firewall rule.
 func (c *Client) FirewallRulesCreate(ctx context.Context, scope FirewallRuleScope, data FirewallRuleCreate) (*FirewallRule, error) {
+	return c.firewallRulesCreate(ctx, FirewallCategoryFirewall, scope, data)
+}
+
+func (c *Client) firewallRulesCreate(ctx context.Context, cat FirewallCategory, scope FirewallRuleScope, data FirewallRuleCreate) (*FirewallRule, error) {
 	req := firewallCreateRequest{Data: data}
 	req.Filter.SiteIDs = scope.SiteIDs
 	req.Filter.AccountIDs = scope.AccountIDs
 	req.Filter.GroupIDs = scope.GroupIDs
 	var resp singleResponse[FirewallRule]
-	if err := c.post(ctx, "/firewall-control", req, &resp); err != nil {
+	if err := c.post(ctx, firewallPath(cat, ""), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp.Data, nil
@@ -256,7 +291,11 @@ func (c *Client) FirewallRulesCreate(ctx context.Context, scope FirewallRuleScop
 
 // FirewallRulesUpdate updates a firewall rule by ID.
 func (c *Client) FirewallRulesUpdate(ctx context.Context, id string, data FirewallRuleCreate) (*FirewallRule, error) {
-	return update[FirewallRule](c, ctx, fmt.Sprintf("/firewall-control/%s", url.PathEscape(id)), data)
+	return c.firewallRulesUpdate(ctx, FirewallCategoryFirewall, id, data)
+}
+
+func (c *Client) firewallRulesUpdate(ctx context.Context, cat FirewallCategory, id string, data FirewallRuleCreate) (*FirewallRule, error) {
+	return update[FirewallRule](c, ctx, firewallPath(cat, "/"+url.PathEscape(id)), data)
 }
 
 // FirewallRuleScope identifies the scope for creating a firewall rule.

@@ -46,18 +46,26 @@ func (p *FirewallProtocolListParams) values() url.Values {
 
 // FirewallProtocolsList returns the protocols available for firewall rules.
 func (c *Client) FirewallProtocolsList(ctx context.Context, params *FirewallProtocolListParams) ([]FirewallProtocol, *Pagination, error) {
-	return list[FirewallProtocol](c, ctx, "/firewall-control/protocols", params.values())
+	return c.firewallProtocolsList(ctx, FirewallCategoryFirewall, params)
+}
+
+func (c *Client) firewallProtocolsList(ctx context.Context, cat FirewallCategory, params *FirewallProtocolListParams) ([]FirewallProtocol, *Pagination, error) {
+	return list[FirewallProtocol](c, ctx, firewallPath(cat, "/protocols"), params.values())
 }
 
 // FirewallRulesDelete deletes firewall rules by ID.
 func (c *Client) FirewallRulesDelete(ctx context.Context, ids []string) (int, error) {
+	return c.firewallRulesDelete(ctx, FirewallCategoryFirewall, ids)
+}
+
+func (c *Client) firewallRulesDelete(ctx context.Context, cat FirewallCategory, ids []string) (int, error) {
 	req := map[string]any{
 		"filter": map[string]any{
 			"ids": ids,
 		},
 	}
 	var resp affectedResponse
-	if err := c.jsonRequest(ctx, http.MethodDelete, "/firewall-control", req, &resp); err != nil {
+	if err := c.jsonRequest(ctx, http.MethodDelete, firewallPath(cat, ""), req, &resp); err != nil {
 		return 0, err
 	}
 	return resp.Data.Affected, nil
@@ -73,6 +81,10 @@ type FirewallRuleReorderFilter struct {
 
 // FirewallRulesReorder changes the order of firewall rules within a scope.
 func (c *Client) FirewallRulesReorder(ctx context.Context, orders []RuleOrder, filter FirewallRuleReorderFilter) error {
+	return c.firewallRulesReorder(ctx, FirewallCategoryFirewall, orders, filter)
+}
+
+func (c *Client) firewallRulesReorder(ctx context.Context, cat FirewallCategory, orders []RuleOrder, filter FirewallRuleReorderFilter) error {
 	req := struct {
 		Data   []RuleOrder               `json:"data"`
 		Filter FirewallRuleReorderFilter `json:"filter"`
@@ -82,7 +94,7 @@ func (c *Client) FirewallRulesReorder(ctx context.Context, orders []RuleOrder, f
 			Success bool `json:"success"`
 		} `json:"data"`
 	}
-	return c.put(ctx, "/firewall-control/reorder", req, &resp)
+	return c.put(ctx, firewallPath(cat, "/reorder"), req, &resp)
 }
 
 // FirewallRuleCopyTarget specifies a destination scope for copying rules.
@@ -95,12 +107,16 @@ type FirewallRuleCopyTarget struct {
 
 // FirewallRulesCopy copies firewall rules from a source scope to targets.
 func (c *Client) FirewallRulesCopy(ctx context.Context, filter FirewallRuleReorderFilter, targets []FirewallRuleCopyTarget) (int, error) {
+	return c.firewallRulesCopy(ctx, FirewallCategoryFirewall, filter, targets)
+}
+
+func (c *Client) firewallRulesCopy(ctx context.Context, cat FirewallCategory, filter FirewallRuleReorderFilter, targets []FirewallRuleCopyTarget) (int, error) {
 	req := struct {
 		Filter FirewallRuleReorderFilter `json:"filter"`
 		Data   []FirewallRuleCopyTarget  `json:"data"`
 	}{Filter: filter, Data: targets}
 	var resp affectedResponse
-	if err := c.post(ctx, "/firewall-control/copy-rules", req, &resp); err != nil {
+	if err := c.post(ctx, firewallPath(cat, "/copy-rules"), req, &resp); err != nil {
 		return 0, err
 	}
 	return resp.Data.Affected, nil
@@ -108,6 +124,10 @@ func (c *Client) FirewallRulesCopy(ctx context.Context, filter FirewallRuleReord
 
 // FirewallRulesSetStatus enables or disables firewall rules by ID.
 func (c *Client) FirewallRulesSetStatus(ctx context.Context, ids []string, status FirewallStatus) (int, error) {
+	return c.firewallRulesSetStatus(ctx, FirewallCategoryFirewall, ids, status)
+}
+
+func (c *Client) firewallRulesSetStatus(ctx context.Context, cat FirewallCategory, ids []string, status FirewallStatus) (int, error) {
 	req := struct {
 		Filter struct {
 			IDs []string `json:"ids"`
@@ -119,7 +139,7 @@ func (c *Client) FirewallRulesSetStatus(ctx context.Context, ids []string, statu
 	req.Filter.IDs = ids
 	req.Data.Status = status
 	var resp affectedResponse
-	if err := c.put(ctx, "/firewall-control/enable", req, &resp); err != nil {
+	if err := c.put(ctx, firewallPath(cat, "/enable"), req, &resp); err != nil {
 		return 0, err
 	}
 	return resp.Data.Affected, nil
@@ -127,7 +147,11 @@ func (c *Client) FirewallRulesSetStatus(ctx context.Context, ids []string, statu
 
 // FirewallRulesExport exports firewall rules as raw JSON for the given scope.
 func (c *Client) FirewallRulesExport(ctx context.Context, params *FirewallRuleListParams) ([]byte, error) {
-	u := c.baseURL + "/firewall-control/export"
+	return c.firewallRulesExport(ctx, FirewallCategoryFirewall, params)
+}
+
+func (c *Client) firewallRulesExport(ctx context.Context, cat FirewallCategory, params *FirewallRuleListParams) ([]byte, error) {
+	u := c.baseURL + firewallPath(cat, "/export")
 	v := params.values()
 	if len(v) > 0 {
 		u += "?" + v.Encode()
@@ -165,6 +189,10 @@ type FirewallImportScope struct {
 
 // FirewallRulesImport imports firewall rules from a JSON file into the given scope.
 func (c *Client) FirewallRulesImport(ctx context.Context, scope FirewallImportScope, filename string, fileData []byte) error {
+	return c.firewallRulesImport(ctx, FirewallCategoryFirewall, scope, filename, fileData)
+}
+
+func (c *Client) firewallRulesImport(ctx context.Context, cat FirewallCategory, scope FirewallImportScope, filename string, fileData []byte) error {
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
 
@@ -200,7 +228,7 @@ func (c *Client) FirewallRulesImport(ctx context.Context, scope FirewallImportSc
 		return fmt.Errorf("mgmt: close multipart: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/firewall-control/import", &body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+firewallPath(cat, "/import"), &body)
 	if err != nil {
 		return fmt.Errorf("mgmt: %w", err)
 	}

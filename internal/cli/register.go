@@ -37,6 +37,7 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newApplicationsCmd())
 	root.AddCommand(newDeviceControlCmd())
 	root.AddCommand(newFirewallCmd())
+	root.AddCommand(newNetworkCmd())
 	root.AddCommand(newUpdatesCmd())
 	root.AddCommand(newReportsCmd())
 	root.AddCommand(newSettingsCmd())
