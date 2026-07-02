@@ -7,7 +7,7 @@ import (
 )
 
 func newPoliciesRevertCmd() *cobra.Command {
-	var scope, id, siteID string
+	var scope, id string
 	var yes bool
 
 	cmd := &cobra.Command{
@@ -19,7 +19,6 @@ Site policies revert to their account's policy, group policies revert to their
 site's policy, and account policies revert to global defaults.
 
 Specify the scope with --scope (site, account, or group) and the target with --id.
-For group scope, --site-id is also required.
 Dry-run by default — pass --yes to apply.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if id == "" {
@@ -32,10 +31,7 @@ Dry-run by default — pass --yes to apply.`,
 			case "account":
 				return revertAccountPolicy(cmd, id, yes)
 			case "group":
-				if siteID == "" {
-					return fmt.Errorf("--site-id is required when --scope=group")
-				}
-				return revertGroupPolicy(cmd, siteID, id, yes)
+				return revertGroupPolicy(cmd, id, yes)
 			default:
 				return fmt.Errorf("invalid --scope %q: must be site, account, or group", scope)
 			}
@@ -43,7 +39,6 @@ Dry-run by default — pass --yes to apply.`,
 	}
 	cmd.Flags().StringVar(&scope, "scope", "site", "policy scope: site, account, or group")
 	cmd.Flags().StringVar(&id, "id", "", "target scope ID (site, account, or group ID)")
-	cmd.Flags().StringVar(&siteID, "site-id", "", "site ID (required for group scope)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the revert (default: dry-run)")
 	return cmd
 }
@@ -82,13 +77,13 @@ func revertAccountPolicy(cmd *cobra.Command, accountID string, yes bool) error {
 	})
 }
 
-func revertGroupPolicy(cmd *cobra.Command, siteID, groupID string, yes bool) error {
+func revertGroupPolicy(cmd *cobra.Command, groupID string, yes bool) error {
 	return guard(cmd.OutOrStdout(), "policies revert", "revert policy for group "+groupID+" to site inherited values", groupID, yes, func() error {
 		c, err := mgmtClient()
 		if err != nil {
 			return err
 		}
-		if err := c.PolicyRevertGroup(cmd.Context(), siteID, groupID); err != nil {
+		if err := c.PolicyRevertGroup(cmd.Context(), groupID); err != nil {
 			return fmt.Errorf("revert group %s policy: %w", groupID, err)
 		}
 		if outputFormat == "json" {

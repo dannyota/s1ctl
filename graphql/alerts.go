@@ -239,8 +239,8 @@ func (g *AlertGroup) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-const alertGroupsQuery = `query AlertGroups($first: Int, $after: String, $filters: [FilterInput!], $scope: ScopeSelectorInput, $groupByFieldId: String!) {
-  alertGroups(first: $first, after: $after, filters: $filters, scope: $scope, groupByFieldId: $groupByFieldId) {
+const alertGroupsQuery = `query AlertGroups($first: Int, $after: String, $filters: [FilterInput!], $scope: ScopeSelectorInput, $sort: SortInput, $groupByFieldId: String!) {
+  alertGroups(first: $first, after: $after, filters: $filters, scope: $scope, sort: $sort, groupByFieldId: $groupByFieldId) {
     edges {
       cursor
       node {

@@ -3,6 +3,7 @@ package sdl
 import (
 	"context"
 	"encoding/json"
+	"maps"
 )
 
 // LogQueryRequest is the request body for a log query (REST /api/query).
@@ -120,9 +121,20 @@ func (c *Client) QueryAll(ctx context.Context, req *LogQueryRequest, opts ...Que
 			return nil, err
 		}
 		resp.Matches = append(resp.Matches, next.Matches...)
+		if len(next.Sessions) > 0 {
+			if resp.Sessions == nil {
+				resp.Sessions = make(map[string]json.RawMessage, len(next.Sessions))
+			}
+			maps.Copy(resp.Sessions, next.Sessions)
+		}
 		resp.ContinuationToken = next.ContinuationToken
 		if cfg.onPage != nil {
 			cfg.onPage(len(resp.Matches))
+		}
+		// A token may be returned even when no events remain; stop on an
+		// empty page or when the token stops advancing.
+		if len(next.Matches) == 0 || next.ContinuationToken == page.ContinuationToken {
+			break
 		}
 	}
 

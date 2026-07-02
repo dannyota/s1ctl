@@ -78,9 +78,8 @@ func (p *UpgradePolicyListParams) values() url.Values {
 	addString(v, "scopeId", p.ScopeID)
 	addString(v, "osType", p.OSType)
 	addInt(v, "limit", p.Limit)
-	if p.Skip > 0 {
-		v.Set("skip", strconv.Itoa(p.Skip))
-	}
+	// skip is a required parameter, so it is sent even when zero.
+	v.Set("skip", strconv.Itoa(p.Skip))
 	addString(v, "sortBy", p.SortBy)
 	addString(v, "sortOrder", p.SortOrder)
 	return v
@@ -107,19 +106,38 @@ func (c *Client) UpgradePoliciesList(ctx context.Context, params *UpgradePolicyL
 	return resp.Data.Policies, resp.Pagination.TotalItems, nil
 }
 
+// UpgradePolicyOSType is the OS targeted by an upgrade policy.
+type UpgradePolicyOSType string
+
+const (
+	UpgradePolicyOSLinux   UpgradePolicyOSType = "linux"
+	UpgradePolicyOSMacOS   UpgradePolicyOSType = "macos"
+	UpgradePolicyOSWindows UpgradePolicyOSType = "windows"
+)
+
+// UpgradePolicyScopeLevel is the scope level of an upgrade policy.
+type UpgradePolicyScopeLevel string
+
+const (
+	UpgradePolicyScopeAccount UpgradePolicyScopeLevel = "account"
+	UpgradePolicyScopeGroup   UpgradePolicyScopeLevel = "group"
+	UpgradePolicyScopeSite    UpgradePolicyScopeLevel = "site"
+	UpgradePolicyScopeTenant  UpgradePolicyScopeLevel = "tenant"
+)
+
 // UpgradePolicyCreate is the request body for creating an upgrade policy.
 type UpgradePolicyCreate struct {
-	Name         string           `json:"name"`
-	Description  string           `json:"description,omitempty"`
-	OSType       string           `json:"osType"`
-	ScopeLevel   string           `json:"scopeLevel"`
-	ScopeID      string           `json:"scopeId,omitempty"`
-	IsActive     bool             `json:"isActive"`
-	IsScheduled  bool             `json:"isScheduled"`
-	AllEndpoints bool             `json:"allEndpoints"`
-	MaxRetries   int              `json:"maxRetries"`
-	Package      UpgradePolicyPkg `json:"package"`
-	Tags         []string         `json:"tags,omitempty"`
+	Name         string                  `json:"name"`
+	Description  string                  `json:"description,omitempty"`
+	OSType       UpgradePolicyOSType     `json:"osType"`
+	ScopeLevel   UpgradePolicyScopeLevel `json:"scopeLevel"`
+	ScopeID      string                  `json:"scopeId,omitempty"`
+	IsActive     bool                    `json:"isActive"`
+	IsScheduled  bool                    `json:"isScheduled"`
+	AllEndpoints bool                    `json:"allEndpoints"`
+	MaxRetries   int                     `json:"maxRetries"`
+	Package      UpgradePolicyPkg        `json:"package"`
+	Tags         []string                `json:"tags,omitempty"`
 }
 
 // UpgradePoliciesCreate creates an upgrade policy.
@@ -129,25 +147,25 @@ func (c *Client) UpgradePoliciesCreate(ctx context.Context, data UpgradePolicyCr
 
 // UpgradePoliciesUpdate updates an upgrade policy.
 func (c *Client) UpgradePoliciesUpdate(ctx context.Context, id string, data UpgradePolicyCreate) error {
-	return c.put(ctx, fmt.Sprintf("/upgrade-policy/policy/%s", id), data, nil)
+	return c.put(ctx, fmt.Sprintf("/upgrade-policy/policy/%s", url.PathEscape(id)), data, nil)
 }
 
 // UpgradePoliciesDelete deletes an upgrade policy by ID.
 func (c *Client) UpgradePoliciesDelete(ctx context.Context, id string) error {
 	req := map[string]string{"action": "delete"}
-	return c.post(ctx, fmt.Sprintf("/upgrade-policy/policy/%s", id), req, nil)
+	return c.post(ctx, fmt.Sprintf("/upgrade-policy/policy/%s", url.PathEscape(id)), req, nil)
 }
 
 // UpgradePoliciesActivate activates an upgrade policy.
 func (c *Client) UpgradePoliciesActivate(ctx context.Context, id string) error {
 	req := map[string]string{"action": "activate"}
-	return c.post(ctx, fmt.Sprintf("/upgrade-policy/policy/%s", id), req, nil)
+	return c.post(ctx, fmt.Sprintf("/upgrade-policy/policy/%s", url.PathEscape(id)), req, nil)
 }
 
 // UpgradePoliciesDeactivate deactivates an upgrade policy.
 func (c *Client) UpgradePoliciesDeactivate(ctx context.Context, id string) error {
 	req := map[string]string{"action": "deactivate"}
-	return c.post(ctx, fmt.Sprintf("/upgrade-policy/policy/%s", id), req, nil)
+	return c.post(ctx, fmt.Sprintf("/upgrade-policy/policy/%s", url.PathEscape(id)), req, nil)
 }
 
 // UpgradePackage is an available agent package for upgrade policies.

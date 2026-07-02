@@ -46,7 +46,7 @@ s1ctl unified-exclusions export [flags]
 | `--group-id` | stringSlice | - | filter by group ID |
 | `--mode-type` | stringSlice | - | filter by mode type |
 | `--os-type` | stringSlice | - | filter by OS type |
-| `-o, --output-file` | string | - | write export to file |
+| `--out` | string | - | write export to file (default: stdout) |
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--source` | stringSlice | - | filter by source |
 | `--threat-type` | stringSlice | - | filter by threat type |

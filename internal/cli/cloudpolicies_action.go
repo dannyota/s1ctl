@@ -40,15 +40,16 @@ func newCloudPolicyActionCmd(verb, short string, fn cloudPolicyActionFn) *cobra.
 				if err != nil {
 					return err
 				}
-				affected := 0
-				if resp != nil {
-					affected = len(resp.IDs)
+				affectedIDs := []string{}
+				if resp != nil && resp.IDs != nil {
+					affectedIDs = resp.IDs
 				}
+				affected := len(affectedIDs)
 				if outputFormat == "json" {
 					return printJSON(cmd.OutOrStdout(), map[string]any{
 						"action":   verb,
 						"affected": affected,
-						"ids":      resp.IDs,
+						"ids":      affectedIDs,
 					})
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n",

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 )
 
 // Policy is a SentinelOne endpoint policy (at site, group, or account scope).
@@ -65,45 +66,45 @@ func (c *Client) putPolicy(ctx context.Context, path string, policy json.RawMess
 
 // PolicyGetSite returns the policy for a site.
 func (c *Client) PolicyGetSite(ctx context.Context, siteID string) (*Policy, error) {
-	return c.getPolicy(ctx, fmt.Sprintf("/sites/%s/policy", siteID))
+	return c.getPolicy(ctx, fmt.Sprintf("/sites/%s/policy", url.PathEscape(siteID)))
 }
 
 // PolicyGetAccount returns the policy for an account.
 func (c *Client) PolicyGetAccount(ctx context.Context, accountID string) (*Policy, error) {
-	return c.getPolicy(ctx, fmt.Sprintf("/accounts/%s/policy", accountID))
+	return c.getPolicy(ctx, fmt.Sprintf("/accounts/%s/policy", url.PathEscape(accountID)))
 }
 
 // PolicyGetGroup returns the policy for a group.
-func (c *Client) PolicyGetGroup(ctx context.Context, siteID, groupID string) (*Policy, error) {
-	return c.getPolicy(ctx, fmt.Sprintf("/sites/%s/groups/%s/policy", siteID, groupID))
+func (c *Client) PolicyGetGroup(ctx context.Context, groupID string) (*Policy, error) {
+	return c.getPolicy(ctx, fmt.Sprintf("/groups/%s/policy", url.PathEscape(groupID)))
 }
 
 // PolicyUpdateSite updates the policy for a site.
 func (c *Client) PolicyUpdateSite(ctx context.Context, siteID string, policy json.RawMessage) (*Policy, error) {
-	return c.putPolicy(ctx, fmt.Sprintf("/sites/%s/policy", siteID), policy)
+	return c.putPolicy(ctx, fmt.Sprintf("/sites/%s/policy", url.PathEscape(siteID)), policy)
 }
 
 // PolicyUpdateAccount updates the policy for an account.
 func (c *Client) PolicyUpdateAccount(ctx context.Context, accountID string, policy json.RawMessage) (*Policy, error) {
-	return c.putPolicy(ctx, fmt.Sprintf("/accounts/%s/policy", accountID), policy)
+	return c.putPolicy(ctx, fmt.Sprintf("/accounts/%s/policy", url.PathEscape(accountID)), policy)
 }
 
 // PolicyUpdateGroup updates the policy for a group.
-func (c *Client) PolicyUpdateGroup(ctx context.Context, siteID, groupID string, policy json.RawMessage) (*Policy, error) {
-	return c.putPolicy(ctx, fmt.Sprintf("/sites/%s/groups/%s/policy", siteID, groupID), policy)
+func (c *Client) PolicyUpdateGroup(ctx context.Context, groupID string, policy json.RawMessage) (*Policy, error) {
+	return c.putPolicy(ctx, fmt.Sprintf("/groups/%s/policy", url.PathEscape(groupID)), policy)
 }
 
 // PolicyRevertSite reverts a site policy to its parent (account) inherited values.
 func (c *Client) PolicyRevertSite(ctx context.Context, siteID string) error {
-	return c.put(ctx, fmt.Sprintf("/sites/%s/revert-policy", siteID), map[string]any{}, nil)
+	return c.put(ctx, fmt.Sprintf("/sites/%s/revert-policy", url.PathEscape(siteID)), map[string]any{}, nil)
 }
 
 // PolicyRevertAccount reverts an account policy to the global inherited values.
 func (c *Client) PolicyRevertAccount(ctx context.Context, accountID string) error {
-	return c.put(ctx, fmt.Sprintf("/accounts/%s/revert-policy", accountID), map[string]any{}, nil)
+	return c.put(ctx, fmt.Sprintf("/accounts/%s/revert-policy", url.PathEscape(accountID)), map[string]any{}, nil)
 }
 
 // PolicyRevertGroup reverts a group policy to its parent (site) inherited values.
-func (c *Client) PolicyRevertGroup(ctx context.Context, siteID, groupID string) error {
-	return c.put(ctx, fmt.Sprintf("/sites/%s/groups/%s/revert-policy", siteID, groupID), map[string]any{}, nil)
+func (c *Client) PolicyRevertGroup(ctx context.Context, groupID string) error {
+	return c.put(ctx, fmt.Sprintf("/groups/%s/revert-policy", url.PathEscape(groupID)), map[string]any{}, nil)
 }

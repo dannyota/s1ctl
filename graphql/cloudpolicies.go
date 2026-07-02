@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"encoding/json"
+	"errors"
 )
 
 // CloudPolicyScope is the scope of a cloud policy (CNS rule).
@@ -160,6 +161,19 @@ func (r *CloudPoliciesActionResponse) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// CloudPolicyAction is a bulk action applied to CNS rules.
+type CloudPolicyAction string
+
+const (
+	CloudPolicyActionEnable  CloudPolicyAction = "enable"
+	CloudPolicyActionDisable CloudPolicyAction = "disable"
+	CloudPolicyActionDelete  CloudPolicyAction = "delete"
+)
+
+// ErrCloudPolicyActionNoIDs is returned when a CNS rule bulk action is
+// requested without any rule IDs.
+var ErrCloudPolicyActionNoIDs = errors.New("graphql: cloud policy action requires at least one rule ID")
+
 const cloudPoliciesActionMutation = `mutation CloudPoliciesAction($action: String!, $input: CloudCommonActionInput!) {
   actionOnCNSRules(action: $action, input: $input) {
     ids
@@ -167,8 +181,12 @@ const cloudPoliciesActionMutation = `mutation CloudPoliciesAction($action: Strin
 }`
 
 // CloudPoliciesAction performs a bulk action (enable, disable, delete) on CNS
-// rules by ID.
-func (c *Client) CloudPoliciesAction(ctx context.Context, action string, ids []string) (*CloudPoliciesActionResponse, error) {
+// rules by ID. At least one ID is required: the API treats an empty ids list
+// as "act on all rules in scope", so the SDK rejects it.
+func (c *Client) CloudPoliciesAction(ctx context.Context, action CloudPolicyAction, ids []string) (*CloudPoliciesActionResponse, error) {
+	if len(ids) == 0 {
+		return nil, ErrCloudPolicyActionNoIDs
+	}
 	vars := map[string]any{
 		"action": action,
 		"input":  map[string]any{"ids": ids},
@@ -184,15 +202,15 @@ func (c *Client) CloudPoliciesAction(ctx context.Context, action string, ids []s
 
 // CloudPoliciesEnable enables the specified CNS rules.
 func (c *Client) CloudPoliciesEnable(ctx context.Context, ids []string) (*CloudPoliciesActionResponse, error) {
-	return c.CloudPoliciesAction(ctx, "enable", ids)
+	return c.CloudPoliciesAction(ctx, CloudPolicyActionEnable, ids)
 }
 
 // CloudPoliciesDisable disables the specified CNS rules.
 func (c *Client) CloudPoliciesDisable(ctx context.Context, ids []string) (*CloudPoliciesActionResponse, error) {
-	return c.CloudPoliciesAction(ctx, "disable", ids)
+	return c.CloudPoliciesAction(ctx, CloudPolicyActionDisable, ids)
 }
 
 // CloudPoliciesDelete deletes the specified CNS rules.
 func (c *Client) CloudPoliciesDelete(ctx context.Context, ids []string) (*CloudPoliciesActionResponse, error) {
-	return c.CloudPoliciesAction(ctx, "delete", ids)
+	return c.CloudPoliciesAction(ctx, CloudPolicyActionDelete, ids)
 }

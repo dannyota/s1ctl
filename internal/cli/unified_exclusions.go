@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 
@@ -146,6 +147,14 @@ func newUnifiedExclusionsCreateCmd() *cobra.Command {
 			if scopeLevel == "" {
 				return fmt.Errorf("--scope-level is required")
 			}
+			var scopeLevelID *int64
+			if scopeID != "" {
+				n, err := strconv.ParseInt(scopeID, 10, 64)
+				if err != nil {
+					return fmt.Errorf("--scope-id must be numeric: %w", err)
+				}
+				scopeLevelID = &n
+			}
 
 			return guard(cmd.OutOrStdout(), "unified-exclusions create", "create unified exclusion "+name+" ("+osType+", "+threatType+")", name, yes, func() error {
 				c, err := mgmtClient()
@@ -155,24 +164,24 @@ func newUnifiedExclusionsCreateCmd() *cobra.Command {
 
 				data := mgmt.UnifiedExclusionCreate{
 					ExclusionName:     name,
-					OSType:            osType,
-					ThreatType:        threatType,
-					ModeType:          modeType,
+					OSType:            mgmt.UnifiedExclusionOSType(osType),
+					ThreatType:        mgmt.UnifiedExclusionThreatType(threatType),
+					ModeType:          mgmt.UnifiedExclusionModeType(modeType),
 					Reason:            reason,
-					Type:              exclType,
+					Type:              mgmt.UnifiedExclusionType(exclType),
 					Description:       description,
-					InteractionLevel:  interactionLevel,
-					PathExclusionType: pathType,
+					InteractionLevel:  mgmt.UnifiedExclusionInteractionLevel(interactionLevel),
+					PathExclusionType: mgmt.UnifiedExclusionPathType(pathType),
 					Engines:           engines,
-					Source:            source,
+					Source:            mgmt.UnifiedExclusionSource(source),
 				}
 				if value != "" {
 					data.Value = value
 				}
 
 				scope := mgmt.UnifiedExclusionScope{
-					ScopeLevel:   scopeLevel,
-					ScopeLevelID: scopeID,
+					ScopeLevel:   mgmt.UnifiedExclusionScopeLevel(scopeLevel),
+					ScopeLevelID: scopeLevelID,
 				}
 
 				created, err := c.UnifiedExclusionsCreate(cmd.Context(), scope, data)
@@ -207,7 +216,7 @@ func newUnifiedExclusionsCreateCmd() *cobra.Command {
 
 func newUnifiedExclusionsExportCmd() *cobra.Command {
 	var siteIDs, accountIDs, groupIDs, osTypes, source, modeType, threatType []string
-	var outputFile string
+	var outFile string
 
 	cmd := &cobra.Command{
 		Use:   "export",
@@ -232,11 +241,11 @@ func newUnifiedExclusionsExportCmd() *cobra.Command {
 				return err
 			}
 
-			if outputFile != "" {
-				if err := os.WriteFile(outputFile, data, 0o644); err != nil {
+			if outFile != "" {
+				if err := os.WriteFile(outFile, data, 0o644); err != nil {
 					return err
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Exported to %s\n", outputFile)
+				fmt.Fprintf(cmd.OutOrStdout(), "Exported to %s\n", outFile)
 				return nil
 			}
 			_, err = cmd.OutOrStdout().Write(data)
@@ -250,6 +259,6 @@ func newUnifiedExclusionsExportCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&source, "source", nil, "filter by source")
 	cmd.Flags().StringSliceVar(&modeType, "mode-type", nil, "filter by mode type")
 	cmd.Flags().StringSliceVar(&threatType, "threat-type", nil, "filter by threat type")
-	cmd.Flags().StringVarP(&outputFile, "output-file", "o", "", "write export to file")
+	cmd.Flags().StringVar(&outFile, "out", "", "write export to file (default: stdout)")
 	return cmd
 }

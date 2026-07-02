@@ -52,8 +52,8 @@ Use "upgrade-policies packages" to find available package versions and file IDs.
 			data := mgmt.UpgradePolicyCreate{
 				Name:         name,
 				Description:  description,
-				OSType:       osType,
-				ScopeLevel:   scopeLevel,
+				OSType:       mgmt.UpgradePolicyOSType(osType),
+				ScopeLevel:   mgmt.UpgradePolicyScopeLevel(scopeLevel),
 				ScopeID:      scopeID,
 				IsActive:     isActive,
 				AllEndpoints: allEndpoints,

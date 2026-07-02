@@ -187,6 +187,9 @@ func (c *Client) PlatformRulesDisable(ctx context.Context, filter PlatformRuleAc
 }
 
 func platformRuleAction(c *Client, ctx context.Context, path string, filter PlatformRuleActionFilter) (int, error) {
+	// Explicit rule IDs are required by design: ScopeID/ScopeLevel only narrow
+	// the ID list, and allowing an ID-less filter would toggle every rule in
+	// the scope in one call.
 	if len(filter.PlatformRuleIDs) == 0 {
 		return 0, fmt.Errorf("mgmt: platform rule action requires at least one rule ID")
 	}

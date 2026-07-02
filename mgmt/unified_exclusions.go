@@ -115,40 +115,121 @@ func (c *Client) UnifiedExclusionsList(ctx context.Context, params *UnifiedExclu
 
 // UnifiedExclusionsCount returns the count of unified exclusions matching the filter.
 func (c *Client) UnifiedExclusionsCount(ctx context.Context, params *UnifiedExclusionListParams) (int, error) {
-	if params == nil {
-		params = &UnifiedExclusionListParams{}
+	p := UnifiedExclusionListParams{}
+	if params != nil {
+		p = *params
 	}
-	params.CountOnly = true
-	_, pag, err := list[UnifiedExclusion](c, ctx, "/unified-exclusions", params.values())
+	p.CountOnly = true
+	_, pag, err := list[UnifiedExclusion](c, ctx, "/unified-exclusions", p.values())
 	if err != nil {
 		return 0, err
 	}
 	return pag.TotalItems, nil
 }
 
+// UnifiedExclusionOSType is the OS a unified exclusion applies to.
+type UnifiedExclusionOSType string
+
+const (
+	UnifiedExclusionOSLinux         UnifiedExclusionOSType = "linux"
+	UnifiedExclusionOSMacOS         UnifiedExclusionOSType = "macos"
+	UnifiedExclusionOSWindows       UnifiedExclusionOSType = "windows"
+	UnifiedExclusionOSWindowsLegacy UnifiedExclusionOSType = "windows_legacy"
+)
+
+// UnifiedExclusionThreatType is the threat type a unified exclusion targets.
+type UnifiedExclusionThreatType string
+
+const (
+	UnifiedExclusionThreatEDR UnifiedExclusionThreatType = "EDR"
+	UnifiedExclusionThreatIDR UnifiedExclusionThreatType = "IDR"
+)
+
+// UnifiedExclusionModeType is the mode of a unified exclusion.
+type UnifiedExclusionModeType string
+
+const (
+	UnifiedExclusionModeAll                   UnifiedExclusionModeType = "all"
+	UnifiedExclusionModeSuppression           UnifiedExclusionModeType = "suppression"
+	UnifiedExclusionModeAgentInteroperability UnifiedExclusionModeType = "agent_interoperability"
+	UnifiedExclusionModeBinaryVault           UnifiedExclusionModeType = "binary_vault"
+)
+
+// UnifiedExclusionType is the condition type of a unified exclusion.
+type UnifiedExclusionType string
+
+const (
+	UnifiedExclusionTypePath            UnifiedExclusionType = "path"
+	UnifiedExclusionTypeCertificate     UnifiedExclusionType = "certificate"
+	UnifiedExclusionTypeBrowser         UnifiedExclusionType = "browser"
+	UnifiedExclusionTypeFileType        UnifiedExclusionType = "file_type"
+	UnifiedExclusionTypeWhiteHash       UnifiedExclusionType = "white_hash"
+	UnifiedExclusionTypeCommandline     UnifiedExclusionType = "commandline"
+	UnifiedExclusionTypeContainerNative UnifiedExclusionType = "container_native"
+)
+
+// UnifiedExclusionInteractionLevel is the interaction between a unified
+// exclusion and the agent processes.
+type UnifiedExclusionInteractionLevel string
+
+const (
+	UnifiedExclusionInteractionDisableInProcessMonitor UnifiedExclusionInteractionLevel = "disable_in_process_monitor"
+	UnifiedExclusionInteractionDisableAllMonitors      UnifiedExclusionInteractionLevel = "disable_all_monitors"
+	UnifiedExclusionInteractionIdentityOnly            UnifiedExclusionInteractionLevel = "identity_only"
+)
+
+// UnifiedExclusionSource is the source of creation of a unified exclusion.
+type UnifiedExclusionSource string
+
+const (
+	UnifiedExclusionSourceUser               UnifiedExclusionSource = "user"
+	UnifiedExclusionSourceActionFromThreat   UnifiedExclusionSource = "action_from_threat"
+	UnifiedExclusionSourceCatalog            UnifiedExclusionSource = "catalog"
+	UnifiedExclusionSourcePerformanceInsight UnifiedExclusionSource = "performance_insight"
+)
+
+// UnifiedExclusionPathType is the path match mode for path exclusions.
+type UnifiedExclusionPathType string
+
+const (
+	UnifiedExclusionPathFile       UnifiedExclusionPathType = "file"
+	UnifiedExclusionPathFolder     UnifiedExclusionPathType = "folder"
+	UnifiedExclusionPathSubfolders UnifiedExclusionPathType = "subfolders"
+)
+
+// UnifiedExclusionScopeLevel is the scope level of a unified exclusion.
+type UnifiedExclusionScopeLevel string
+
+const (
+	UnifiedExclusionScopeGroup   UnifiedExclusionScopeLevel = "group"
+	UnifiedExclusionScopeSite    UnifiedExclusionScopeLevel = "site"
+	UnifiedExclusionScopeAccount UnifiedExclusionScopeLevel = "account"
+	UnifiedExclusionScopeTenant  UnifiedExclusionScopeLevel = "tenant"
+)
+
 // UnifiedExclusionCreate is the request body for creating a unified exclusion.
 type UnifiedExclusionCreate struct {
-	ExclusionName     string   `json:"exclusionName"`
-	OSType            string   `json:"osType"`
-	ThreatType        string   `json:"threatType"`
-	ModeType          string   `json:"modeType"`
-	Reason            string   `json:"reason"`
-	Type              string   `json:"type,omitempty"`
-	Description       string   `json:"description,omitempty"`
-	InteractionLevel  string   `json:"interactionLevel,omitempty"`
-	Source            string   `json:"source,omitempty"`
-	Value             any      `json:"value,omitempty"`
-	PathExclusionType string   `json:"pathExclusionType,omitempty"`
-	Engines           string   `json:"engines,omitempty"`
-	ChildProcess      *bool    `json:"childProcess,omitempty"`
-	Actions           []string `json:"actions,omitempty"`
-	TagIDs            []string `json:"tagIds,omitempty"`
+	ExclusionName     string                           `json:"exclusionName"`
+	OSType            UnifiedExclusionOSType           `json:"osType"`
+	ThreatType        UnifiedExclusionThreatType       `json:"threatType"`
+	ModeType          UnifiedExclusionModeType         `json:"modeType"`
+	Reason            string                           `json:"reason"`
+	Type              UnifiedExclusionType             `json:"type,omitempty"`
+	Description       string                           `json:"description,omitempty"`
+	InteractionLevel  UnifiedExclusionInteractionLevel `json:"interactionLevel,omitempty"`
+	Source            UnifiedExclusionSource           `json:"source,omitempty"`
+	Value             any                              `json:"value,omitempty"`
+	PathExclusionType UnifiedExclusionPathType         `json:"pathExclusionType,omitempty"`
+	Engines           string                           `json:"engines,omitempty"`
+	ChildProcess      *bool                            `json:"childProcess,omitempty"`
+	Actions           []string                         `json:"actions,omitempty"`
+	TagIDs            []string                         `json:"tagIds,omitempty"`
 }
 
 // UnifiedExclusionScope defines the scope for a unified exclusion operation.
 type UnifiedExclusionScope struct {
-	ScopeLevel   string `json:"scopeLevel"`
-	ScopeLevelID string `json:"scopeLevelId,omitempty"`
+	ScopeLevel   UnifiedExclusionScopeLevel `json:"scopeLevel"`
+	ScopeLevelID *int64                     `json:"scopeLevelId,omitempty"`
 }
 
 type unifiedExclusionCreateRequest struct {

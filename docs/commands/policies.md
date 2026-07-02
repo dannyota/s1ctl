@@ -34,7 +34,7 @@ s1ctl policies get [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--account-id` | string | - | account ID |
-| `--group-id` | string | - | group ID (requires --site-id) |
+| `--group-id` | string | - | group ID |
 | `--site-id` | string | - | site ID |
 
 ## policies list
@@ -118,7 +118,6 @@ Site policies revert to their account's policy, group policies revert to their
 site's policy, and account policies revert to global defaults.
 
 Specify the scope with --scope (site, account, or group) and the target with --id.
-For group scope, --site-id is also required.
 Dry-run by default — pass --yes to apply.
 
 **Flags**
@@ -127,5 +126,4 @@ Dry-run by default — pass --yes to apply.
 |------|------|---------|-------------|
 | `--id` | string | - | target scope ID (site, account, or group ID) |
 | `--scope` | string | site | policy scope: site, account, or group |
-| `--site-id` | string | - | site ID (required for group scope) |
 | `--yes` | bool | false | apply the revert (default: dry-run) |

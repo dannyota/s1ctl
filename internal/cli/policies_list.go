@@ -36,8 +36,8 @@ func newPoliciesGetCmd() *cobra.Command {
 			}
 			var raw json.RawMessage
 			switch {
-			case groupID != "" && siteID != "":
-				p, pErr := c.PolicyGetGroup(cmd.Context(), siteID, groupID)
+			case groupID != "":
+				p, pErr := c.PolicyGetGroup(cmd.Context(), groupID)
 				if pErr != nil {
 					return pErr
 				}
@@ -55,14 +55,14 @@ func newPoliciesGetCmd() *cobra.Command {
 				}
 				raw = p.Raw
 			default:
-				return fmt.Errorf("specify --site-id, --account-id, or both --site-id and --group-id")
+				return fmt.Errorf("specify --site-id, --account-id, or --group-id")
 			}
 			return printJSON(cmd.OutOrStdout(), raw)
 		},
 	}
 	cmd.Flags().StringVar(&siteID, "site-id", "", "site ID")
 	cmd.Flags().StringVar(&accountID, "account-id", "", "account ID")
-	cmd.Flags().StringVar(&groupID, "group-id", "", "group ID (requires --site-id)")
+	cmd.Flags().StringVar(&groupID, "group-id", "", "group ID")
 	return cmd
 }
 

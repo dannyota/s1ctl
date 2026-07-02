@@ -258,7 +258,7 @@ func pullGroupPolicies(cmd *cobra.Command, siteIDs []string, outDir string) erro
 	for i, g := range groups {
 		printProgress("policy", i, len(groups))
 
-		p, pErr := c.PolicyGetGroup(cmd.Context(), g.SiteID, g.ID)
+		p, pErr := c.PolicyGetGroup(cmd.Context(), g.ID)
 		if pErr != nil {
 			fmt.Fprintf(cmd.ErrOrStderr(), "Warning: group %s (%s): %v\n", g.Name, g.ID, pErr)
 			continue
@@ -404,10 +404,15 @@ Dry-run by default — pass --yes to apply changes.`,
 				return nil
 			}
 
+			// In JSON mode the summary goes to stderr so stdout stays valid JSON.
+			summaryW := cmd.OutOrStdout()
+			if outputFormat == "json" {
+				summaryW = cmd.ErrOrStderr()
+			}
 			for _, d := range diffs {
-				fmt.Fprintf(cmd.OutOrStdout(), "%s:\n", policyScopeLabel(d.file))
+				fmt.Fprintf(summaryW, "%s:\n", policyScopeLabel(d.file))
 				for _, ch := range d.changes {
-					fmt.Fprintln(cmd.OutOrStdout(), ch)
+					fmt.Fprintln(summaryW, ch)
 				}
 			}
 
@@ -443,7 +448,7 @@ func getPolicyForScope(cmd *cobra.Command, c *mgmt.Client, pf policyFile) (*mgmt
 	case "account":
 		return c.PolicyGetAccount(cmd.Context(), pf.AccountID)
 	case "group":
-		return c.PolicyGetGroup(cmd.Context(), pf.SiteID, pf.GroupID)
+		return c.PolicyGetGroup(cmd.Context(), pf.GroupID)
 	default:
 		return c.PolicyGetSite(cmd.Context(), pf.SiteID)
 	}
@@ -455,7 +460,7 @@ func updatePolicyForScope(cmd *cobra.Command, c *mgmt.Client, pf policyFile, pay
 	case "account":
 		_, err = c.PolicyUpdateAccount(cmd.Context(), pf.AccountID, payload)
 	case "group":
-		_, err = c.PolicyUpdateGroup(cmd.Context(), pf.SiteID, pf.GroupID, payload)
+		_, err = c.PolicyUpdateGroup(cmd.Context(), pf.GroupID, payload)
 	default:
 		_, err = c.PolicyUpdateSite(cmd.Context(), pf.SiteID, payload)
 	}
