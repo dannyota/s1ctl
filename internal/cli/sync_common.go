@@ -57,7 +57,9 @@ type applySummary struct {
 // drift command iterates it to plan each surface against its default directory.
 func syncSurfaceSpecs() []surfaceSpec {
 	return []surfaceSpec{
+		cloudPoliciesSpec(),
 		deviceControlSpec(),
+		exclusionsSpec(),
 		firewallSpec(),
 		groupsSpec(),
 		rulesSpec(),

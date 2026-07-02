@@ -1,23 +1,33 @@
 package cli
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func TestCloudPoliciesPushDryRun(t *testing.T) {
-	f := filepath.Join(t.TempDir(), "cloud-policies.json")
-	payload := `[{"id":"P1","status":"enabled"},{"id":"P2","status":"disabled"}]`
-	if err := os.WriteFile(f, []byte(payload), 0o644); err != nil {
-		t.Fatal(err)
+// TestCloudPoliciesPushMissingDir asserts a missing directory is a hard error
+// naming it. The stat check runs before any GraphQL client is constructed, so
+// this stays fully offline.
+func TestCloudPoliciesPushMissingDir(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "nope")
+	_, err := runCLI(t, "cloud-policies", "push", "--dir", missing)
+	if err == nil {
+		t.Fatal("cloud-policies push: expected error for missing dir")
 	}
-	out, err := runCLI(t, "cloud-policies", "push", "--file", f)
+	if !strings.Contains(err.Error(), "read "+missing) {
+		t.Fatalf("cloud-policies push: error %q does not contain %q", err, "read "+missing)
+	}
+}
+
+// TestCloudPoliciesPushEmptyDir asserts an empty (but present) directory returns
+// cleanly with the "No cloud policy files found." message before any API call.
+func TestCloudPoliciesPushEmptyDir(t *testing.T) {
+	out, err := runCLI(t, "cloud-policies", "push", "--dir", t.TempDir())
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("cloud-policies push: unexpected error: %v", err)
 	}
-	if !strings.Contains(out, "Would") {
-		t.Fatalf("expected dry-run message, got %q", out)
+	if want := "No cloud policy files found."; !strings.Contains(out, want) {
+		t.Fatalf("cloud-policies push: output %q does not contain %q", out, want)
 	}
 }
