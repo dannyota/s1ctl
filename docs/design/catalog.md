@@ -67,6 +67,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | vulnerabilities | list, get, health, notes, history, related-assets, export, cves, cve, stats (GraphQL) | status, verdict, note-add, note-update, note-delete, assign | -- | built |
 | misconfigurations | list, get, notes, history, related-assets, export (GraphQL) | status, verdict, note-add, note-update, note-delete, assign | -- | built |
 | cloud policies | list, get (GraphQL) | enable, disable, delete | pull/push | built |
+| cloud rules (CNS) | list, get, types (GraphQL) | create, update, enable, disable, delete, evaluate | -- | built |
 | cloud onboarding | list, get | onboard, delete | -- | designed |
 | cloud compliance | -- | -- | -- | blocked |
 
