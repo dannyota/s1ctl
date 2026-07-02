@@ -120,14 +120,15 @@ func (p Plan) Empty() bool {
 // Describe renders the guard action string for a plan, e.g.
 // "create 2 device rules, update 1 device rule (3 unchanged) from <dir>".
 // Zero-count create/update segments are omitted; when neither is present it
-// reads "no changes for <nouns> in <dir>".
+// reads "make no changes to <nouns> in <dir>" so guard renders it grammatically
+// ("Would make no changes to ... Pass --yes to apply.").
 func Describe(p Plan, noun, dir string) string {
 	creates := len(p.Creates())
 	updates := len(p.Updates())
 	unchanged := len(p.Unchanged())
 
 	if creates == 0 && updates == 0 {
-		return fmt.Sprintf("no changes for %s in %s", nounForm(2, noun), dir)
+		return fmt.Sprintf("make no changes to %s in %s", nounForm(2, noun), dir)
 	}
 
 	var segs []string

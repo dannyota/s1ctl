@@ -251,7 +251,7 @@ func TestDescribe(t *testing.T) {
 		{
 			name: "nothing to change",
 			plan: Plan{Items: []Item{{Kind: "unchanged"}, {Kind: "live-only"}}},
-			want: "no changes for device rules in dir",
+			want: "make no changes to device rules in dir",
 		},
 	}
 	for _, tc := range cases {

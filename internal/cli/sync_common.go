@@ -59,7 +59,10 @@ func syncSurfaceSpecs() []surfaceSpec {
 	return []surfaceSpec{
 		deviceControlSpec(),
 		firewallSpec(),
+		groupsSpec(),
 		rulesSpec(),
+		sitesSpec(),
+		tagsSpec(),
 	}
 }
 

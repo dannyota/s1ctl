@@ -1,104 +1,172 @@
 package cli
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 
+	"danny.vn/s1/internal/reconcile"
 	"danny.vn/s1/mgmt"
 )
 
 func addGroupSyncCmds(parent *cobra.Command) {
-	parent.AddCommand(newGroupsPullCmd())
-	parent.AddCommand(newGroupsPushCmd())
+	spec := groupsSpec()
+	parent.AddCommand(newEnginePullCmd(spec))
+	parent.AddCommand(newEnginePushCmd(spec))
 }
 
-func newGroupsPullCmd() *cobra.Command {
-	var siteIDs []string
-	var outDir string
-
-	cmd := &cobra.Command{
-		Use:   "pull",
-		Short: "Pull groups to a local file",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			c, err := mgmtClient()
-			if err != nil {
-				return err
-			}
-			groups, _, err := fetchAllREST("groups", func(cursor string) ([]mgmt.Group, *mgmt.Pagination, error) {
-				return c.GroupsList(cmd.Context(), &mgmt.GroupListParams{SiteIDs: siteIDs, Limit: 1000, Cursor: cursor})
-			})
-			if err != nil {
-				return err
-			}
-			if err := os.MkdirAll(outDir, 0o750); err != nil {
-				return err
-			}
-			path := filepath.Join(outDir, "groups.json")
-			data, err := json.MarshalIndent(groups, "", "  ")
-			if err != nil {
-				return err
-			}
-			if err := os.WriteFile(path, data, 0o644); err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Pulled %s to %s\n", pluralize(len(groups), "group"), path)
-			return nil
-		},
-	}
-	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	cmd.Flags().StringVar(&outDir, "out", "samples", "output directory")
-	return cmd
+// groupFile is the YAML representation of a group on disk. It holds only the
+// declarative fields; server-assigned IDs, rank, and timestamps are omitted.
+type groupFile struct {
+	Name        string `yaml:"name"`
+	SiteID      string `yaml:"siteId"`
+	Description string `yaml:"description,omitempty"`
 }
 
-func newGroupsPushCmd() *cobra.Command {
-	var inFile string
-	var yes bool
+func groupToFile(g mgmt.Group) groupFile {
+	return groupFile{
+		Name:        g.Name,
+		SiteID:      g.SiteID,
+		Description: g.Description,
+	}
+}
 
-	cmd := &cobra.Command{
-		Use:   "push --file <groups.json>",
-		Short: "Create groups from a local file",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			if inFile == "" {
-				return fmt.Errorf("--file is required")
-			}
-			data, err := os.ReadFile(inFile)
-			if err != nil {
-				return fmt.Errorf("read %s: %w", inFile, err)
-			}
-			var groups []mgmt.GroupCreate
-			if err := json.Unmarshal(data, &groups); err != nil {
-				return fmt.Errorf("parse %s: %w", inFile, err)
-			}
-			return guard(cmd.OutOrStdout(), "groups push", fmt.Sprintf("create %s from %s", pluralize(len(groups), "group"), inFile), inFile, yes, func() error {
-				c, err := mgmtClient()
-				if err != nil {
-					return err
-				}
-				var created int
-				for _, g := range groups {
-					if g.SiteID == "" {
-						fmt.Fprintf(cmd.ErrOrStderr(), "warning: skipping group %q: missing siteId\n", g.Name)
-						continue
+func (f groupFile) toCreate() mgmt.GroupCreate {
+	return mgmt.GroupCreate{
+		Name:        f.Name,
+		SiteID:      f.SiteID,
+		Description: f.Description,
+	}
+}
+
+// toUpdate builds the pointer-field update body. SiteID is part of the identity
+// (a moved group plans as create + live-only), so GroupUpdate carries only the
+// mutable name and description.
+func (f groupFile) toUpdate() mgmt.GroupUpdate {
+	return mgmt.GroupUpdate{
+		Name:        &f.Name,
+		Description: &f.Description,
+	}
+}
+
+// groupIdentity is the engine matching key for a group: site ID plus name, so
+// the same group name under two sites stays distinct.
+func groupIdentity(f groupFile) string {
+	return f.SiteID + "/" + f.Name
+}
+
+// decodeGroup maps one local file to a canonical Object: it validates the group
+// name and re-marshals through groupFile so bodies are byte-equal to the ones
+// List produces. Identity is site ID + name.
+func decodeGroup(data []byte) (reconcile.Object, error) {
+	var f groupFile
+	if err := yaml.Unmarshal(data, &f); err != nil {
+		return reconcile.Object{}, err
+	}
+	if f.Name == "" {
+		return reconcile.Object{}, fmt.Errorf("group has no name")
+	}
+	body, err := yaml.Marshal(f)
+	if err != nil {
+		return reconcile.Object{}, err
+	}
+	return reconcile.Object{Name: groupIdentity(f), Body: body}, nil
+}
+
+// groupsSpec adapts groups to the shared sync builders. Identity is site ID +
+// group name.
+func groupsSpec() surfaceSpec {
+	return surfaceSpec{
+		Noun:       "group",
+		Command:    "groups",
+		DefaultDir: "groups",
+		PullShort:  "Pull groups to local YAML files",
+		PullLong: `Fetch all groups and write them as YAML files.
+
+Each group produces one file. Server-only metadata (ID, rank, agent counts,
+timestamps) is omitted so the files contain only the declarative definition.`,
+		PushShort: "Push groups from local YAML files",
+		PushLong: `Read group YAML files from a directory and sync them to SentinelOne.
+
+Groups are matched by site ID + name: existing groups are updated, new groups
+are created, and unchanged groups are skipped. A group file without a siteId
+fails at create time. Dry-run by default — pass --yes to apply changes.`,
+		RegisterPullFlags: func(cmd *cobra.Command, scope *scopeFlags) {
+			cmd.Flags().StringSliceVar(&scope.SiteIDs, "site-id", nil, "filter by site ID")
+		},
+		Build: func(_ *cobra.Command, scope scopeFlags) (reconcile.Surface, error) {
+			var client *mgmt.Client
+			getClient := func() (*mgmt.Client, error) {
+				if client == nil {
+					c, err := mgmtClient()
+					if err != nil {
+						return nil, err
 					}
-					if _, cErr := c.GroupsCreate(cmd.Context(), g.SiteID, g); cErr != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "warning: %v\n", cErr)
-						continue
+					client = c
+				}
+				return client, nil
+			}
+
+			return reconcile.Surface{
+				Name:    "group",
+				Command: "groups",
+				Decode:  decodeGroup,
+				List: func(ctx context.Context) ([]reconcile.Object, error) {
+					c, err := getClient()
+					if err != nil {
+						return nil, err
 					}
-					created++
-				}
-				if outputFormat == "json" {
-					return printJSON(cmd.OutOrStdout(), map[string]int{"created": created})
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", pluralize(created, "group"))
-				return nil
-			})
+					// Pull filters by --site-id; push registers no scope flag,
+					// so it lists every group (matching spans the tenant).
+					params := &mgmt.GroupListParams{SiteIDs: scope.SiteIDs, Limit: 1000}
+					groups, _, lErr := fetchAllREST("group", func(cur string) ([]mgmt.Group, *mgmt.Pagination, error) {
+						params.Cursor = cur
+						return c.GroupsList(ctx, params)
+					})
+					if lErr != nil {
+						return nil, lErr
+					}
+					objs := make([]reconcile.Object, 0, len(groups))
+					for _, g := range groups {
+						f := groupToFile(g)
+						body, mErr := yaml.Marshal(f)
+						if mErr != nil {
+							return nil, fmt.Errorf("marshal group %s: %w", g.Name, mErr)
+						}
+						objs = append(objs, reconcile.Object{Name: groupIdentity(f), ID: g.ID, Body: body})
+					}
+					return objs, nil
+				},
+				Create: func(ctx context.Context, local reconcile.Object) error {
+					c, err := getClient()
+					if err != nil {
+						return err
+					}
+					var f groupFile
+					if uErr := yaml.Unmarshal(local.Body, &f); uErr != nil {
+						return uErr
+					}
+					if f.SiteID == "" {
+						return fmt.Errorf("group %q has no siteId", f.Name)
+					}
+					_, cErr := c.GroupsCreate(ctx, f.SiteID, f.toCreate())
+					return cErr
+				},
+				Update: func(ctx context.Context, id string, local reconcile.Object) error {
+					c, err := getClient()
+					if err != nil {
+						return err
+					}
+					var f groupFile
+					if uErr := yaml.Unmarshal(local.Body, &f); uErr != nil {
+						return uErr
+					}
+					_, uErr := c.GroupsUpdate(ctx, id, f.toUpdate())
+					return uErr
+				},
+			}, nil
 		},
 	}
-	cmd.Flags().StringVar(&inFile, "file", "", "JSON file with an array of groups (required)")
-	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
 }

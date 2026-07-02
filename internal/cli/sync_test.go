@@ -11,7 +11,10 @@ func TestSyncSurfaceSpecs(t *testing.T) {
 	want := map[string]string{
 		"devicecontrol": "devicecontrol",
 		"firewall":      "firewall",
+		"groups":        "groups",
 		"rules":         "rules",
+		"sites":         "sites",
+		"tags":          "tags",
 	}
 	specs := syncSurfaceSpecs()
 	if len(specs) != len(want) {
