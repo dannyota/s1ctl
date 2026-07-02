@@ -2,6 +2,20 @@
 
 Manage users
 
+## users delete
+
+Delete a user
+
+```text
+s1ctl users delete <user-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## users get
 
 Get user details

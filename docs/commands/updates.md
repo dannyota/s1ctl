@@ -2,6 +2,14 @@
 
 Agent update packages
 
+## updates get
+
+Get an update package
+
+```text
+s1ctl updates get <package-id>
+```
+
 ## updates list
 
 List update packages

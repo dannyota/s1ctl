@@ -177,7 +177,8 @@ s1ctl datalake powerquery \
 ## Facet aggregation
 
 `datalake facet` returns the most common values of a single field (SDL REST
-protocol, so `S1_SDL_URL` must be set).
+protocol, so `S1_SDL_URL` must be set). Pass `--output csv` for a
+spreadsheet-friendly table.
 
 ```bash
 s1ctl datalake facet --field event.type --start 24h
@@ -196,6 +197,7 @@ s1ctl datalake facet --field src.process.name \
 ## Time-series aggregation
 
 `datalake timeseries` buckets an aggregation over time (SDL REST protocol).
+Pass `--output csv` to emit one row per bucket for spreadsheets.
 
 ```bash
 s1ctl datalake timeseries --filter "event.type = 'DNS'" \
@@ -250,10 +252,11 @@ s1ctl datalake ingest logs --file app.log --parser myparser --yes
 `datalake files` manages data lake configuration files such as parsers and
 lookups.
 
-List and fetch:
+List and fetch (`files list` honors `--output csv`):
 
 ```bash
 s1ctl datalake files list
+s1ctl datalake files list --output csv
 s1ctl datalake files get path/to/file.conf
 s1ctl datalake files get path/to/file.conf --out local-copy.conf
 ```

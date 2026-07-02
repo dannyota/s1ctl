@@ -16,6 +16,20 @@ s1ctl threats add-note <threat-id> <text> [flags]
 |------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
+## threats blacklist
+
+Add the threat file hash to the blacklist
+
+```text
+s1ctl threats blacklist <threat-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## threats count
 
 Count threats
@@ -29,6 +43,20 @@ s1ctl threats count [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--site-id` | stringSlice | - | filter by site ID |
+
+## threats fetch-file
+
+Fetch the threat file from the endpoint to the console
+
+```text
+s1ctl threats fetch-file <threat-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## threats get
 

@@ -48,3 +48,11 @@ Types: smtp, syslog
 | `--account-id` | stringSlice | - | filter by account ID |
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--yes` | bool | false | apply the action (default: dry-run) |
+
+## settings update
+
+Update settings from a JSON file (pull with 'settings get', edit, push back)
+
+```text
+s1ctl settings update
+```

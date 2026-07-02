@@ -43,12 +43,14 @@ terminology — never invented abstractions.
 ## Config-as-code verbs
 
 ```text
-s1ctl pull <surface> [--site-id ID] [--output-dir DIR]
-s1ctl push <surface> [--yes] [--prune]
+s1ctl <surface> pull [--site-id ID] [--out DIR]
+s1ctl <surface> push [--dir DIR] [--yes]
 ```
 
-`pull` writes to `samples/<surface>/`. `push` reads from the same directory,
-diffs against live state, and applies (with `--yes`).
+`pull` writes one YAML file per object to a directory named after the surface
+(`exclusions/`, `sites/`, …). `push` reads the same directory, plans the
+difference against live state, and applies creates and updates with `--yes`.
+See [Reconcile engine](reconcile.md) for the full semantics.
 
 ## Examples
 

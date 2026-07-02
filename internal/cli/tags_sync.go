@@ -86,8 +86,9 @@ func tagsSpec() surfaceSpec {
 
 Each tag produces one file named by its sanitized key. Server-only metadata
 (ID, timestamps) is omitted so the files contain only the declarative
-definition. Tags are matched by key: duplicate keys across scopes resolve to
-the first one listed with a warning.`,
+definition. Pull writes every live tag, including duplicates of the same key
+as suffixed files; push and drift match by key, so resolve duplicate keys
+before pushing.`,
 		PushShort: "Push tags from local YAML files",
 		PushLong: `Read tag YAML files from a directory and sync them to SentinelOne.
 

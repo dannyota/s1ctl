@@ -154,8 +154,8 @@ s1ctl rules push [flags]
 ```
 
 Read rule YAML files from a directory and sync them to SentinelOne.
-Rules are matched by name: existing rules are updated, new rules are created.
-Dry-run by default — pass --yes to apply changes.
+Rules are matched by name: existing rules are updated, new rules are created,
+and unchanged rules are skipped. Dry-run by default — pass --yes to apply changes.
 
 **Flags**
 

@@ -86,6 +86,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | tags | list, get | create, update, delete | pull/push | built |
 | activities | list, count, export, types | -- | -- | built |
 | audit | list (local mutation log) | -- | -- | built |
+| drift | drift summary (all sync surfaces) | -- | -- | built |
 | reports | list, tasks, types, download | create | -- | built |
 | system | info | -- | -- | built |
 

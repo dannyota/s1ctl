@@ -47,11 +47,11 @@ s1ctl threats mitigate --id 000000 --action kill --yes
 
 ## Config-as-code
 
-Pull exclusions to a local file, review, then push back:
+Pull exclusions to a local directory, review, then push back:
 
 ```bash
 s1ctl exclusions pull --site-id 000000
-git diff samples/exclusions.json
+git diff exclusions/
 s1ctl exclusions push --site-id 000000 --yes
 ```
 

@@ -2,6 +2,14 @@
 
 Remote operations and scripts
 
+## remoteops get
+
+Get a remote script
+
+```text
+s1ctl remoteops get <script-id>
+```
+
 ## remoteops list
 
 List remote scripts

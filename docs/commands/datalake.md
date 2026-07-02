@@ -2,6 +2,40 @@
 
 Query Singularity Data Lake (SDL)
 
+## datalake facet
+
+Aggregate the most common values of a field (SDL REST)
+
+```text
+s1ctl datalake facet [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--end` | string | - | end time |
+| `--field` | string | - | field to aggregate (required) |
+| `--filter` | string | - | query filter expression |
+| `--max-count` | int | 0 | max distinct values to return |
+| `--start` | string | - | start time, e.g. 24h or timestamp (required) |
+
+## datalake files
+
+Manage data lake configuration files
+
+```text
+s1ctl datalake files
+```
+
+## datalake ingest
+
+Ingest events or raw logs into the data lake
+
+```text
+s1ctl datalake ingest
+```
+
 ## datalake powerquery
 
 Execute a PowerQuery
@@ -65,3 +99,21 @@ s1ctl datalake saved-queries
 
 List saved searches from the Singularity Data Lake console.
 Shows both private and shared saved queries.
+
+## datalake timeseries
+
+Run a time-series aggregation (SDL REST)
+
+```text
+s1ctl datalake timeseries [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--buckets` | int | 0 | number of time buckets |
+| `--end` | string | - | end time |
+| `--filter` | string | - | query filter expression (required) |
+| `--function` | string | - | aggregation function (e.g. count, mean(field)) |
+| `--start` | string | - | start time, e.g. 24h or timestamp (required) |

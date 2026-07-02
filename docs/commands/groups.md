@@ -74,3 +74,60 @@ s1ctl groups list [flags]
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--sort-by` | string | - | sort field (e.g. name, type) |
 | `--sort-order` | string | - | sort direction (asc, desc) |
+
+## groups pull
+
+Pull groups to local YAML files
+
+```text
+s1ctl groups pull [flags]
+```
+
+Fetch all groups and write them as YAML files.
+
+Each group produces one file. Server-only metadata (ID, rank, agent counts,
+timestamps) is omitted so the files contain only the declarative definition.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--out` | string | groups | output directory |
+| `--site-id` | stringSlice | - | filter by site ID |
+
+## groups push
+
+Push groups from local YAML files
+
+```text
+s1ctl groups push [flags]
+```
+
+Read group YAML files from a directory and sync them to SentinelOne.
+
+Groups are matched by site ID + name: existing groups are updated, new groups
+are created, and unchanged groups are skipped. A group file without a siteId
+fails at create time. Dry-run by default — pass --yes to apply changes.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--dir` | string | groups | directory containing group YAML files |
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
+## groups update
+
+Update a group
+
+```text
+s1ctl groups update <group-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--description` | string | - | new description |
+| `--name` | string | - | new group name |
+| `--yes` | bool | false | apply the action (default: dry-run) |

@@ -100,6 +100,14 @@ Show device control events from endpoints with Device Control-enabled Agents.
 | `--query` | string | - | free text search |
 | `--site-id` | stringSlice | - | filter by site ID |
 
+## devicecontrol get
+
+Get a device control rule
+
+```text
+s1ctl devicecontrol get <rule-id>
+```
+
 ## devicecontrol list
 
 List device control rules
@@ -150,8 +158,8 @@ s1ctl devicecontrol push [flags]
 
 Read device control rule YAML files from a directory and sync them to SentinelOne.
 
-Rules are matched by name: existing rules are updated, new rules are created.
-Dry-run by default — pass --yes to apply changes.
+Rules are matched by name: existing rules are updated, new rules are created,
+and unchanged rules are skipped. Dry-run by default — pass --yes to apply changes.
 
 New rules are created at the scope specified by --site-id. If no scope flag
 is given, new rules are created at the global (tenant) scope.

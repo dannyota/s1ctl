@@ -18,11 +18,12 @@ Prerequisite: a resolved config and working auth — see
 
 | Plane | How it works | Source of truth | Examples |
 |-------|--------------|-----------------|----------|
-| **Control** | pull &rarr; `git diff` &rarr; push | Git | Exclusions |
+| **Control** | pull &rarr; `git diff` &rarr; push | Git | Exclusions, rules, firewall, sites |
 | **Operational** | list/get &rarr; review &rarr; act | Live console | Agents, threats, alerts, vulns |
 
-Most of SentinelOne is operational. The config-as-code loop currently covers
-**exclusions** — other surfaces (rules, policies, settings) are planned.
+Most of SentinelOne is operational. The config-as-code loop covers exclusions,
+rules, firewall, device control, sites, groups, tags, policies, and cloud
+policies — see [config-as-code.md](config-as-code.md).
 
 ## Pull (read-only)
 
@@ -32,8 +33,8 @@ Mirror live state into files. `pull` never mutates the console.
 s1ctl exclusions pull --site-id 000000
 ```
 
-Files land in `samples/` by default. Run from inside a git repo so the mirror
-is diffable and committable.
+Files land in a surface-named directory (`exclusions/`) by default. Run from
+inside a git repo so the mirror is diffable and committable.
 
 ## Review, then push
 
@@ -41,12 +42,16 @@ Every `push` is a mutation against a live console. Dry-run is the default;
 `--yes` applies.
 
 ```bash
-git diff samples/exclusions.json                 # review what changed
+git diff exclusions/                             # review what changed
 s1ctl exclusions push --site-id 000000           # dry-run (default)
 s1ctl exclusions push --site-id 000000 --yes     # apply for real
 ```
 
 Pull &rarr; `git diff` &rarr; push is the whole loop. Never skip the diff.
+
+To check the committed mirror against the console without pulling, run
+`s1ctl drift`: it reports per-surface drift and exits non-zero when any surface
+diverges, which makes it a natural CI gate.
 
 ```mermaid
 sequenceDiagram

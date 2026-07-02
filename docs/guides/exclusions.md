@@ -7,13 +7,13 @@ to local files, review in git, and push back.
 
 ```mermaid
 flowchart LR
-    A[Console] -->|pull| B[Local JSON]
+    A[Console] -->|pull| B[Local YAML files]
     B -->|git diff| C[Review]
     C -->|push --yes| A
     C -->|git commit| D[Git history]
 ```
 
-Pull the live exclusions to a local file, review the diff, commit to git for
+Pull the live exclusions to local YAML files, review the diff, commit to git for
 audit history, then push changes back. Every mutation is dry-run by default --
 pass `--yes` to apply.
 
@@ -58,7 +58,8 @@ creation date.
 
 ## Pull exclusions
 
-Download all exclusions matching the given filters to a local JSON file:
+Download all exclusions matching the given filters to a directory of
+per-exclusion YAML files:
 
 ```bash
 s1ctl exclusions pull --site-id 000000
@@ -67,13 +68,13 @@ s1ctl exclusions pull --site-id 000000
 | Flag | Description |
 |------|-------------|
 | `--site-id` | Filter by site ID (repeatable) |
-| `--out` | Output directory (default `samples`) |
+| `--out` | Output directory (default `exclusions`) |
 
-The command auto-paginates (fetches all pages) and writes to
-`<out>/exclusions.json`.
+The command auto-paginates (fetches all pages) and writes one YAML file per
+exclusion under `<out>/`.
 
 ```bash
-# Pull to the default samples/ directory
+# Pull to the default exclusions/ directory
 s1ctl exclusions pull --site-id 000000
 
 # Pull to a custom directory
@@ -82,10 +83,12 @@ s1ctl exclusions pull --site-id 000000 --out snapshots/prod
 
 ## Push exclusions
 
-Create exclusions from a local JSON file. Dry-run by default:
+Sync exclusions from a local directory. Exclusions are matched by type + OS +
+value: matching files update, new files create, and live-only entries are
+reported. Dry-run by default:
 
 ```bash
-# Preview what would be created
+# Preview what would change
 s1ctl exclusions push --site-id 000000
 
 # Apply
@@ -94,12 +97,12 @@ s1ctl exclusions push --site-id 000000 --yes
 
 | Flag | Description |
 |------|-------------|
-| `--file` | Input file (default `samples/exclusions.json`) |
-| `--site-id` | Target site IDs (repeatable) |
+| `--dir` | Input directory (default `exclusions`) |
+| `--site-id` | Scope for new exclusions (default: global/tenant) |
 | `--yes` | Apply changes (default: dry-run) |
 
 Failed entries log a warning and continue -- the command does not abort on the
-first error.
+first error, and exits non-zero if any item failed.
 
 ## Pull, diff, push workflow
 
@@ -107,10 +110,10 @@ The core loop for managing exclusions as code:
 
 ```mermaid
 flowchart TD
-    A[s1ctl exclusions pull] --> B[samples/exclusions.json]
+    A[s1ctl exclusions pull] --> B[exclusions/ YAML files]
     B --> C{git diff}
     C -->|Changes look right| D[git commit]
-    C -->|Edit needed| E[Edit exclusions.json]
+    C -->|Edit needed| E[Edit or delete files]
     E --> C
     D --> F[s1ctl exclusions push --yes]
     F --> G[Console updated]
@@ -127,15 +130,15 @@ flowchart TD
 2. Review the diff against the last committed version:
 
    ```bash
-   git diff samples/exclusions.json
+   git diff exclusions/
    ```
 
-3. Edit the file if changes are needed (add, remove, or modify entries).
+3. Add, delete, or edit files if changes are needed.
 
 4. Commit the snapshot to git:
 
    ```bash
-   git add samples/exclusions.json
+   git add exclusions/
    git commit -m "exclusions: update path exclusions for site 000000"
    ```
 
@@ -159,9 +162,9 @@ flowchart TD
 Pull exclusions from multiple sites and compare:
 
 ```bash
-s1ctl exclusions pull --site-id 111111 --out samples/site-a
-s1ctl exclusions pull --site-id 222222 --out samples/site-b
-diff samples/site-a/exclusions.json samples/site-b/exclusions.json
+s1ctl exclusions pull --site-id 111111 --out site-a
+s1ctl exclusions pull --site-id 222222 --out site-b
+diff -r site-a site-b
 ```
 
 ### Export all exclusions as JSON

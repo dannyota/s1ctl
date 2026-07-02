@@ -2,6 +2,34 @@
 
 Manage endpoint agents
 
+## agents abort-scan
+
+Abort a running disk scan
+
+```text
+s1ctl agents abort-scan <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents approve-uninstall
+
+Approve a pending uninstall request
+
+```text
+s1ctl agents approve-uninstall <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## agents count
 
 Count agents
@@ -28,6 +56,63 @@ s1ctl agents decommission <agent-id> [flags]
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents disable
+
+Disable an agent
+
+```text
+s1ctl agents disable <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents enable
+
+Enable a disabled agent
+
+```text
+s1ctl agents enable <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents fetch-logs
+
+Fetch agent logs to the console
+
+```text
+s1ctl agents fetch-logs <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents firewall-logging
+
+Enable or disable firewall logging on an agent
+
+```text
+s1ctl agents firewall-logging <agent-id> --state on|off [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--state` | string | - | "on" or "off" (required) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## agents get
@@ -102,6 +187,20 @@ s1ctl agents list [flags]
 | `--sort-by` | string | - | sort field (e.g. computerName, lastActiveDate) |
 | `--sort-order` | string | - | sort direction (asc, desc) |
 
+## agents mark-up-to-date
+
+Mark an agent as up to date
+
+```text
+s1ctl agents mark-up-to-date <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## agents move
 
 Move an agent to a different group
@@ -115,6 +214,21 @@ s1ctl agents move <agent-id> --group-id <target-group-id> [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--group-id` | string | - | target group ID (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents move-to-site
+
+Move an agent to a different site
+
+```text
+s1ctl agents move-to-site <agent-id> --site-id <target-site-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--site-id` | string | - | target site ID (required) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## agents outdated
@@ -132,6 +246,20 @@ s1ctl agents outdated [flags]
 | `--all` | bool | false | fetch all pages |
 | `--limit` | int | 0 | max results per page (default 50) |
 | `--site-id` | stringSlice | - | filter by site ID |
+
+## agents randomize-uuid
+
+Randomize the agent UUID
+
+```text
+s1ctl agents randomize-uuid <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## agents reconnect
 
@@ -154,12 +282,83 @@ Both can be combined. Dry-run by default; pass --yes to apply.
 | `--filter` | stringArray | - | key=value filter (e.g. --filter networkStatuses=disconnected) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
+## agents reject-uninstall
+
+Reject a pending uninstall request
+
+```text
+s1ctl agents reject-uninstall <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents reset-config
+
+Reset agent local configuration
+
+```text
+s1ctl agents reset-config <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents restart
+
+Restart the endpoint
+
+```text
+s1ctl agents restart <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## agents scan
 
 Start full disk scan
 
 ```text
 s1ctl agents scan <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents set-external-id
+
+Set the external ID on an agent
+
+```text
+s1ctl agents set-external-id <agent-id> --external-id <value> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--external-id` | string | - | external ID value (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents shutdown
+
+Shut down the endpoint
+
+```text
+s1ctl agents shutdown <agent-id> [flags]
 ```
 
 **Flags**

@@ -97,6 +97,14 @@ The exported file can be imported into another scope with "firewall import".
 | `--out` | string | firewall-rules.json | output file (use - for stdout) |
 | `--site-id` | stringSlice | - | scope: site IDs |
 
+## firewall get
+
+Get a firewall rule
+
+```text
+s1ctl firewall get <rule-id>
+```
+
 ## firewall import
 
 Import firewall rules from a JSON file
@@ -175,8 +183,8 @@ s1ctl firewall push [flags]
 ```
 
 Read firewall rule YAML files from a directory and sync them to SentinelOne.
-Rules are matched by name: existing rules are updated, new rules are created.
-Dry-run by default — pass --yes to apply changes.
+Rules are matched by name: existing rules are updated, new rules are created,
+and unchanged rules are skipped. Dry-run by default — pass --yes to apply changes.
 
 **Flags**
 

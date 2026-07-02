@@ -8,40 +8,85 @@ Manage SentinelOne configuration through local files and git.
 2. **Review** changes in `git diff`
 3. **Push** desired state back (dry-run by default)
 
+## Reconcile model
+
+Most sync surfaces share one on-disk model and one engine (see
+[Reconcile engine](../design/reconcile.md)). Each object is a single YAML file
+in a per-surface directory named after the surface (`sites/`, `firewall/`,
+`tags/`, ...). Files hold only the declarative definition — server-assigned
+IDs, scopes, and timestamps are omitted so diffs never churn on server-managed
+fields.
+
+`pull` renders live objects to files (overwrite; never deletes). `push` matches
+files to live objects by a stable identity, then **creates** objects with no
+live match and **updates** objects whose body differs — dry-run by default,
+`--yes` to apply. Live-only objects (live, no local file) are reported, never
+deleted. A push exits non-zero if any per-item apply fails.
+
+### Immutable fields
+
+A file carries some fields that identify or place the object but that an update
+cannot change — a site's `accountId` or `siteType`, a tag's `scope`. Editing
+one of these does not move the object; the push keeps planning an `update`
+every run because the live object never matches. Revert the field to its pulled
+value to clear the drift.
+
+### Stale local files
+
+`pull` never deletes local files, but it warns about **stale** ones — a `.yaml`
+file with no live counterpart. A stale file (its object was deleted or renamed
+away in the console) plans as a `create` on the next push and would re-create
+the object. Delete stale files before pushing.
+
 ## Surfaces
 
-| Surface | Pull | Push | Format |
+| Surface | Pull | Push | Layout |
 |---------|------|------|--------|
-| Exclusions | `exclusions pull` | `exclusions push` | JSON |
-| Policies | `policies pull` | `policies push` | YAML (per site) |
-| Rules | `rules pull` | `rules push` | YAML (per rule) |
-| Device control | `devicecontrol pull` | `devicecontrol push` | JSON |
-| Firewall | `firewall pull` | `firewall push` | JSON |
-| Sites | `sites pull` | `sites push` | JSON |
-| Groups | `groups pull` | `groups push` | JSON |
-| Tags | `tags pull` | `tags push` | JSON |
-| Cloud policies | `cloud-policies pull` | `cloud-policies push` | JSON |
+| Exclusions | `exclusions pull` | `exclusions push` | YAML dir (per exclusion) |
+| Policies | `policies pull` | `policies push` | YAML (per scope) |
+| Rules | `rules pull` | `rules push` | YAML dir (per rule) |
+| Device control | `devicecontrol pull` | `devicecontrol push` | YAML dir (per rule) |
+| Firewall | `firewall pull` | `firewall push` | YAML dir (per rule) |
+| Sites | `sites pull` | `sites push` | YAML dir (per site) |
+| Groups | `groups pull` | `groups push` | YAML dir (per group) |
+| Tags | `tags pull` | `tags push` | YAML dir (per tag) |
+| Cloud policies | `cloud-policies pull` | `cloud-policies push` | YAML dir (per policy) |
+
+Policies are the one exception: they are scope-singletons (account/site/group)
+with their own pull/push/diff/revert lane, not a per-object collection.
 
 ## Exclusions
 
-Pull all exclusions (or filter by site):
+Pull all exclusions (or filter by site) into a directory of per-exclusion
+files:
 
 ```bash
-s1ctl exclusions pull --out samples/
-s1ctl exclusions pull --site-id 000000 --out samples/
+s1ctl exclusions pull
+s1ctl exclusions pull --site-id 000000
 ```
 
-This creates `samples/exclusions.json`. Edit the file, then push:
+This writes one YAML file per exclusion under `exclusions/`:
+
+```yaml
+type: path
+value: /opt/app/cache
+osType: linux
+mode: suppress
+```
+
+Edit or delete files, then push. Exclusions are matched by type + OS + value:
+matching files update, files with no live match are created, live-only entries
+are reported. New exclusions are created at the scope named by `--site-id`
+(global/tenant scope if omitted):
 
 ```bash
-s1ctl exclusions push --file samples/exclusions.json --site-id 000000
-# dry-run output shows what would be created
-s1ctl exclusions push --file samples/exclusions.json --site-id 000000 --yes
+s1ctl exclusions push --site-id 000000            # dry-run
+s1ctl exclusions push --site-id 000000 --yes      # apply
 ```
 
 ## Policies
 
-Pull fetches one YAML file per site:
+Pull fetches one YAML file per scope:
 
 ```bash
 s1ctl policies pull --out policies/
@@ -117,48 +162,101 @@ s1ctl rules trends --top 10
 
 ## Device control and firewall
 
-Same pull/push pattern:
+Same per-object pattern — pull to a surface directory, edit files, push:
 
 ```bash
-s1ctl devicecontrol pull --site-id 000000 --out samples/
-s1ctl devicecontrol push --file samples/device-control.json --site-id 000000 --yes
+s1ctl devicecontrol pull --site-id 000000
+s1ctl devicecontrol push --site-id 000000 --yes
 
-s1ctl firewall pull --site-id 000000 --out samples/
-s1ctl firewall push --file samples/firewall-rules.json --site-id 000000 --yes
+s1ctl firewall pull --site-id 000000
+s1ctl firewall push --site-id 000000 --yes
 ```
+
+Rules are matched by name. New rules are created at the scope named by
+`--site-id`.
 
 ## Sites, groups, and tags
 
-Pull the hierarchy objects to JSON, review, and push new ones back:
+Pull the hierarchy objects to per-object directories, review in git, then push:
 
 ```bash
-s1ctl sites pull --out samples/
-s1ctl sites push --file samples/sites.json --yes
+s1ctl sites pull
+s1ctl sites push --yes
 
-s1ctl groups pull --site-id 000000 --out samples/
-s1ctl groups push --file samples/groups.json --yes
+s1ctl groups pull --site-id 000000
+s1ctl groups push --yes
 
-s1ctl tags pull --site-id 000000 --out samples/
-s1ctl tags push --file samples/tags.json --yes
+s1ctl tags pull --site-id 000000
+s1ctl tags push --yes
 ```
 
-For these surfaces, `push` creates the objects listed in the file. See the
-[Sites and groups](guides/sites-groups.md) guide for per-command flags.
+Each object is one file. Sites are matched by name, groups by site ID + name,
+and tags by key: matching files update, files with no live match are created.
+A site file looks like:
+
+```yaml
+name: Production
+accountId: "000000"
+siteType: Paid
+totalLicenses: 500
+```
+
+See the [Sites and groups](sites-groups.md) guide for per-command flags.
 
 ## Cloud policies
 
-Pull cloud security policies, flip their enabled/disabled state in the file,
-then push the reconciled status back:
+Pull cloud security policies to a directory, flip the `status` field in the
+per-policy files, then push the reconciled status back:
 
 ```bash
-s1ctl cloud-policies pull --out samples/
-# edit samples/cloud-policies.json: set "status" to "enabled" or "disabled" per policy
-s1ctl cloud-policies push --file samples/cloud-policies.json --yes
+s1ctl cloud-policies pull
+# edit files in cloud-policies/: set status to enabled or disabled
+s1ctl cloud-policies push --yes
+```
+
+Each file carries the policy identity and status:
+
+```yaml
+id: "000000"
+name: Example CNS policy
+status: enabled
 ```
 
 `cloud-policies push` reconciles only the enabled/disabled status of each
-policy in the file — it enables or disables policies to match, and never
-creates or deletes them.
+policy — matched by ID, it enables or disables policies to match, and never
+creates or deletes them. A local file whose ID has no live match fails per-item
+since policies cannot be created through this surface.
+
+## Drift detection
+
+`s1ctl drift` reports the difference between committed files and live state for
+every sync surface, without applying anything. For each surface that has a local
+directory, it loads the files, lists live objects, and prints a per-surface
+summary of creates, updates, live-only, and unchanged counts. It is read-only —
+there is no apply path.
+
+```bash
+s1ctl drift
+s1ctl drift --surface firewall --surface sites
+```
+
+Exit code is 0 when every checked surface is clean and 1 when any surface has
+drift, so a CI job can fail the build on a non-zero exit:
+
+```bash
+# in CI: check the committed config against the console
+s1ctl drift
+```
+
+Two caveats:
+
+- **Surfaces without a local directory are skipped.** Drift checks only what is
+  committed. An empty-but-present surface directory is not skipped: every live
+  object reports as live-only, so the surface shows drift. Pull the surface
+  first.
+- **Live-only counts as drift.** An object that exists in the console but has no
+  committed file is drift, the same as a stale local file that would re-create a
+  deleted object on push. Reconcile either the console or the files to clear it.
 
 ## Settings
 
@@ -181,6 +279,7 @@ pushing — otherwise the update writes them back empty.
 ## Tips
 
 - All push commands are **dry-run by default**. Pass `--yes` to apply.
-- Commit pulled files to git for audit trail and diff review.
+- Commit pulled directories to git for audit trail and diff review.
 - Use `--site-id` to scope pulls to specific sites.
 - The push diff output shows exactly what will change before applying.
+- Run `s1ctl drift` in CI to catch console changes that bypass the loop.

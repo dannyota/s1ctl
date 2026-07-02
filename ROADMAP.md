@@ -79,7 +79,22 @@ threat blacklist and fetch-file, site/group/tag CRUD, policy updates, user
 deletion, settings updates (notifications/sso/smtp/syslog), and the
 upgrade-policies lifecycle (create/update/delete/activate/deactivate).
 
-## Wave 9 — Polish and release
+## Wave 9 — Reconcile engine and drift gate (complete)
+
+A shared reconcile engine (`internal/reconcile`) backs every sync surface: one
+on-disk model, one set of create-or-update semantics, and a `drift` command
+that reports per-surface divergence for CI gating.
+
+- **Reconcile engine (D1)** — one engine drives pull/push across rules,
+  firewall, device control, sites, groups, tags, exclusions, and cloud
+  policies. Push is create-or-update, matched by a stable per-surface identity.
+- **Drift CI gate (D2)** — `s1ctl drift` plans every committed surface and
+  exits non-zero when any surface diverges.
+- **Breaking (v0.6.0):** sites, groups, tags, exclusions, and cloud policies
+  move from single JSON array files to per-object YAML directories; re-pull to
+  regenerate local state.
+
+## Wave 10 — Polish and release
 
 - Progress indicators (bubbletea spinners for long operations)
 - Rate limiting (x/time/rate)
@@ -97,5 +112,3 @@ Surfaces scoped but not yet built:
 - **Marketplace** — list/get/install integrations
 - **Inventory** — unified asset inventory across all types
 - **Identity** — identity posture list/get/configure
-- **Reconcile engine** — declarative desired-state apply across surfaces
-- **Drift CI gate** — fail CI when live state diverges from committed files

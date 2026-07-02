@@ -140,17 +140,18 @@ s1ctl sites delete 000000 --yes    # apply
 
 ### Sites as code
 
-Pull all sites (optionally filtered by account) to a local file, review the
-diff in git, then push new sites back:
+Pull all sites (optionally filtered by account) to a directory of per-site
+YAML files, review the diff in git, then push changes back:
 
 ```bash
-s1ctl sites pull --out samples/
-s1ctl sites pull --account-id 000000 --out samples/
-s1ctl sites push --file samples/sites.json --yes
+s1ctl sites pull
+s1ctl sites pull --account-id 000000
+s1ctl sites push --yes
 ```
 
-`sites pull` writes `samples/sites.json`. `sites push` creates the sites in
-that file.
+`sites pull` writes one file per site under `sites/`. `sites push` matches
+sites by name: existing sites are updated, new ones created. See
+[Config-as-code](config-as-code.md) for the shared reconcile model.
 
 ## Groups
 
@@ -219,13 +220,13 @@ s1ctl groups delete 000000 --yes    # apply
 ### Groups as code
 
 ```bash
-s1ctl groups pull --out samples/
-s1ctl groups pull --site-id 000000 --out samples/
-s1ctl groups push --file samples/groups.json --yes
+s1ctl groups pull
+s1ctl groups pull --site-id 000000
+s1ctl groups push --yes
 ```
 
-`groups pull` writes `samples/groups.json`. `groups push` creates the groups
-in that file.
+`groups pull` writes one file per group under `groups/`. `groups push` matches
+groups by site ID + name: existing groups are updated, new ones created.
 
 ## Tags
 
@@ -269,13 +270,13 @@ s1ctl tags delete 000000 --yes
 ### Tags as code
 
 ```bash
-s1ctl tags pull --out samples/
-s1ctl tags pull --site-id 000000 --out samples/
-s1ctl tags push --file samples/tags.json --yes
+s1ctl tags pull
+s1ctl tags pull --site-id 000000
+s1ctl tags push --yes
 ```
 
-`tags pull` writes `samples/tags.json`. `tags push` creates the tags in that
-file.
+`tags pull` writes one file per tag under `tags/`. `tags push` matches tags by
+key: existing tags are updated, new ones created.
 
 ## Policies
 
