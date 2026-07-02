@@ -30,6 +30,21 @@ s1ctl agents approve-uninstall <agent-id> [flags]
 |------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
+## agents broadcast
+
+Display a broadcast message on an agent's endpoint
+
+```text
+s1ctl agents broadcast <agent-id> --message <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--message` | string | - | message text to broadcast (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## agents count
 
 Count agents
@@ -78,6 +93,54 @@ Enable a disabled agent
 
 ```text
 s1ctl agents enable <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents fetch-files
+
+Fetch specific files from an agent to the console
+
+```text
+s1ctl agents fetch-files <agent-id> --path <file> [--path <file>...] [--password <pw>] [flags]
+```
+
+Fetch up to 10 files from a single agent. The files are uploaded to the
+console encrypted with --password (required by the platform to open the
+resulting archive). The password is never written to the audit log.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--password` | string | - | archive encryption password |
+| `--path` | stringArray | - | absolute file path to fetch (repeatable, up to 10) (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents fetch-firewall-rules
+
+Fetch the current firewall-rules inventory
+
+```text
+s1ctl agents fetch-firewall-rules <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents fetch-installed-apps
+
+Fetch the installed-applications inventory
+
+```text
+s1ctl agents fetch-installed-apps <agent-id> [flags]
 ```
 
 **Flags**
@@ -187,6 +250,36 @@ s1ctl agents list [flags]
 | `--sort-by` | string | - | sort field (e.g. computerName, lastActiveDate) |
 | `--sort-order` | string | - | sort direction (asc, desc) |
 
+## agents local-upgrade
+
+Authorize or revoke local upgrade/downgrade on an agent
+
+```text
+s1ctl agents local-upgrade <agent-id> --state on|off [--until <timestamp>] [flags]
+```
+
+Set an agent's local upgrade/downgrade authorization.
+
+--state on authorizes local upgrades until the --until expiration timestamp
+(RFC3339, e.g. 2030-01-01T00:00:00Z), which is required. --state off revokes
+the authorization.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--state` | string | - | "on" or "off" (required) |
+| `--until` | string | - | authorization expiration timestamp (RFC3339); required with --state on |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents local-upgrade-status
+
+Show an agent's local upgrade/downgrade authorization
+
+```text
+s1ctl agents local-upgrade-status <agent-id>
+```
+
 ## agents mark-up-to-date
 
 Mark an agent as up to date
@@ -247,6 +340,31 @@ s1ctl agents outdated [flags]
 | `--limit` | int | 0 | max results per page (default 50) |
 | `--site-id` | stringSlice | - | filter by site ID |
 
+## agents passphrases
+
+List agent maintenance passphrases (SECRET output)
+
+```text
+s1ctl agents passphrases [flags]
+```
+
+List agent maintenance passphrases. The passphrase column is secret
+material used to run privileged local agent commands — treat the output
+accordingly. Values are never written to the audit log.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--all` | bool | false | fetch all pages |
+| `--cursor` | string | - | pagination cursor |
+| `--group-id` | stringSlice | - | filter by group ID |
+| `--id` | stringSlice | - | filter by agent ID |
+| `--limit` | int | 0 | max results per page (default 50) |
+| `--query` | string | - | free text search |
+| `--site-id` | stringSlice | - | filter by site ID |
+
 ## agents randomize-uuid
 
 Randomize the agent UUID
@@ -259,6 +377,21 @@ s1ctl agents randomize-uuid <agent-id> [flags]
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents ranger
+
+Enable or disable Ranger network discovery on an agent
+
+```text
+s1ctl agents ranger <agent-id> --state on|off [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--state` | string | - | "on" or "off" (required) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## agents reconnect
@@ -302,6 +435,20 @@ Reset agent local configuration
 
 ```text
 s1ctl agents reset-config <agent-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## agents reset-passphrase
+
+Reset the agent maintenance passphrase
+
+```text
+s1ctl agents reset-passphrase <agent-id> [flags]
 ```
 
 **Flags**

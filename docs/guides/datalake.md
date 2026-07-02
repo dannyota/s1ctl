@@ -174,6 +174,26 @@ s1ctl datalake powerquery \
   --start 7d
 ```
 
+## Numeric aggregation
+
+`datalake numeric` runs a numeric aggregation query (SDL REST protocol, so
+`S1_SDL_URL` must be set). Similar to facet and timeseries, it computes a
+single numeric result over matching events.
+
+```bash
+s1ctl datalake numeric --filter "event.type = 'DNS'" \
+  --function count --start 24h
+s1ctl datalake numeric --filter "event.type = 'Process Creation'" \
+  --function "mean(duration)" --start 7d --end 1d
+```
+
+| Flag | Description |
+| --- | --- |
+| `--filter` | Query filter expression (required) |
+| `--start` | Start time, e.g. `24h` or a timestamp (required) |
+| `--end` | End time (defaults to now) |
+| `--function` | Aggregation function, e.g. `count`, `mean(field)` |
+
 ## Facet aggregation
 
 `datalake facet` returns the most common values of a single field (SDL REST
@@ -213,6 +233,33 @@ s1ctl datalake timeseries --filter "event.type = 'Process Creation'" \
 | `--end` | End time (defaults to now) |
 | `--function` | Aggregation function, e.g. `count`, `mean(field)` |
 | `--buckets` | Number of time buckets |
+
+## Dashboards
+
+List and inspect data lake dashboards.
+
+```bash
+s1ctl datalake dashboards list
+s1ctl datalake dashboards get 000000
+```
+
+`dashboards list` shows all dashboards. `dashboards get` returns the full
+dashboard definition by ID, including its panels and queries.
+
+## Saved queries
+
+> **Breaking change (v0.7).** `datalake saved-queries` is now a subcommand
+> group. The flat `saved-queries` command from v0.6.x is removed.
+
+List and delete saved PowerQueries:
+
+```bash
+s1ctl datalake saved-queries list
+s1ctl datalake saved-queries delete 000000 --yes
+```
+
+`saved-queries list` shows all saved queries. `saved-queries delete` is
+dry-run by default; pass `--yes` to apply.
 
 ## Ingest
 

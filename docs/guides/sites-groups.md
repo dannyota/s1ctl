@@ -64,6 +64,36 @@ s1ctl accounts get 000000
 Returns: ID, name, state, type, license usage, site count, expiration, and
 creation date.
 
+### Reactivate an account
+
+Reactivate an expired account. Dry-run by default; pass `--yes` to apply.
+
+```bash
+s1ctl accounts reactivate 000000 --yes
+```
+
+### Expire an account
+
+Expire an account immediately. Dry-run by default; pass `--yes` to apply.
+
+```bash
+s1ctl accounts expire 000000 --yes
+```
+
+### Uninstall password
+
+Manage a account's uninstall password:
+
+```bash
+s1ctl accounts uninstall-password show 000000
+s1ctl accounts uninstall-password generate 000000 --yes
+s1ctl accounts uninstall-password revoke 000000 --yes
+```
+
+`show` prints the password to stdout and a notice to stderr (**secret
+output** — sensitive data). `generate` and `revoke` are dry-run by default;
+pass `--yes` to apply.
+
 ## Sites
 
 ### List sites
@@ -136,6 +166,47 @@ s1ctl sites update 000000 --total-licenses 500 --yes
 ```bash
 s1ctl sites delete 000000         # dry-run
 s1ctl sites delete 000000 --yes    # apply
+```
+
+### Reactivate a site
+
+Reactivate an expired site. Dry-run by default; pass `--yes` to apply.
+
+```bash
+s1ctl sites reactivate 000000 --yes
+```
+
+### Expire a site
+
+Expire a site immediately. Dry-run by default; pass `--yes` to apply.
+
+```bash
+s1ctl sites expire 000000 --yes
+```
+
+### Duplicate a site
+
+Create a copy of an existing site. Dry-run by default; pass `--yes` to apply.
+
+```bash
+s1ctl sites duplicate 000000 --name "New Site Copy" --yes
+```
+
+### Regenerate a registration key
+
+Regenerate a site's agent registration key. Dry-run by default; pass `--yes`
+to apply.
+
+```bash
+s1ctl sites regenerate-key 000000 --yes
+```
+
+### Print a registration token
+
+Print a site's registration token:
+
+```bash
+s1ctl sites token 000000
 ```
 
 ### Sites as code

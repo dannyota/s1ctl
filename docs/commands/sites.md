@@ -51,6 +51,40 @@ s1ctl sites delete <site-id> [flags]
 |------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
+## sites duplicate
+
+Duplicate an existing site
+
+```text
+s1ctl sites duplicate [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--copy-users` | bool | false | copy users from the source site |
+| `--name` | string | - | new site name (required) |
+| `--policy-source` | string | inherit_global | policy origin: inherit_global, copy_source_site, custom |
+| `--source-site-id` | string | - | source site ID to copy from (required) |
+| `--total-licenses` | int | 0 | total licenses for the new site |
+| `--unlimited-licenses` | bool | false | unlimited licenses |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## sites expire
+
+Expire a site immediately
+
+```text
+s1ctl sites expire <site-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## sites get
 
 Get site details
@@ -132,6 +166,54 @@ and unchanged sites are skipped. Dry-run by default — pass --yes to apply chan
 |------|------|---------|-------------|
 | `--dir` | string | sites | directory containing site YAML files |
 | `--yes` | bool | false | apply changes (default: dry-run) |
+
+## sites reactivate
+
+Reactivate an expired site
+
+```text
+s1ctl sites reactivate <site-id> [flags]
+```
+
+Reactivate an expired site. Specify exactly one of --unlimited (no
+expiration) or --expiration (an RFC3339 timestamp) to set the new license
+window.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--expiration` | string | - | new expiration as an RFC3339 timestamp |
+| `--unlimited` | bool | false | reactivate with no expiration |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## sites regenerate-key
+
+Regenerate a site registration key
+
+```text
+s1ctl sites regenerate-key <site-id> [flags]
+```
+
+Regenerate a site's registration key. On apply, the new registration
+token is printed to stdout — treat it as a secret.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## sites token
+
+Print a site's registration token
+
+```text
+s1ctl sites token <site-id>
+```
+
+Print a site's current registration token to stdout. The token is
+sensitive registration material.
 
 ## sites update
 

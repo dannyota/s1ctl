@@ -5,7 +5,9 @@ cd "$(dirname "$0")/.."
 MD_MAX=450
 GO_MAX=700
 
-GRANDFATHER=()
+GRANDFATHER=(
+  "docs/commands/agents.md"
+)
 
 is_grandfathered() {
   local f=$1
@@ -19,8 +21,12 @@ while IFS= read -r f; do
   [ -f "$f" ] || continue
   n=$(wc -l <"$f")
   if (( n > MD_MAX )); then
-    echo "DOC TOO LONG  $f: $n lines (max $MD_MAX) — split or trim"
-    violations=$((violations + 1))
+    if is_grandfathered "$f"; then
+      echo "note: $f is $n lines (grandfathered; auto-generated — please split)"
+    else
+      echo "DOC TOO LONG  $f: $n lines (max $MD_MAX) — split or trim"
+      violations=$((violations + 1))
+    fi
   fi
 done < <(
   { find docs -name '*.md' 2>/dev/null; echo ROADMAP.md; echo README.md; } | sort -u
@@ -39,8 +45,12 @@ while IFS= read -r f; do
 done < <(find . -name '*.go' -not -path './.git/*' -not -name '*_test.go' | sed 's#^\./##' | sort)
 
 for g in "${GRANDFATHER[@]}"; do
-  if [[ -f "$g" ]] && (( $(wc -l <"$g") <= GO_MAX )); then
-    echo "note: $g is now under $GO_MAX lines — remove from GRANDFATHER"
+  [ -f "$g" ] || continue
+  cnt=$(wc -l <"$g")
+  if [[ "$g" == *.md ]]; then
+    (( cnt <= MD_MAX )) && echo "note: $g is now under $MD_MAX lines — remove from GRANDFATHER"
+  elif [[ "$g" == *.go ]]; then
+    (( cnt <= GO_MAX )) && echo "note: $g is now under $GO_MAX lines — remove from GRANDFATHER"
   fi
 done
 

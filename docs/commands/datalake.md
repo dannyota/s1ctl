@@ -2,6 +2,14 @@
 
 Query Singularity Data Lake (SDL)
 
+## datalake dashboards
+
+Manage Data Lake dashboards
+
+```text
+s1ctl datalake dashboards
+```
+
 ## datalake facet
 
 Aggregate the most common values of a field (SDL REST)
@@ -35,6 +43,34 @@ Ingest events or raw logs into the data lake
 ```text
 s1ctl datalake ingest
 ```
+
+## datalake numeric
+
+Run a numeric aggregation query (SDL REST)
+
+```text
+s1ctl datalake numeric [flags]
+```
+
+Run a numeric aggregation query against the Singularity Data Lake.
+
+Counts events, computes event rate, or applies an aggregation function
+(e.g. mean, min, max) to a numeric field across one or more time buckets.
+
+Note: numericQuery is effectively deprecated in favour of timeseries with
+createSummaries=false, but remains useful for sub-30-second bucket
+granularity and users with limited query permissions.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--buckets` | int | 0 | number of buckets (1-5000) |
+| `--end` | string | - | end time |
+| `--filter` | string | - | query filter expression |
+| `--function` | string | - | aggregation function (e.g. rate, count, mean(field)) |
+| `--priority` | string | - | query priority (low, high) |
+| `--start` | string | - | start time, e.g. 1h or timestamp (required) |
 
 ## datalake powerquery
 
@@ -91,14 +127,11 @@ continuation token, or --max-events to cap the total number of events.
 
 ## datalake saved-queries
 
-List saved PowerQueries
+Manage saved PowerQueries
 
 ```text
 s1ctl datalake saved-queries
 ```
-
-List saved searches from the Singularity Data Lake console.
-Shows both private and shared saved queries.
 
 ## datalake timeseries
 

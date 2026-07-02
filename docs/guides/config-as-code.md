@@ -50,6 +50,9 @@ the object. Delete stale files before pushing.
 | Sites | `sites pull` | `sites push` | YAML dir (per site) |
 | Groups | `groups pull` | `groups push` | YAML dir (per group) |
 | Tags | `tags pull` | `tags push` | YAML dir (per tag) |
+| Blocklist | `blocklist pull` | `blocklist push` | YAML dir (per item) |
+| Network | `network pull` | `network push` | YAML dir (per rule) |
+| Locations | `locations pull` | `locations push` | YAML dir (per location) |
 | Cloud policies | `cloud-policies pull` | `cloud-policies push` | YAML dir (per policy) |
 
 Policies are the one exception: they are scope-singletons (account/site/group)
@@ -269,12 +272,20 @@ s1ctl settings get syslog > syslog.json
 s1ctl settings update syslog --from-file syslog.json --yes
 ```
 
-Updatable categories: `notifications`, `sso`, `smtp`, `syslog`. Scope with
-`--site-id` or `--account-id`. Secrets are never echoed: `settings get`
-redacts sensitive fields, and `settings update` reports status only without
-printing the payload back. Because the pulled file has secrets redacted,
-re-enter any secret fields (passwords, tokens, certificate contents) before
-pushing — otherwise the update writes them back empty.
+Updatable categories: `notifications`, `sso`, `smtp`, `syslog`, `sms`,
+`recipients`, `ad`, `ad-scope-mapping`. Scope with `--site-id` or
+`--account-id`.
+
+> **Note:** `settings list` shows `active-directory` as the category name,
+> but the CLI token for `settings get` and `settings update` is `ad`
+> (abbreviated). Similarly, `ad-scope-mapping` is the CLI token for the
+> Active Directory scope mapping category.
+
+Secrets are never echoed: `settings get` redacts sensitive fields, and
+`settings update` reports status only without printing the payload back.
+Because the pulled file has secrets redacted, re-enter any secret fields
+(passwords, tokens, certificate contents) before pushing — otherwise the
+update writes them back empty.
 
 ## Tips
 

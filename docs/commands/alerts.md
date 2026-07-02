@@ -32,6 +32,56 @@ s1ctl alerts count [flags]
 | `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
 | `--verdict` | stringSlice | - | filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED) |
 
+## alerts counts
+
+Count alert values per field (filter counts or group-by counts)
+
+```text
+s1ctl alerts counts --field <fieldId> [--field ...] [flags]
+```
+
+Return per-field value counts for the current alert selection.
+
+By default uses alertFiltersCount (distinct filterable values and their
+cardinality). Pass --group-by to use the deprecated alertGroupByCount query
+instead; for grouped alert volume prefer "alerts stats" (alertGroups).
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--field` | stringSlice | - | field ID to count (repeatable, required) |
+| `--group-by` | bool | false | use the deprecated alertGroupByCount query |
+| `--scope-id` | string | - | account, site, or group ID |
+| `--scope-level` | string | - | scope level (account, site, group) |
+| `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
+| `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
+
+## alerts export
+
+Export alerts to a CSV file
+
+```text
+s1ctl alerts export [flags]
+```
+
+Export alerts matching the filters as CSV via alertsCsvExport.
+
+The API returns the full CSV inline. It is written to --out, or to stdout when
+--out is omitted.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--out` | string | - | output file (default: stdout) |
+| `--scope-id` | string | - | account, site, or group ID |
+| `--scope-level` | string | - | scope level (account, site, group) |
+| `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
+| `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
+| `--verdict` | stringSlice | - | filter by analyst verdict |
+| `--view` | string | - | predefined view (ALL, CLOUD, ENDPOINT, IDENTITY, CUSTOM_ALERTS, THIRD_PARTY) |
+
 ## alerts get
 
 Get alert details
@@ -76,6 +126,43 @@ s1ctl alerts list [flags]
 | `--source` | stringSlice | - | filter by detection source (STAR, EDR, CWS) |
 | `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
 | `--verdict` | stringSlice | - | filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED) |
+
+## alerts note-delete
+
+Delete an alert note
+
+```text
+s1ctl alerts note-delete <note-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## alerts note-update
+
+Update the text of an alert note
+
+```text
+s1ctl alerts note-update <note-id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | new note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## alerts notes
+
+List investigation notes on an alert
+
+```text
+s1ctl alerts notes <alert-id>
+```
 
 ## alerts resolve
 
@@ -133,6 +220,24 @@ s1ctl alerts status <id> <status> [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
+
+## alerts timeline
+
+Show the timeline for an alert
+
+```text
+s1ctl alerts timeline <alert-id> [flags]
+```
+
+Show the alert timeline: notes, activities, enrichments, indicators,
+asset operations, mitigation actions, and related alerts, newest first.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--all` | bool | false | fetch all pages |
+| `--limit` | int | 0 | max results per page (default 50) |
 
 ## alerts verdict
 

@@ -97,6 +97,67 @@ s1ctl alerts list --limit 25 --after "YWxlcnQ6MDAwMDAw"
 Note: alerts use `--after` (GraphQL cursor), not `--cursor` which is used
 by REST-based commands.
 
+## Notes
+
+Manage investigation notes on alerts.
+
+### List notes
+
+```bash
+s1ctl alerts notes 000000
+s1ctl alerts notes 000000 --json
+```
+
+### Update a note
+
+Update the text of an existing note by its note ID:
+
+```bash
+s1ctl alerts note-update 000000 --text "Updated investigation findings"        # dry-run
+s1ctl alerts note-update 000000 --text "Updated investigation findings" --yes   # apply
+```
+
+### Delete a note
+
+Delete a note by its note ID:
+
+```bash
+s1ctl alerts note-delete 000000        # dry-run
+s1ctl alerts note-delete 000000 --yes   # apply
+```
+
+To add a new note, use `s1ctl alerts add-note`.
+
+## Timeline
+
+Show the timeline of events for an alert:
+
+```bash
+s1ctl alerts timeline 000000
+s1ctl alerts timeline 000000 --json
+```
+
+## Counts
+
+Count alert values per field. Useful for quick aggregation without
+fetching full results.
+
+```bash
+s1ctl alerts counts --field severity
+s1ctl alerts counts --field verdict
+s1ctl alerts counts --field severity --json
+```
+
+## Export
+
+Export alerts to a CSV file:
+
+```bash
+s1ctl alerts export --output alerts.csv
+s1ctl alerts export --severity HIGH,CRITICAL --output critical.csv
+s1ctl alerts export --all --output all-alerts.csv
+```
+
 ## Workflows
 
 ### List critical alerts
@@ -138,7 +199,14 @@ Review the Verdict column -- empty values indicate untriaged alerts.
 ### Count alerts by severity
 
 ```bash
+s1ctl alerts counts --field severity
 s1ctl alerts list --severity CRITICAL --all --json | jq 'length'
+```
+
+### Export critical alerts to CSV
+
+```bash
+s1ctl alerts export --severity HIGH,CRITICAL --all --output critical-alerts.csv
 ```
 
 ## GraphQL vs REST

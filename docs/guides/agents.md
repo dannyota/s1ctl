@@ -84,15 +84,30 @@ s1ctl agents abort-scan 000000 --yes
 | `agents uninstall <id>` | Uninstall the agent |
 | `agents approve-uninstall <id>` | Approve a pending uninstall request |
 | `agents reject-uninstall <id>` | Reject a pending uninstall request |
+| `agents reset-passphrase <id>` | Reset the agent maintenance passphrase |
 
 ```bash
 s1ctl agents restart 000000 --yes
 s1ctl agents shutdown 000000 --yes
 s1ctl agents decommission 000000 --yes
+s1ctl agents reset-passphrase 000000 --yes
 ```
 
 > **Warning:** Decommission and uninstall remove the agent from management.
 > Neither can be undone from the CLI.
+
+### Passphrases
+
+```bash
+s1ctl agents passphrases --site-id 000000
+s1ctl agents passphrases --site-id 000000 --json
+```
+
+List agent maintenance passphrases for a site.
+
+> **Note:** This command outputs sensitive data (maintenance passphrases).
+> The output is printed to stdout for scripting, and a notice is printed to
+> stderr reminding the user that the output is sensitive.
 
 ### State and configuration
 
@@ -103,11 +118,35 @@ s1ctl agents decommission 000000 --yes
 | `agents reset-config <id>` | Reset agent local configuration |
 | `agents mark-up-to-date <id>` | Mark the agent as up to date |
 | `agents randomize-uuid <id>` | Randomize the agent UUID |
+| `agents ranger <id>` | Enable or disable Ranger network discovery |
+| `agents local-upgrade <id>` | Authorize or revoke local upgrade/downgrade |
+| `agents local-upgrade-status <id>` | Show local upgrade/downgrade authorization status |
 
 ```bash
 s1ctl agents enable 000000 --yes
 s1ctl agents disable 000000 --yes
 s1ctl agents reset-config 000000 --yes
+```
+
+`ranger` uses `--state on|off`:
+
+```bash
+s1ctl agents ranger 000000 --state on --yes
+s1ctl agents ranger 000000 --state off --yes
+```
+
+`local-upgrade` uses `--authorize` or `--revoke`:
+
+```bash
+s1ctl agents local-upgrade 000000 --authorize --yes
+s1ctl agents local-upgrade 000000 --revoke --yes
+```
+
+`local-upgrade-status` is a read command (no `--yes` needed):
+
+```bash
+s1ctl agents local-upgrade-status 000000
+s1ctl agents local-upgrade-status 000000 --json
 ```
 
 ### Organization
@@ -124,6 +163,37 @@ Move an agent between groups or sites, or set its external ID:
 s1ctl agents move 000000 --group-id 000000 --yes
 s1ctl agents move-to-site 000000 --site-id 000000 --yes
 s1ctl agents set-external-id 000000 --external-id my-asset-tag --yes
+```
+
+### Data collection and broadcast
+
+| Command | Description |
+|---------|-------------|
+| `agents broadcast <id...>` | Display a message on the agent's endpoint |
+| `agents fetch-files <id>` | Fetch specific files from an agent to the console |
+| `agents fetch-installed-apps <id>` | Fetch installed-applications inventory |
+| `agents fetch-firewall-rules <id>` | Fetch current firewall-rules inventory |
+
+`broadcast` requires `--message`:
+
+```bash
+s1ctl agents broadcast 000000 --message "Scheduled maintenance at 22:00 UTC" --yes
+```
+
+`fetch-files` accepts `--password` to encrypt the fetched archive. Using
+`--password` is recommended for security:
+
+```bash
+s1ctl agents fetch-files 000000 --yes
+s1ctl agents fetch-files 000000 --password "s3cret" --yes
+```
+
+`fetch-installed-apps` and `fetch-firewall-rules` trigger an inventory
+refresh from the agent:
+
+```bash
+s1ctl agents fetch-installed-apps 000000 --yes
+s1ctl agents fetch-firewall-rules 000000 --yes
 ```
 
 ### Firewall logging
@@ -190,6 +260,12 @@ s1ctl agents count
 
 ```bash
 s1ctl agents list --os-type linux --json | jq '.[].computerName'
+```
+
+### Retrieve maintenance passphrases
+
+```bash
+s1ctl agents passphrases --site-id 000000 --json
 ```
 
 ### Isolate a compromised agent

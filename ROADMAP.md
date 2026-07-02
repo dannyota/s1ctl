@@ -102,11 +102,37 @@ that reports per-surface divergence for CI gating.
 - Docs site updates for all new commands
 - **Release v1.0.0**
 
+## Wave 11 — API coverage expansion (complete)
+
+Broad surface coverage across the REST, GraphQL, and SDL APIs: new command
+groups and enrichment of existing surfaces.
+
+- **New command groups:** blocklist (CRUD + pull/push), service-users (CRUD +
+  token generation), roles (CRUD), network quarantine (full mirror of firewall),
+  DLP (rules + classifications), cloud-rules (CNS custom), filters, locations
+  (CRUD + pull/push), tag-rules, maintenance windows
+- **Enriched surfaces:** agents (broadcast, fetch-files, fetch-installed-apps,
+  fetch-firewall-rules, reset-passphrase, ranger, local-upgrade, passphrases),
+  threats (add-to-exclusions, mitigate-alerts, set-ticket, quarantined-files,
+  exclusion-options, export), alerts (notes, timeline, counts, export),
+  misconfigurations + vulnerabilities (notes, assign, history, related-assets,
+  export, CVE queries), remoteops (update, content, upload-limits, pending
+  approve/decline, guardrails), settings (sms, recipients, AD, AD scope
+  mapping, SSO cert, cancel-pending-emails), sites (reactivate, expire,
+  duplicate, regenerate-key, token), accounts (reactivate, expire,
+  uninstall-password), users (update, generate-token, revoke-token,
+  token-details, 2FA), datalake (numeric, dashboards, saved-queries delete)
+- **Breaking:** `datalake saved-queries` is now a subcommand group
+  (`saved-queries list`, `saved-queries delete`) — the previous
+  `saved-queries` flat command is removed
+- **Roles note:** RBAC roles surface is CRUD-only (list/get/create/update/
+  delete); pull/push reconcile was planned but review found the round-trip
+  unsafe due to permission-tree normalization
+
 ## Backlog
 
 Surfaces scoped but not yet built:
 
-- **Network control** — list/get/quarantine endpoints
 - **Cloud onboarding** — list/get/onboard/delete cloud accounts
 - **Automation** — list/get/create/run automation rules
 - **Marketplace** — list/get/install integrations
