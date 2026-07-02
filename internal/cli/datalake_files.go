@@ -34,15 +34,11 @@ func newDatalakeFilesListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), resp)
-			}
 			rows := make([][]string, 0, len(resp.Paths))
 			for _, p := range resp.Paths {
 				rows = append(rows, []string{p})
 			}
-			printTable([]string{"PATH"}, rows)
-			return nil
+			return printOutput(cmd.OutOrStdout(), []string{"PATH"}, rows, resp, len(rows), len(rows), "file", true)
 		},
 	}
 }

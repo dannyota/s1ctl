@@ -39,15 +39,11 @@ func newDatalakeFacetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), resp)
-			}
 			rows := make([][]string, 0, len(resp.Values))
 			for _, v := range resp.Values {
 				rows = append(rows, []string{v.Value, strconv.FormatInt(v.Count, 10)})
 			}
-			printTable([]string{"VALUE", "COUNT"}, rows)
-			return nil
+			return printOutput(cmd.OutOrStdout(), []string{"VALUE", "COUNT"}, rows, resp, len(rows), len(rows), "facet value", true)
 		},
 	}
 	cmd.Flags().StringVar(&filter, "filter", "", "query filter expression")
@@ -90,9 +86,6 @@ func newDatalakeTimeseriesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), resp)
-			}
 			var rows [][]string
 			for _, res := range resp.Results {
 				for i, v := range res.Values {
@@ -103,8 +96,7 @@ func newDatalakeTimeseriesCmd() *cobra.Command {
 					rows = append(rows, []string{strconv.Itoa(i), val})
 				}
 			}
-			printTable([]string{"BUCKET", "VALUE"}, rows)
-			return nil
+			return printOutput(cmd.OutOrStdout(), []string{"BUCKET", "VALUE"}, rows, resp, len(rows), len(rows), "bucket", true)
 		},
 	}
 	cmd.Flags().StringVar(&filter, "filter", "", "query filter expression (required)")
