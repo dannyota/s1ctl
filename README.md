@@ -1,12 +1,12 @@
 <div align="center">
 
-<a href="https://s1ctl.danny.vn"><img src="docs/assets/banner.svg" alt="s1ctl — operate SentinelOne Singularity Platform as code" width="600"></a>
+<a href="https://s1.danny.vn"><img src="docs/assets/banner.svg" alt="s1ctl — operate SentinelOne Singularity Platform as code" width="600"></a>
 
 # s1ctl
 
 **Operate SentinelOne Singularity Platform as code — for *any* tenant.**
 
-[Docs](https://s1ctl.danny.vn) · [Catalog](docs/design/catalog.md) · [Releases](https://github.com/dannyota/s1ctl/releases)
+[Docs](https://s1.danny.vn) · [Catalog](docs/design/catalog.md) · [Releases](https://github.com/dannyota/s1ctl/releases)
 
 </div>
 
@@ -146,7 +146,7 @@ conventions, self-discovery commands, and common recipes.
 
 ## Documentation
 
-Full docs at [s1ctl.danny.vn](https://s1ctl.danny.vn).
+Full docs at [s1.danny.vn](https://s1.danny.vn).
 
 ## License
 
