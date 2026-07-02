@@ -27,6 +27,7 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newActivitiesCmd())
 	root.AddCommand(newCloudPoliciesCmd())
 	root.AddCommand(newCloudRulesCmd())
+	root.AddCommand(newDLPCmd())
 	root.AddCommand(newRulesCmd())
 
 	// Operations
