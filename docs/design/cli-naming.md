@@ -35,7 +35,7 @@ terminology — never invented abstractions.
 | Verb | Domain | Example |
 |------|--------|---------|
 | `isolate` | agents | `s1ctl agents isolate <id> --yes` |
-| `connect` | agents | `s1ctl agents connect <id> --yes` |
+| `reconnect` | agents | `s1ctl agents reconnect <id> --yes` |
 | `scan` | agents | `s1ctl agents scan <id> --yes` |
 | `mitigate` | threats | `s1ctl threats mitigate <id> --yes` |
 | `run` | remoteops | `s1ctl remoteops run <script-id> --yes` |

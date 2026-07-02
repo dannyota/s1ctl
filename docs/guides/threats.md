@@ -90,6 +90,26 @@ s1ctl threats status 000000 --status resolved --yes         # apply
 | `in_progress` | Under investigation |
 | `resolved` | Fully handled |
 
+### Blacklist
+
+Add the threat's file hash to the blacklist so the same file is blocked
+across the tenant on next encounter.
+
+```bash
+s1ctl threats blacklist 000000        # dry-run
+s1ctl threats blacklist 000000 --yes   # apply
+```
+
+### Fetch file
+
+Retrieve the threat file from the endpoint to the console for offline
+analysis (for example, to download it later for sandbox detonation).
+
+```bash
+s1ctl threats fetch-file 000000        # dry-run
+s1ctl threats fetch-file 000000 --yes   # apply
+```
+
 ## Workflows
 
 ### Triage unresolved threats

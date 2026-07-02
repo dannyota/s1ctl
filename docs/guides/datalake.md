@@ -174,6 +174,104 @@ s1ctl datalake powerquery \
   --start 7d
 ```
 
+## Facet aggregation
+
+`datalake facet` returns the most common values of a single field (SDL REST
+protocol, so `S1_SDL_URL` must be set).
+
+```bash
+s1ctl datalake facet --field event.type --start 24h
+s1ctl datalake facet --field src.process.name \
+  --filter "event.type = 'Process Creation'" --start 7d --max-count 20
+```
+
+| Flag | Description |
+| --- | --- |
+| `--field` | Field to aggregate (required) |
+| `--start` | Start time, e.g. `24h` or a timestamp (required) |
+| `--end` | End time (defaults to now) |
+| `--filter` | Query filter expression |
+| `--max-count` | Max distinct values to return |
+
+## Time-series aggregation
+
+`datalake timeseries` buckets an aggregation over time (SDL REST protocol).
+
+```bash
+s1ctl datalake timeseries --filter "event.type = 'DNS'" \
+  --function count --start 24h --buckets 24
+s1ctl datalake timeseries --filter "event.type = 'Process Creation'" \
+  --function "mean(duration)" --start 7d
+```
+
+| Flag | Description |
+| --- | --- |
+| `--filter` | Query filter expression (required) |
+| `--start` | Start time, e.g. `24h` or a timestamp (required) |
+| `--end` | End time (defaults to now) |
+| `--function` | Aggregation function, e.g. `count`, `mean(field)` |
+| `--buckets` | Number of time buckets |
+
+## Ingest
+
+Send data into the data lake. Both subcommands are **dry-run by default**;
+pass `--yes` to apply.
+
+### Structured events
+
+`datalake ingest events` uploads a JSON array of events (addEvents):
+
+```bash
+s1ctl datalake ingest events --file events.json --session my-uploader-1 --yes
+```
+
+| Flag | Description |
+| --- | --- |
+| `--file` | JSON file containing an array of events (required) |
+| `--session` | Unique session ID for this uploader (required) |
+
+### Plain-text logs
+
+`datalake ingest logs` uploads a raw log file (uploadLogs):
+
+```bash
+s1ctl datalake ingest logs --file app.log --parser myparser --yes
+```
+
+| Flag | Description |
+| --- | --- |
+| `--file` | Log file to upload (required) |
+| `--parser` | Parser to apply on ingest |
+| `--logfile` | `logfile` attribute for the events |
+| `--server-host` | `serverHost` attribute for the events |
+
+## Configuration files
+
+`datalake files` manages data lake configuration files such as parsers and
+lookups.
+
+List and fetch:
+
+```bash
+s1ctl datalake files list
+s1ctl datalake files get path/to/file.conf
+s1ctl datalake files get path/to/file.conf --out local-copy.conf
+```
+
+Create, update, or delete (dry-run by default; pass `--yes` to apply):
+
+```bash
+s1ctl datalake files put path/to/file.conf --from-file local.conf --yes
+s1ctl datalake files put path/to/file.conf --delete --yes
+```
+
+| Flag | Description |
+| --- | --- |
+| `--from-file` | Local file with the new content |
+| `--delete` | Delete the remote file |
+| `--out` | (get) Write content to a local file instead of stdout |
+| `--expected-version` | (put) Fail if the remote version differs |
+
 ## Go SDK
 
 Query the data lake programmatically:

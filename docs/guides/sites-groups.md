@@ -104,6 +104,54 @@ s1ctl sites get 000000
 Returns: ID, name, state, type, parent account, license usage, expiration, and
 creation date.
 
+### Create a site
+
+Site mutations are **dry-run by default**; pass `--yes` to apply.
+
+```bash
+s1ctl sites create --account-id 000000 --name "New Site" --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--account-id` | Account ID (required) |
+| `--name` | Site name (required) |
+| `--description` | Site description |
+| `--site-type` | Site type |
+| `--total-licenses` | Total licenses |
+| `--unlimited-licenses` | Grant unlimited licenses |
+| `--expiration` | Expiration timestamp (RFC 3339) |
+
+### Update a site
+
+Pass only the fields you want to change:
+
+```bash
+s1ctl sites update 000000 --name "Renamed Site" --yes
+s1ctl sites update 000000 --total-licenses 500 --yes
+```
+
+### Delete a site
+
+```bash
+s1ctl sites delete 000000         # dry-run
+s1ctl sites delete 000000 --yes    # apply
+```
+
+### Sites as code
+
+Pull all sites (optionally filtered by account) to a local file, review the
+diff in git, then push new sites back:
+
+```bash
+s1ctl sites pull --out samples/
+s1ctl sites pull --account-id 000000 --out samples/
+s1ctl sites push --file samples/sites.json --yes
+```
+
+`sites pull` writes `samples/sites.json`. `sites push` creates the sites in
+that file.
+
 ## Groups
 
 ### List groups
@@ -140,6 +188,94 @@ s1ctl groups get 000000
 ```
 
 Returns: ID, name, type, agent count, default flag, site ID, and creation date.
+
+### Create a group
+
+Group mutations are **dry-run by default**; pass `--yes` to apply.
+
+```bash
+s1ctl groups create --site-id 000000 --name "Servers" --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Site ID (required) |
+| `--name` | Group name (required) |
+| `--description` | Group description |
+
+### Update a group
+
+```bash
+s1ctl groups update 000000 --name "Renamed Group" --yes
+```
+
+### Delete a group
+
+```bash
+s1ctl groups delete 000000         # dry-run
+s1ctl groups delete 000000 --yes    # apply
+```
+
+### Groups as code
+
+```bash
+s1ctl groups pull --out samples/
+s1ctl groups pull --site-id 000000 --out samples/
+s1ctl groups push --file samples/groups.json --yes
+```
+
+`groups pull` writes `samples/groups.json`. `groups push` creates the groups
+in that file.
+
+## Tags
+
+Tags label firewall, network-quarantine, and device-inventory objects.
+
+### List and get tags
+
+```bash
+s1ctl tags list --type firewall
+s1ctl tags list --site-id 000000
+s1ctl tags get 000000
+```
+
+| Flag | Description |
+|------|-------------|
+| `--type` | Tag type (`firewall`, `network-quarantine`, `device-inventory`) |
+| `--site-id` | Filter by site ID (repeatable) |
+| `--query` | Free text search |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--cursor` | Pagination cursor for manual paging |
+
+### Create, update, delete
+
+Tag mutations are **dry-run by default**; pass `--yes` to apply.
+
+```bash
+s1ctl tags create --key env --value production --yes
+s1ctl tags update 000000 --value staging --yes
+s1ctl tags delete 000000 --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--key` | Tag key (required on create) |
+| `--value` | Tag value (required on create) |
+| `--description` | Tag description |
+| `--scope` | Tag scope |
+| `--scope-id` | Tag scope ID |
+
+### Tags as code
+
+```bash
+s1ctl tags pull --out samples/
+s1ctl tags pull --site-id 000000 --out samples/
+s1ctl tags push --file samples/tags.json --yes
+```
+
+`tags pull` writes `samples/tags.json`. `tags push` creates the tags in that
+file.
 
 ## Policies
 

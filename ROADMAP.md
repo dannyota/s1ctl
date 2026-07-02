@@ -36,60 +36,48 @@ Read-only CLI commands across all surfaces.
 | Data lake | powerquery (GraphQL + REST protocols) |
 | Platform | activities |
 
-## Wave 4 — Mutation commands (complete: SDK; partial: CLI)
+## Wave 4 — Mutation commands (complete)
 
-Agent and threat actions, exclusion sync, and core mutations.
+Agent and threat actions, exclusion sync, and core mutations — all wired to
+the CLI.
 
-| Surface | CLI wired | SDK ready |
-|---------|-----------|-----------|
-| Agent actions | isolate, connect, scan, decommission | + update-software, move-to-site, fetch-logs, restart, enable, disable, reset-config, approve/reject-uninstall, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging |
-| Threat actions | mitigate, verdict, status | + add-to-blacklist, fetch-file |
-| Exclusions | pull, push, create, delete | + update |
-| Sites | -- | create, update, delete |
-| Groups | -- | create, update, delete |
-| Tags | -- | create, update, delete |
-| Policies | -- | update (site, account, group) |
-| Users | -- | delete |
+| Surface | CLI wired |
+|---------|-----------|
+| Agent actions | isolate, reconnect, scan, abort-scan, decommission, uninstall, approve/reject-uninstall, upgrade, move, move-to-site, fetch-logs, restart, shutdown, enable, disable, reset-config, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging |
+| Threat actions | mitigate, verdict, status, resolve, add-note, blacklist, fetch-file |
+| Exclusions | pull, push, create, update, delete |
+| Sites | create, update, delete |
+| Groups | create, update, delete |
+| Tags | get, create, update, delete |
+| Policies | update, revert (site, account, group) |
+| Users | delete |
 
-## Wave 5 — Cloud and xSPM CLI
+## Wave 5 — Cloud and xSPM CLI (complete)
 
-Wire the GraphQL domain SDKs into CLI commands.
+GraphQL domain SDKs wired into CLI commands: misconfigurations and
+vulnerabilities (list/get/status/verdict), cloud-policies (list/get/enable/
+disable/delete), and expanded alerts (get/status/verdict/history/stats).
 
-- `s1ctl misconfigurations list|get|status|verdict`
-- `s1ctl vulnerabilities list|get|status|verdict`
-- `s1ctl cloud-policies list|get`
-- Expanded alerts: `s1ctl alerts get|status|verdict`
+## Wave 6 — Data Lake CLI (complete)
 
-## Wave 6 — Data Lake CLI
+Remaining SDL operations wired into CLI commands: `datalake query`,
+`datalake facet`, `datalake timeseries`, `datalake ingest events|logs`
+(addEvents / uploadLogs), and `datalake files list|get|put`
+(getFile / listFiles / putFile).
 
-Wire remaining SDL operations into CLI commands.
+## Wave 7 — Config-as-code (complete)
 
-- `s1ctl datalake query` — raw log search
-- `s1ctl datalake facet` — facet aggregation
-- `s1ctl datalake timeseries` — time-series aggregation
-- `s1ctl datalake ingest` — addEvents / uploadLogs
-- `s1ctl datalake files` — getFile / putFile / listFiles
+Pull/push loop across mutable resources: exclusions, policies (site/account/
+group), rules, firewall, device control, sites, groups, tags, and cloud
+policies. Every push is dry-run by default with a diff, and applies only
+with `--yes`.
 
-## Wave 7 — Config-as-code
+## Wave 8 — Extended mutations CLI (complete)
 
-Pull/push loop for all mutable resources.
-
-- Sites, groups, tags pull/push
-- Policies pull/push (site, account, group)
-- Cloud policies pull/push
-- Firewall rules pull/push
-- Device control rules pull/push
-- Dry-run diff before every push
-
-## Wave 8 — Extended mutations CLI
-
-Wire remaining SDK mutations into CLI commands.
-
-- Agent actions: all 20 actions accessible as subcommands
-- Threat actions: blacklist, fetch-file
-- Site/group/tag CRUD commands
-- Policy update commands
-- User management commands
+Remaining SDK mutations wired into CLI commands: the full agent action set,
+threat blacklist and fetch-file, site/group/tag CRUD, policy updates, user
+deletion, settings updates (notifications/sso/smtp/syslog), and the
+upgrade-policies lifecycle (create/update/delete/activate/deactivate).
 
 ## Wave 9 — Polish and release
 
@@ -98,3 +86,16 @@ Wire remaining SDK mutations into CLI commands.
 - Release automation (goreleaser — Win/Mac/Linux x amd64/arm64)
 - Docs site updates for all new commands
 - **Release v1.0.0**
+
+## Backlog
+
+Surfaces scoped but not yet built:
+
+- **Network control** — list/get/quarantine endpoints
+- **Cloud onboarding** — list/get/onboard/delete cloud accounts
+- **Automation** — list/get/create/run automation rules
+- **Marketplace** — list/get/install integrations
+- **Inventory** — unified asset inventory across all types
+- **Identity** — identity posture list/get/configure
+- **Reconcile engine** — declarative desired-state apply across surfaces
+- **Drift CI gate** — fail CI when live state diverges from committed files

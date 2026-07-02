@@ -17,6 +17,10 @@ Manage SentinelOne configuration through local files and git.
 | Rules | `rules pull` | `rules push` | YAML (per rule) |
 | Device control | `devicecontrol pull` | `devicecontrol push` | JSON |
 | Firewall | `firewall pull` | `firewall push` | JSON |
+| Sites | `sites pull` | `sites push` | JSON |
+| Groups | `groups pull` | `groups push` | JSON |
+| Tags | `tags pull` | `tags push` | JSON |
+| Cloud policies | `cloud-policies pull` | `cloud-policies push` | JSON |
 
 ## Exclusions
 
@@ -122,6 +126,57 @@ s1ctl devicecontrol push --file samples/device-control.json --site-id 000000 --y
 s1ctl firewall pull --site-id 000000 --out samples/
 s1ctl firewall push --file samples/firewall-rules.json --site-id 000000 --yes
 ```
+
+## Sites, groups, and tags
+
+Pull the hierarchy objects to JSON, review, and push new ones back:
+
+```bash
+s1ctl sites pull --out samples/
+s1ctl sites push --file samples/sites.json --yes
+
+s1ctl groups pull --site-id 000000 --out samples/
+s1ctl groups push --file samples/groups.json --yes
+
+s1ctl tags pull --site-id 000000 --out samples/
+s1ctl tags push --file samples/tags.json --yes
+```
+
+For these surfaces, `push` creates the objects listed in the file. See the
+[Sites and groups](guides/sites-groups.md) guide for per-command flags.
+
+## Cloud policies
+
+Pull cloud security policies, flip their enabled/disabled state in the file,
+then push the reconciled status back:
+
+```bash
+s1ctl cloud-policies pull --out samples/
+# edit samples/cloud-policies.json: set "status" to "enabled" or "disabled" per policy
+s1ctl cloud-policies push --file samples/cloud-policies.json --yes
+```
+
+`cloud-policies push` reconciles only the enabled/disabled status of each
+policy in the file — it enables or disables policies to match, and never
+creates or deletes them.
+
+## Settings
+
+Settings follow a read-edit-apply round-trip rather than a bulk pull. Read a
+category, edit the JSON, then apply it:
+
+```bash
+s1ctl settings get syslog > syslog.json
+# edit syslog.json
+s1ctl settings update syslog --from-file syslog.json --yes
+```
+
+Updatable categories: `notifications`, `sso`, `smtp`, `syslog`. Scope with
+`--site-id` or `--account-id`. Secrets are never echoed: `settings get`
+redacts sensitive fields, and `settings update` reports status only without
+printing the payload back. Because the pulled file has secrets redacted,
+re-enter any secret fields (passwords, tokens, certificate contents) before
+pushing — otherwise the update writes them back empty.
 
 ## Tips
 

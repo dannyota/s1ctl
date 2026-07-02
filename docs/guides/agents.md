@@ -48,39 +48,114 @@ one or more sites.
 
 ## Actions
 
-All actions are **dry-run by default**. Pass `--yes` to apply.
+All actions are **dry-run by default**: they print what would happen and
+change nothing. Pass `--yes` to apply. Most actions take one or more agent
+IDs as arguments.
+
+### Isolation and scanning
 
 | Command | Description |
 |---------|-------------|
-| `agents isolate <id>` | Network-isolate an agent |
-| `agents connect <id>` | Reconnect an isolated agent |
+| `agents isolate <id...>` | Network-isolate agents |
+| `agents reconnect <id...>` | Reconnect network-isolated agents |
 | `agents scan <id>` | Start a full disk scan |
-| `agents decommission <id>` | Decommission an agent |
+| `agents abort-scan <id>` | Abort a running disk scan |
 
-### Isolate and reconnect
-
-```bash
-s1ctl agents isolate 000000            # dry-run: prints what would happen
-s1ctl agents isolate 000000 --yes      # applies the isolation
-
-s1ctl agents connect 000000 --yes      # reconnect the agent
-```
-
-### Scan
+`isolate` and `reconnect` also accept `--filter key=value` to target agents
+by API query (repeatable, and combinable with explicit IDs):
 
 ```bash
+s1ctl agents isolate 000000                        # dry-run
+s1ctl agents isolate 000000 --yes                  # apply
+s1ctl agents isolate --filter infected=true --yes  # all infected agents
+
+s1ctl agents reconnect 000000 --yes
 s1ctl agents scan 000000 --yes
+s1ctl agents abort-scan 000000 --yes
 ```
 
-### Decommission
+### Lifecycle
+
+| Command | Description |
+|---------|-------------|
+| `agents restart <id>` | Restart the endpoint |
+| `agents shutdown <id>` | Shut down the endpoint |
+| `agents decommission <id>` | Remove the agent from the console |
+| `agents uninstall <id>` | Uninstall the agent |
+| `agents approve-uninstall <id>` | Approve a pending uninstall request |
+| `agents reject-uninstall <id>` | Reject a pending uninstall request |
 
 ```bash
-s1ctl agents decommission 000000       # dry-run
+s1ctl agents restart 000000 --yes
+s1ctl agents shutdown 000000 --yes
 s1ctl agents decommission 000000 --yes
 ```
 
-> **Warning:** Decommission removes the agent from the console. This cannot
-> be undone from the CLI.
+> **Warning:** Decommission and uninstall remove the agent from management.
+> Neither can be undone from the CLI.
+
+### State and configuration
+
+| Command | Description |
+|---------|-------------|
+| `agents enable <id>` | Enable a disabled agent |
+| `agents disable <id>` | Disable an agent |
+| `agents reset-config <id>` | Reset agent local configuration |
+| `agents mark-up-to-date <id>` | Mark the agent as up to date |
+| `agents randomize-uuid <id>` | Randomize the agent UUID |
+
+```bash
+s1ctl agents enable 000000 --yes
+s1ctl agents disable 000000 --yes
+s1ctl agents reset-config 000000 --yes
+```
+
+### Organization
+
+Move an agent between groups or sites, or set its external ID:
+
+| Command | Required flag | Description |
+|---------|---------------|-------------|
+| `agents move <id>` | `--group-id` | Move to a different group |
+| `agents move-to-site <id>` | `--site-id` | Move to a different site |
+| `agents set-external-id <id>` | `--external-id` | Set the external ID |
+
+```bash
+s1ctl agents move 000000 --group-id 000000 --yes
+s1ctl agents move-to-site 000000 --site-id 000000 --yes
+s1ctl agents set-external-id 000000 --external-id my-asset-tag --yes
+```
+
+### Firewall logging
+
+Toggle firewall logging on an agent with `--state on|off`:
+
+```bash
+s1ctl agents firewall-logging 000000 --state on --yes
+s1ctl agents firewall-logging 000000 --state off --yes
+```
+
+### Upgrade
+
+Trigger an agent software upgrade. Identify the package with exactly one of
+`--package-id`, `--file-name` (which also needs `--os-type`), or `--path`.
+Target agents by ID, or by `--site-id` / `--group-id` / `--query` filter:
+
+```bash
+s1ctl agents upgrade 000000 --package-id 000000 --yes
+s1ctl agents upgrade --group-id 000000 --package-id 000000 --yes
+s1ctl agents upgrade 000000 --file-name AgentSetup.exe --os-type windows --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--package-id` | Upgrade package ID |
+| `--file-name` | Package file name (requires `--os-type`) |
+| `--path` | Local path to the package on the endpoint |
+| `--os-type` | Target OS (`linux`, `macos`, `windows`) |
+| `--package-type` | `Agent`, `Ranger`, or `AgentAndRanger` |
+| `--allow-downgrade` | Allow downgrading the agent version |
+| `--scheduled` | Upgrade per the agent upgrade schedule |
 
 ## Workflows
 

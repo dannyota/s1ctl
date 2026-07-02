@@ -30,10 +30,10 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | agents | list, get, count, outdated, versions, health | isolate, reconnect (by ID or filter), scan, abort-scan, decommission, uninstall, approve/reject-uninstall, upgrade (by package ID, file name, or path), move, fetch-logs, restart, shutdown, enable, disable, reset-config, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging | -- | built |
-| threats | list, get, count, notes, timeline | mitigate, verdict, status, resolve, add-note, add-to-blacklist, fetch-file | -- | built |
+| threats | list, get, count, notes, timeline | mitigate, verdict, status, resolve, add-note, blacklist, fetch-file | -- | built |
 | alerts | list, get, count, history, stats (GraphQL) | status, verdict, resolve, add-note | -- | built |
-| sites | list, get, count, licenses | create, update, delete | -- | built |
-| groups | list, get, count | create, update, delete | -- | built |
+| sites | list, get, count, licenses | create, update, delete | pull/push | built |
+| groups | list, get, count | create, update, delete | pull/push | built |
 | accounts | list, get, count | -- | -- | built |
 | policies | list, get, diff (site, account, group scopes) | update, revert (per scope) | pull/push | built |
 | exclusions | list, get | create, update, delete | pull/push | built |
@@ -64,7 +64,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 |---------|------|-------|----------------|--------|
 | vulnerabilities | list, get, health (GraphQL) | status, verdict | -- | built |
 | misconfigurations | list, get (GraphQL) | status, verdict | -- | built |
-| cloud policies | list, get (GraphQL) | enable, disable, delete | -- | built |
+| cloud policies | list, get (GraphQL) | enable, disable, delete | pull/push | built |
 | cloud onboarding | list, get | onboard, delete | -- | designed |
 | cloud compliance | -- | -- | -- | blocked |
 
@@ -83,7 +83,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | settings | list, get | update, test | -- | built |
 | updates | list, get | -- | -- | built |
 | upgrade-policies | list, get, packages | create, update, delete, activate, deactivate | -- | built |
-| tags | list, get | create, update, delete | -- | built |
+| tags | list, get | create, update, delete | pull/push | built |
 | activities | list, count, export, types | -- | -- | built |
 | audit | list (local mutation log) | -- | -- | built |
 | reports | list, tasks, types, download | create | -- | built |
