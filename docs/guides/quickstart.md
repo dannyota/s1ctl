@@ -1,7 +1,6 @@
 # Quickstart
 
-Common workflows with s1ctl. Assumes you have already
-[installed](guides/install.md) and [configured](guides/configure.md) the CLI.
+Get started with s1ctl in minutes: list agents, query threats, run mutations, and manage config-as-code. Assumes you have already [installed](guides/install.md) and [configured](guides/configure.md) the CLI.
 
 ## Read operations
 

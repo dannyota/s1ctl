@@ -53,3 +53,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: npx --yes markdownlint-cli2 "docs/**/*.md" "ROADMAP.md"
+
+  seo:
+    name: SEO files up-to-date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash scripts/gen-seo.sh
+      - run: git diff --exit-code docs/sitemap.xml docs/llms.txt docs/llms-full.txt

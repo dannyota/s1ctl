@@ -252,3 +252,32 @@ s1ctl threats list --site-id 000000 --status unresolved
 | (default) | table | Human-readable terminal output |
 | `--json` | JSON | Pipe to jq, scripts, automation |
 | `--output csv` | CSV | Spreadsheets, bulk analysis |
+
+## FAQ
+
+### How do I see all unresolved threats?
+
+```bash
+s1ctl threats list --status unresolved --all
+```
+
+### What is the difference between mitigate actions?
+
+`kill` stops the process. `quarantine` isolates the file. `remediate`
+does all three: kill, quarantine, and undo changes. Use `remediate` for
+the most thorough response.
+
+### How do I mark a threat as a false positive?
+
+```bash
+s1ctl threats verdict 000000 --verdict false_positive --yes
+s1ctl threats status 000000 --status resolved --yes
+```
+
+### Can I link threats to my ticketing system?
+
+Yes. Use `set-ticket` with `--ticket-id` and/or `--ticket-url`:
+
+```bash
+s1ctl threats set-ticket 000000 --ticket-id "INC-1234" --yes
+```

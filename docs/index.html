@@ -3,19 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-  <title>s1ctl</title>
-  <meta name="description" content="Operate SentinelOne Singularity Platform as code">
+  <title>s1ctl — SentinelOne CLI and Go SDK</title>
+  <meta name="description" content="CLI and Go SDK for operating SentinelOne Singularity Platform as code. 370+ commands across REST, SDL, and GraphQL surfaces.">
+  <link rel="canonical" href="https://s1.danny.vn">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="s1ctl">
-  <meta property="og:title" content="s1ctl — operate SentinelOne as code">
-  <meta property="og:description" content="Operate SentinelOne Singularity Platform as code">
-  <meta property="og:url" content="https://s1ctl.danny.vn">
+  <meta property="og:title" content="s1ctl — SentinelOne CLI and Go SDK">
+  <meta property="og:description" content="CLI and Go SDK for operating SentinelOne Singularity Platform as code. 370+ commands across REST, SDL, and GraphQL surfaces.">
+  <meta property="og:url" content="https://s1.danny.vn">
+  <meta property="og:image" content="https://s1.danny.vn/assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="s1ctl — operate SentinelOne as code">
-  <meta name="twitter:description" content="Operate SentinelOne Singularity Platform as code">
+  <meta name="twitter:title" content="s1ctl — SentinelOne CLI and Go SDK">
+  <meta name="twitter:description" content="CLI and Go SDK for operating SentinelOne Singularity Platform as code. 370+ commands across REST, SDL, and GraphQL surfaces.">
+  <meta name="twitter:image" content="https://s1.danny.vn/assets/og.png">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "s1ctl",
+    "description": "CLI and Go SDK for operating SentinelOne Singularity Platform as code",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Linux, macOS, Windows",
+    "programmingLanguage": "Go",
+    "url": "https://s1.danny.vn",
+    "codeRepository": "https://github.com/dannyota/s1ctl",
+    "offers": { "@type": "Offer", "price": "0" }
+  }
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -484,7 +503,16 @@
       });
     }
     window.$docsify = window.$docsify || {};
-    window.$docsify.plugins = (window.$docsify.plugins || []).concat(initMermaid, initTocState, initHomeActive);
+    function updateTitle(hook) {
+      hook.doneEach(function () {
+        var h1 = document.querySelector('.markdown-section h1');
+        var base = 's1ctl';
+        document.title = h1
+          ? h1.textContent.trim() + ' — ' + base
+          : base + ' — SentinelOne CLI and Go SDK';
+      });
+    }
+    window.$docsify.plugins = (window.$docsify.plugins || []).concat(initMermaid, initTocState, initHomeActive, updateTitle);
   </script>
   <script>
     function sysDark() {

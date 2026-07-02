@@ -56,3 +56,20 @@ s1ctl doctor
 ```
 
 Checks connectivity to all three API surfaces (REST MGMT, SDL, GraphQL).
+
+## FAQ
+
+### How do I create an API token?
+
+In the SentinelOne console: Settings > Users > API Token > Generate.
+Grant it the minimum scope needed for your use case.
+
+### Can I use multiple consoles?
+
+Yes. Use `--config` to point to a different config file per console, or
+switch `S1_CONSOLE_URL` and `S1_TOKEN` environment variables.
+
+### What is `S1_SDL_URL` and when do I need it?
+
+Only needed if you use `--protocol rest` for data lake queries. GraphQL
+(the default) routes through your management console URL.

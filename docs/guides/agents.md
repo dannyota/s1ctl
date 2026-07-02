@@ -283,3 +283,29 @@ s1ctl agents isolate 000000 --yes          # apply
 | (default) | table | Human-readable terminal output |
 | `--json` | JSON | Pipe to jq, scripts, automation |
 | `--output csv` | CSV | Spreadsheets, bulk analysis |
+
+## FAQ
+
+### How do I list all Windows agents?
+
+```bash
+s1ctl agents list --os-type windows --all
+```
+
+### How do I find agents that have been offline for a long time?
+
+Sort by last active date, oldest first:
+
+```bash
+s1ctl agents list --sort-by lastActiveDate --sort-order asc --limit 25
+```
+
+### What does dry-run mode do?
+
+All mutation commands (isolate, decommission, upgrade, etc.) print what
+would happen without making changes. Pass `--yes` to apply.
+
+### Can I target agents by filter instead of ID?
+
+Yes. `isolate` and `reconnect` accept `--filter key=value` to target
+agents matching an API query instead of (or in addition to) explicit IDs.

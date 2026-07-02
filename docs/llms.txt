@@ -1,0 +1,86 @@
+# s1ctl
+
+> CLI and Go SDK for operating SentinelOne Singularity Platform as code.
+> Pull live state, review in git diff, push back. 370+ commands across REST, SDL, and GraphQL surfaces.
+
+- [Home](https://s1.danny.vn/#/): Operate...
+
+## Getting started
+
+- [Install](https://s1.danny.vn/#/guides/install): Install s1ctl via go install, from source, or with a pre-built binary for Linux, macOS, or Windows (amd64 and arm64). 
+- [Configure](https://s1.danny.vn/#/guides/configure): s1ctl needs two things: your console URL and an API token. 
+- [Quickstart](https://s1.danny.vn/#/guides/quickstart): Get...
+- [The loop](https://s1.danny.vn/#/guides/the-loop): Core...
+- [Agents](https://s1.danny.vn/#/guides/agents): Query, inspect, and act on endpoint agents. 
+- [Threats](https://s1.danny.vn/#/guides/threats): List, inspect, triage, and mitigate threats. 
+- [Sites and groups](https://s1.danny.vn/#/guides/sites-groups): Navigate the SentinelOne management hierarchy: accounts, sites, groups, and their policies. 
+- [Exclusions](https://s1.danny.vn/#/guides/exclusions): Manage SentinelOne exclusions (allowlist entries) as code: list, inspect, pull to local files, review in git, and push back. 
+- [Alerts](https://s1.danny.vn/#/guides/alerts): Query...
+- [Data lake](https://s1.danny.vn/#/guides/datalake): Query the Singularity Data Lake (SDL) with s1ctl datalake powerquery. Supports two protocols: GraphQL (default) and REST. 
+- [Config-as-code](https://s1.danny.vn/#/guides/config-as-code): Manage SentinelOne configuration through local files and git. 
+- [Settings](https://s1.danny.vn/#/guides/settings): Read and update platform settings: notifications, SSO, SMTP, syslog, SMS, recipients, Active Directory, and AD scope mapping. 
+- [Examples](https://s1.danny.vn/#/guides/examples): Real-world workflows using s1ctl. 
+- [Go SDK](https://s1.danny.vn/#/guides/sdk): The SDK packages are independently importable Go libraries. Each covers one SentinelOne API protocol — use one, two, or all three. 
+
+## Commands
+
+- [Overview](https://s1.danny.vn/#/commands): Auto-generated from the command tree. Run s1ctl docs generate to update. 
+- [accounts](https://s1.danny.vn/#/commands/accounts): Manage accounts 
+- [activities](https://s1.danny.vn/#/commands/activities): View activity log 
+- [agents](https://s1.danny.vn/#/commands/agents): Manage endpoint agents 
+- [alerts](https://s1.danny.vn/#/commands/alerts): Manage unified alerts (GraphQL UAM) 
+- [applications](https://s1.danny.vn/#/commands/applications): Application inventory and risk management 
+- [assets](https://s1.danny.vn/#/commands/assets): XDR asset inventory 
+- [audit](https://s1.danny.vn/#/commands/audit): View mutation audit log 
+- [blocklist](https://s1.danny.vn/#/commands/blocklist): Manage the blocklist (blocked file hashes) 
+- [cloud-policies](https://s1.danny.vn/#/commands/cloud-policies): Manage cloud security policies (CNS rules) 
+- [cloud-rules](https://s1.danny.vn/#/commands/cloud-rules): Manage CNS custom cloud rules (Cloud Native Security) 
+- [config](https://s1.danny.vn/#/commands/config): Manage s1ctl configuration 
+- [datalake](https://s1.danny.vn/#/commands/datalake): Query Singularity Data Lake (SDL) 
+- [detection-library](https://s1.danny.vn/#/commands/detection-library): Manage platform detection rules (detection library) 
+- [devicecontrol](https://s1.danny.vn/#/commands/devicecontrol): Device control rules 
+- [dlp](https://s1.danny.vn/#/commands/dlp): Manage Data Loss Prevention (DLP) rules and classifications 
+- [exclusions](https://s1.danny.vn/#/commands/exclusions): Manage exclusions and blocklist 
+- [filters](https://s1.danny.vn/#/commands/filters): Manage saved endpoint filters 
+- [firewall](https://s1.danny.vn/#/commands/firewall): Firewall control rules 
+- [groups](https://s1.danny.vn/#/commands/groups): Manage groups 
+- [iocs](https://s1.danny.vn/#/commands/iocs): Manage threat intelligence IOCs 
+- [locations](https://s1.danny.vn/#/commands/locations): Manage firewall locations 
+- [maintenance](https://s1.danny.vn/#/commands/maintenance): Manage task maintenance-window configuration 
+- [misconfigurations](https://s1.danny.vn/#/commands/misconfigurations): Manage xSPM misconfigurations 
+- [network](https://s1.danny.vn/#/commands/network): Network quarantine control rules 
+- [policies](https://s1.danny.vn/#/commands/policies): View endpoint policies 
+- [ranger-ad](https://s1.danny.vn/#/commands/ranger-ad): Ranger AD exposure assessment (ISPM) 
+- [remoteops](https://s1.danny.vn/#/commands/remoteops): Remote operations and scripts 
+- [reports](https://s1.danny.vn/#/commands/reports): Manage reports and report tasks 
+- [roles](https://s1.danny.vn/#/commands/roles): Manage RBAC roles 
+- [rules](https://s1.danny.vn/#/commands/rules): Manage custom detection rules (STAR) 
+- [service-users](https://s1.danny.vn/#/commands/service-users): Manage service users (API-token identities) 
+- [settings](https://s1.danny.vn/#/commands/settings): Manage platform settings 
+- [sites](https://s1.danny.vn/#/commands/sites): Manage sites 
+- [status](https://s1.danny.vn/#/commands/status): Show environment health summary 
+- [system](https://s1.danny.vn/#/commands/system): Console system information 
+- [tag-rules](https://s1.danny.vn/#/commands/tag-rules): Manage dynamic asset tag rules 
+- [tags](https://s1.danny.vn/#/commands/tags): Manage tags 
+- [threats](https://s1.danny.vn/#/commands/threats): Manage threats 
+- [unified-exclusions](https://s1.danny.vn/#/commands/unified-exclusions): Manage unified exclusions 
+- [updates](https://s1.danny.vn/#/commands/updates): Agent update packages 
+- [upgrade-policies](https://s1.danny.vn/#/commands/upgrade-policies): Agent auto-upgrade policies 
+- [users](https://s1.danny.vn/#/commands/users): Manage users 
+- [visibility](https://s1.danny.vn/#/commands/visibility): Deep Visibility threat hunting 
+- [vulnerabilities](https://s1.danny.vn/#/commands/vulnerabilities): Manage xSPM vulnerabilities 
+- [Global](https://s1.danny.vn/#/commands/global): Top-level commands 
+
+## Design
+
+- [Architecture](https://s1.danny.vn/#/design/architecture): s1ctl is an SDK-first project: the Go SDK packages are the product, the CLI is a thin consumer. Both ship together. 
+- [Surfaces](https://s1.danny.vn/#/design/surfaces): Every...
+- [Catalog](https://s1.danny.vn/#/design/catalog): Implementation...
+- [CLI naming](https://s1.danny.vn/#/design/cli-naming): Command naming conventions for s1ctl. Names follow SentinelOne's official API terminology — never invented abstractions. 
+- [CLI v1](https://s1.danny.vn/#/design/cli-v1): First...
+- [Reconcile engine](https://s1.danny.vn/#/design/reconcile): The...
+- [Doc style](https://s1.danny.vn/#/STYLE): The contract every doc in docs/ follows. Keep it short; keep it true to the code. 
+- [Glossary](https://s1.danny.vn/#/GLOSSARY): Plain-language...
+- [Roadmap](https://github.com/dannyota/s1ctl/blob/main/ROADMAP.md)
+- [GitHub](https://github.com/dannyota/s1ctl)
+
