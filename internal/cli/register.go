@@ -31,6 +31,7 @@ func registerCommands(root *cobra.Command) {
 	// Operations
 	root.AddCommand(newUsersCmd())
 	root.AddCommand(newServiceUsersCmd())
+	root.AddCommand(newRolesCmd())
 	root.AddCommand(newTagsCmd())
 	root.AddCommand(newRemoteOpsCmd())
 	root.AddCommand(newApplicationsCmd())
