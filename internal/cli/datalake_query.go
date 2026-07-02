@@ -19,8 +19,10 @@ func newDatalakeCmd() *cobra.Command {
 	cmd.AddCommand(newDatalakeSavedQueriesCmd())
 	cmd.AddCommand(newDatalakeFacetCmd())
 	cmd.AddCommand(newDatalakeTimeseriesCmd())
+	cmd.AddCommand(newDatalakeNumericCmd())
 	cmd.AddCommand(newDatalakeIngestCmd())
 	cmd.AddCommand(newDatalakeFilesCmd())
+	cmd.AddCommand(newDatalakeDashboardsCmd())
 	return cmd
 }
 

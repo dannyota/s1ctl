@@ -76,7 +76,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| datalake | powerquery (GraphQL + REST), query, facet, timeseries, saved-queries | addEvents, uploadLogs | -- | built |
+| datalake | powerquery (GraphQL + REST), query, facet, timeseries, numeric, saved-queries list, dashboards (list, get) | addEvents, uploadLogs, saved-queries delete | -- | built |
 | files | getFile, listFiles | putFile | -- | built |
 
 ## Platform administration
