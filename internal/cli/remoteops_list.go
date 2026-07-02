@@ -15,9 +15,42 @@ func newRemoteOpsCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newRemoteOpsListCmd())
+	cmd.AddCommand(newRemoteOpsGetCmd())
 	cmd.AddCommand(newRemoteOpsRunCmd())
 	cmd.AddCommand(newRemoteOpsResultsCmd())
 	return cmd
+}
+
+func newRemoteOpsGetCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "get <script-id>",
+		Short: "Get a remote script",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			r, err := c.RemoteScriptsGet(cmd.Context(), args[0])
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), r)
+			}
+			printTable([]string{"FIELD", "VALUE"}, [][]string{
+				{"ID", r.ID},
+				{"FileName", r.FileName},
+				{"FileType", orDash(r.FileType)},
+				{"ScriptType", orDash(r.ScriptType)},
+				{"OSTypes", orDash(strings.Join(r.OSTypes, ", "))},
+				{"ScopeLevel", orDash(r.ScopeLevel)},
+				{"ScopeID", orDash(r.ScopeID)},
+				{"CreatedAt", orDash(r.CreatedAt)},
+			})
+			return nil
+		},
+	}
 }
 
 func newRemoteOpsListCmd() *cobra.Command {

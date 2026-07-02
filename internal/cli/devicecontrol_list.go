@@ -13,6 +13,7 @@ func newDeviceControlCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newDeviceControlListCmd())
+	cmd.AddCommand(newDeviceControlGetCmd())
 	cmd.AddCommand(newDeviceControlDeleteCmd())
 	cmd.AddCommand(newDeviceControlEnableCmd())
 	cmd.AddCommand(newDeviceControlDisableCmd())
@@ -21,6 +22,38 @@ func newDeviceControlCmd() *cobra.Command {
 	cmd.AddCommand(newDeviceControlEventsCmd())
 	addDeviceControlSyncCmds(cmd)
 	return cmd
+}
+
+func newDeviceControlGetCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "get <rule-id>",
+		Short: "Get a device control rule",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			r, err := c.DeviceRulesGet(cmd.Context(), args[0])
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), r)
+			}
+			printTable([]string{"FIELD", "VALUE"}, [][]string{
+				{"ID", r.ID},
+				{"RuleName", r.RuleName},
+				{"Status", string(r.Status)},
+				{"Action", string(r.Action)},
+				{"Interface", string(r.Interface)},
+				{"RuleType", string(r.RuleType)},
+				{"AccessPermission", string(r.AccessPermission)},
+				{"DeviceClass", orDash(r.DeviceClass)},
+			})
+			return nil
+		},
+	}
 }
 
 func newDeviceControlListCmd() *cobra.Command {

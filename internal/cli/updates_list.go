@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"strconv"
+
 	"github.com/spf13/cobra"
 
 	"danny.vn/s1/mgmt"
@@ -13,7 +15,39 @@ func newUpdatesCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newUpdatesListCmd())
+	cmd.AddCommand(newUpdatesGetCmd())
 	return cmd
+}
+
+func newUpdatesGetCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "get <package-id>",
+		Short: "Get an update package",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			r, err := c.UpdatesGet(cmd.Context(), args[0])
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), r)
+			}
+			printTable([]string{"FIELD", "VALUE"}, [][]string{
+				{"ID", r.ID},
+				{"FileName", r.FileName},
+				{"Version", orDash(r.Version)},
+				{"OSType", orDash(r.OSType)},
+				{"Status", orDash(r.Status)},
+				{"FileSize", strconv.FormatInt(r.FileSize, 10)},
+				{"ScopeName", orDash(r.ScopeName)},
+			})
+			return nil
+		},
+	}
 }
 
 func newUpdatesListCmd() *cobra.Command {

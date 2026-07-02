@@ -13,6 +13,7 @@ func newFirewallCmd() *cobra.Command {
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newFirewallListCmd())
+	cmd.AddCommand(newFirewallGetCmd())
 	cmd.AddCommand(newFirewallDeleteCmd())
 	cmd.AddCommand(newFirewallEnableCmd())
 	cmd.AddCommand(newFirewallDisableCmd())
@@ -23,6 +24,38 @@ func newFirewallCmd() *cobra.Command {
 	cmd.AddCommand(newFirewallImportCmd())
 	addFirewallSyncCmds(cmd)
 	return cmd
+}
+
+func newFirewallGetCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "get <rule-id>",
+		Short: "Get a firewall rule",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			r, err := c.FirewallRulesGet(cmd.Context(), args[0])
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), r)
+			}
+			printTable([]string{"FIELD", "VALUE"}, [][]string{
+				{"ID", r.ID},
+				{"Name", r.Name},
+				{"Status", string(r.Status)},
+				{"Action", string(r.Action)},
+				{"Direction", string(r.Direction)},
+				{"Protocol", orDash(r.Protocol)},
+				{"OS", orDash(r.OSType)},
+				{"Description", orDash(r.Description)},
+			})
+			return nil
+		},
+	}
 }
 
 func newFirewallListCmd() *cobra.Command {
