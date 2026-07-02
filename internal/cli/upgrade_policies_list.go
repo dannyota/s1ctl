@@ -19,6 +19,9 @@ func newUpgradePoliciesCmd() *cobra.Command {
 	cmd.AddCommand(newUpgradePoliciesListCmd())
 	cmd.AddCommand(newUpgradePoliciesGetCmd())
 	cmd.AddCommand(newUpgradePoliciesCreateCmd())
+	cmd.AddCommand(newUpgradePoliciesUpdateCmd())
+	cmd.AddCommand(newUpgradePolicyToggleCmd("activate", (*mgmt.Client).UpgradePoliciesActivate))
+	cmd.AddCommand(newUpgradePolicyToggleCmd("deactivate", (*mgmt.Client).UpgradePoliciesDeactivate))
 	cmd.AddCommand(newUpgradePoliciesDeleteCmd())
 	cmd.AddCommand(newUpgradePoliciesPackagesCmd())
 	return cmd
