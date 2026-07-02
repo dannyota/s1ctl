@@ -40,6 +40,21 @@ Get alert details
 s1ctl alerts get <id>
 ```
 
+## alerts history
+
+Show audit trail for an alert
+
+```text
+s1ctl alerts history <alert-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--all` | bool | false | fetch all pages |
+| `--limit` | int | 0 | max results per page (default 50) |
+
 ## alerts list
 
 List alerts
@@ -83,6 +98,27 @@ Filter flags only match alerts with status NEW. Dry-run by default.
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL) |
 | `--source` | stringSlice | - | filter by detection source (STAR, EDR, CWS) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
+
+## alerts stats
+
+Show alert volume grouped by field
+
+```text
+s1ctl alerts stats [flags]
+```
+
+Show alert counts grouped by a specified field using the GraphQL alertGroups query.
+
+Common group-by fields: severity, status, analystVerdict, classification,
+detectionSource.product, assets.name.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--group-by` | string | severity | field to group by (e.g. severity, status, analystVerdict) |
+| `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
+| `--status` | stringSlice | - | filter by status (NEW, RESOLVED, etc.) |
 
 ## alerts status
 

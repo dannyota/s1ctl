@@ -55,7 +55,7 @@ s1ctl vulnerabilities status <id> <status> [flags]
 
 ## vulnerabilities verdict
 
-Update vulnerability analyst verdict
+Update vulnerability analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)
 
 ```text
 s1ctl vulnerabilities verdict <id> <verdict> [flags]

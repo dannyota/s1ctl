@@ -44,7 +44,7 @@ s1ctl misconfigurations status <id> <status> [flags]
 
 ## misconfigurations verdict
 
-Update misconfiguration analyst verdict
+Update misconfiguration analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)
 
 ```text
 s1ctl misconfigurations verdict <id> <verdict> [flags]

@@ -40,9 +40,22 @@ func (c *Client) AgentsUninstall(ctx context.Context, filter ActionFilter) (int,
 	return doAction(c, ctx, "/agents/actions/uninstall", filter, nil)
 }
 
+// UpdateSoftwareData specifies which package to use for an agent software update.
+// Exactly one of PackageID, FileName, or Path must be set.
+type UpdateSoftwareData struct {
+	PackageID       string `json:"packageId,omitempty"`
+	FileName        string `json:"fileName,omitempty"`
+	Path            string `json:"path,omitempty"`
+	OSType          string `json:"osType,omitempty"`
+	PackageType     string `json:"packageType,omitempty"`
+	IsScheduled     *bool  `json:"isScheduled,omitempty"`
+	AllowDowngrade  *bool  `json:"allowDowngrade,omitempty"`
+	IgnoreConflicts *bool  `json:"ignoreConflicts,omitempty"`
+}
+
 // AgentsUpdateSoftware triggers a software update on agents.
-func (c *Client) AgentsUpdateSoftware(ctx context.Context, filter ActionFilter) (int, error) {
-	return doAction(c, ctx, "/agents/actions/update-software", filter, nil)
+func (c *Client) AgentsUpdateSoftware(ctx context.Context, filter ActionFilter, data UpdateSoftwareData) (int, error) {
+	return doAction(c, ctx, "/agents/actions/update-software", filter, data)
 }
 
 // AgentsMoveToSite moves agents to a different site.

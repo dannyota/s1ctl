@@ -61,23 +61,6 @@ s1ctl help [command]
 Help provides help for any command in the application.
 Simply type s1ctl help [path to command] for full details.
 
-## status
-
-Show environment health summary
-
-```text
-s1ctl status [flags]
-```
-
-One-shot dashboard: agent count and health, unresolved threats,
-NEW alerts, site count, and policy mode warnings.
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--site-id` | stringSlice | - | filter by site ID |
-
 ## version
 
 Print version information

@@ -24,6 +24,18 @@ Get site details
 s1ctl sites get <site-id>
 ```
 
+## sites licenses
+
+Show license utilization across sites
+
+```text
+s1ctl sites licenses
+```
+
+Aggregate license health view across all sites.
+Each site shows active vs total licenses, utilization percentage,
+expiration date, and a status indicator (OK, WARNING, CRITICAL).
+
 ## sites list
 
 List sites

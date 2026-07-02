@@ -13,12 +13,18 @@ import (
 func newAgentsUpgradeCmd() *cobra.Command {
 	var siteIDs, groupIDs []string
 	var query string
+	var packageID, fileName, path, osType, packageType string
+	var allowDowngrade, ignoreConflicts, scheduled bool
 	var yes bool
 
 	cmd := &cobra.Command{
 		Use:   "upgrade [agent-id...]",
 		Short: "Trigger agent software upgrade",
 		Long: `Trigger a software update on one or more agents.
+
+Exactly one of --package-id, --file-name, or --path is required to
+identify the upgrade package. The --file-name option also requires
+--os-type.
 
 Specify agent IDs as arguments, or use --site-id / --group-id / --query
 to target agents by filter. Dry-run by default.`,
@@ -31,13 +37,41 @@ to target agents by filter. Dry-run by default.`,
 			if len(filter.IDs) == 0 && len(filter.SiteIDs) == 0 && filter.Query == "" {
 				return fmt.Errorf("specify agent IDs or --site-id / --query")
 			}
+			set := 0
+			for _, s := range []string{packageID, fileName, path} {
+				if s != "" {
+					set++
+				}
+			}
+			if set == 0 {
+				return fmt.Errorf("one of --package-id, --file-name, or --path is required")
+			}
+			if set > 1 {
+				return fmt.Errorf("only one of --package-id, --file-name, or --path may be specified")
+			}
+			data := mgmt.UpdateSoftwareData{
+				PackageID:   packageID,
+				FileName:    fileName,
+				Path:        path,
+				OSType:      osType,
+				PackageType: packageType,
+			}
+			if cmd.Flags().Changed("allow-downgrade") {
+				data.AllowDowngrade = &allowDowngrade
+			}
+			if cmd.Flags().Changed("ignore-conflicts") {
+				data.IgnoreConflicts = &ignoreConflicts
+			}
+			if cmd.Flags().Changed("scheduled") {
+				data.IsScheduled = &scheduled
+			}
+			_ = groupIDs
 			return guard(cmd.OutOrStdout(), "agents upgrade", "trigger upgrade on "+describeFilter(filter), describeFilter(filter), yes, func() error {
 				c, err := mgmtClient()
 				if err != nil {
 					return err
 				}
-				_ = groupIDs
-				affected, err := c.AgentsUpdateSoftware(cmd.Context(), filter)
+				affected, err := c.AgentsUpdateSoftware(cmd.Context(), filter, data)
 				if err != nil {
 					return err
 				}
@@ -52,6 +86,14 @@ to target agents by filter. Dry-run by default.`,
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "filter by group ID")
 	cmd.Flags().StringVar(&query, "query", "", "free text search filter")
+	cmd.Flags().StringVar(&packageID, "package-id", "", "upgrade package ID")
+	cmd.Flags().StringVar(&fileName, "file-name", "", "upgrade package file name")
+	cmd.Flags().StringVar(&path, "path", "", "local path to upgrade package on the endpoint")
+	cmd.Flags().StringVar(&osType, "os-type", "", "target OS type (linux, macos, windows)")
+	cmd.Flags().StringVar(&packageType, "package-type", "", "package type (Agent, Ranger, AgentAndRanger)")
+	cmd.Flags().BoolVar(&allowDowngrade, "allow-downgrade", false, "allow downgrading the agent version")
+	cmd.Flags().BoolVar(&ignoreConflicts, "ignore-conflicts", false, "ignore conflicts with active upgrade policies")
+	cmd.Flags().BoolVar(&scheduled, "scheduled", false, "upgrade according to agent upgrade schedule")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
 	return cmd
 }

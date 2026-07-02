@@ -80,11 +80,11 @@ func newAgentsListCmd() *cobra.Command {
 				return err
 			}
 
-			headers := []string{"ID", "Name", "OS", "Version", "Network", "Active", "Site"}
+			headers := []string{"ID", "Name", "Serial", "OS", "Version", "Network", "Active", "Site"}
 			rows := make([][]string, len(agents))
 			for i, a := range agents {
 				rows[i] = []string{
-					a.ID, a.ComputerName, a.OSType, a.AgentVersion,
+					a.ID, a.ComputerName, orDash(a.SerialNumber), a.OSType, a.AgentVersion,
 					a.NetworkStatus, boolIcon(a.IsActive), a.SiteName,
 				}
 			}

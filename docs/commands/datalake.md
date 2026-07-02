@@ -40,13 +40,17 @@ Execute a basic log query against the Singularity Data Lake.
 Uses the SDL REST API (/api/query) to search log events. Requires
 S1_SDL_URL to be configured.
 
+By default, returns only the first page. Use --all to fetch all pages via
+continuation token, or --max-events to cap the total number of events.
+
 **Flags**
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--all` | bool | false | fetch all pages via continuation token |
 | `--end` | string | - | end time |
-| `--max-count` | int | 0 | max events to return |
+| `--max-count` | int | 0 | max events per page (1-5000) |
+| `--max-events` | int | 0 | max total events across all pages (0 = no limit) |
 | `--protocol` | string | rest | API protocol (rest) |
 | `--query` | string | - | query expression (required) |
 | `--start` | string | 24h | start time (e.g. 24h, 7d) |

@@ -2,6 +2,120 @@
 
 Firewall control rules
 
+## firewall copy
+
+Copy firewall rules between scopes
+
+```text
+s1ctl firewall copy [flags]
+```
+
+Copy firewall rules from a source scope to a target scope.
+
+Use --source-site-id or --source-account-id to define the source, and
+--target-site-id, --target-account-id, or --target-group-id for the destination.
+Dry-run by default — pass --yes to apply.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--source-account-id` | stringSlice | - | source account IDs |
+| `--source-site-id` | stringSlice | - | source site IDs |
+| `--target-account-id` | string | - | target account ID |
+| `--target-group-id` | string | - | target group ID |
+| `--target-site-id` | string | - | target site ID |
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
+## firewall delete
+
+Delete firewall rules
+
+```text
+s1ctl firewall delete <rule-id>... [flags]
+```
+
+Delete one or more firewall rules by ID.
+Dry-run by default — pass --yes to apply.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
+## firewall disable
+
+Disable firewall rules
+
+```text
+s1ctl firewall disable <rule-id>... [flags]
+```
+
+Disable one or more firewall rules by ID.
+Dry-run by default — pass --yes to apply.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
+## firewall enable
+
+Enable firewall rules
+
+```text
+s1ctl firewall enable <rule-id>... [flags]
+```
+
+Enable one or more firewall rules by ID.
+Dry-run by default — pass --yes to apply.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
+## firewall export
+
+Export firewall rules to a JSON file
+
+```text
+s1ctl firewall export [flags]
+```
+
+Export firewall rules from a scope to a JSON file.
+The exported file can be imported into another scope with "firewall import".
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--out` | string | firewall-rules.json | output file (use - for stdout) |
+| `--site-id` | stringSlice | - | scope: site IDs |
+
+## firewall import
+
+Import firewall rules from a JSON file
+
+```text
+s1ctl firewall import <file> [flags]
+```
+
+Import firewall rules from a previously exported JSON file into a scope.
+Dry-run by default — pass --yes to apply.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | target account IDs |
+| `--group-id` | stringSlice | - | target group IDs |
+| `--site-id` | stringSlice | - | target site IDs |
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
 ## firewall list
 
 List firewall rules
@@ -19,6 +133,22 @@ s1ctl firewall list [flags]
 | `--limit` | int | 0 | max results per page (default 50) |
 | `--query` | string | - | free text search |
 | `--site-id` | stringSlice | - | filter by site ID |
+
+## firewall protocols
+
+List available firewall protocols
+
+```text
+s1ctl firewall protocols [flags]
+```
+
+Show protocols that can be used in firewall rules.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--query` | string | - | search protocols |
 
 ## firewall pull
 
@@ -53,4 +183,30 @@ Dry-run by default — pass --yes to apply changes.
 |------|------|---------|-------------|
 | `--dir` | string | firewall | directory containing firewall rule YAML files |
 | `--site-id` | stringSlice | - | target site IDs |
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
+## firewall reorder
+
+Reorder firewall rules
+
+```text
+s1ctl firewall reorder <id:order>... [flags]
+```
+
+Change the evaluation order of firewall rules.
+
+Each argument is an id:order pair, for example:
+
+  s1ctl firewall reorder 123:1 456:2 789:3
+
+The order determines rule evaluation priority (1 = first).
+Dry-run by default — pass --yes to apply.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | scope: account IDs |
+| `--group-id` | stringSlice | - | scope: group IDs |
+| `--site-id` | stringSlice | - | scope: site IDs |
 | `--yes` | bool | false | apply changes (default: dry-run) |

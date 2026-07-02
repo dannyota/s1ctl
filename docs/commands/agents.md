@@ -2,20 +2,6 @@
 
 Manage endpoint agents
 
-## agents connect
-
-Reconnect an isolated agent
-
-```text
-s1ctl agents connect <agent-id> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
 ## agents count
 
 Count agents
@@ -71,16 +57,23 @@ decommissioned, or infected. Helps identify endpoints that need attention.
 
 ## agents isolate
 
-Network-isolate an agent
+Network-isolate agents
 
 ```text
-s1ctl agents isolate <agent-id> [flags]
+s1ctl agents isolate [agent-id...] [flags]
 ```
+
+Disconnect agents from the network.
+
+Specify agent IDs as arguments, or use --filter to match agents by API
+query parameters (e.g. --filter infected=true --filter osTypes=windows).
+Both can be combined. Dry-run by default; pass --yes to apply.
 
 **Flags**
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
+| `--filter` | stringArray | - | key=value filter (e.g. --filter infected=true) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## agents list
@@ -140,6 +133,27 @@ s1ctl agents outdated [flags]
 | `--limit` | int | 0 | max results per page (default 50) |
 | `--site-id` | stringSlice | - | filter by site ID |
 
+## agents reconnect
+
+Reconnect isolated agents
+
+```text
+s1ctl agents reconnect [agent-id...] [flags]
+```
+
+Reconnect previously network-isolated agents.
+
+Specify agent IDs as arguments, or use --filter to match agents by API
+query parameters (e.g. --filter networkStatuses=disconnected).
+Both can be combined. Dry-run by default; pass --yes to apply.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--filter` | stringArray | - | key=value filter (e.g. --filter networkStatuses=disconnected) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## agents scan
 
 Start full disk scan
@@ -178,6 +192,10 @@ s1ctl agents upgrade [agent-id...] [flags]
 
 Trigger a software update on one or more agents.
 
+Exactly one of --package-id, --file-name, or --path is required to
+identify the upgrade package. The --file-name option also requires
+--os-type.
+
 Specify agent IDs as arguments, or use --site-id / --group-id / --query
 to target agents by filter. Dry-run by default.
 
@@ -185,8 +203,16 @@ to target agents by filter. Dry-run by default.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
+| `--allow-downgrade` | bool | false | allow downgrading the agent version |
+| `--file-name` | string | - | upgrade package file name |
 | `--group-id` | stringSlice | - | filter by group ID |
+| `--ignore-conflicts` | bool | false | ignore conflicts with active upgrade policies |
+| `--os-type` | string | - | target OS type (linux, macos, windows) |
+| `--package-id` | string | - | upgrade package ID |
+| `--package-type` | string | - | package type (Agent, Ranger, AgentAndRanger) |
+| `--path` | string | - | local path to upgrade package on the endpoint |
 | `--query` | string | - | free text search filter |
+| `--scheduled` | bool | false | upgrade according to agent upgrade schedule |
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--yes` | bool | false | apply the action (default: dry-run) |
 

@@ -33,6 +33,20 @@ For path exclusions, --path-type specifies the match type:
 | `--value` | string | - | exclusion value (path, hash, extension, etc.) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
+## exclusions delete
+
+Delete an exclusion
+
+```text
+s1ctl exclusions delete <exclusion-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## exclusions get
 
 Get exclusion details

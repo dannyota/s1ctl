@@ -17,6 +17,28 @@ s1ctl activities count [flags]
 | `--account-id` | stringSlice | - | filter by account ID |
 | `--site-id` | stringSlice | - | filter by site ID |
 
+## activities export
+
+Export activities as CSV
+
+```text
+s1ctl activities export [flags]
+```
+
+Bulk export the activity log as CSV. Output goes to stdout by default, or to a file with --output.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--activity-type` | intSlice | - | filter by activity type ID |
+| `--end` | string | - | activities before this timestamp (ISO 8601) |
+| `--group-id` | stringSlice | - | filter by group ID |
+| `-o, --output` | string | - | write to file instead of stdout |
+| `--site-id` | stringSlice | - | filter by site ID |
+| `--start` | string | - | activities after this timestamp (ISO 8601) |
+
 ## activities list
 
 List activities
@@ -37,3 +59,11 @@ s1ctl activities list [flags]
 | `--cursor` | string | - | pagination cursor |
 | `--limit` | int | 0 | max results per page (default 50) |
 | `--site-id` | stringSlice | - | filter by site ID |
+
+## activities types
+
+List available activity types
+
+```text
+s1ctl activities types
+```

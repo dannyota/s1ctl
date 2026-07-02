@@ -108,6 +108,8 @@ s1ctl threats resolve [threat-id...] [flags]
 Set incident status to "resolved" on one or more threats.
 
 Specify threat IDs as arguments, or use filter flags to match threats.
+Use typed flags (--classification, --verdict) or the generic --filter
+flag with key=value pairs (e.g. --filter classifications=Malware).
 Filter flags only match unresolved threats. Dry-run by default.
 
 **Flags**
@@ -115,6 +117,7 @@ Filter flags only match unresolved threats. Dry-run by default.
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--classification` | stringSlice | - | filter by classification (e.g. Malware, PUP) |
+| `--filter` | stringArray | - | key=value filter (e.g. --filter classifications=Malware) |
 | `--mitigation-status` | stringSlice | - | filter by mitigation status |
 | `--name` | string | - | match threats by name (contains, case-insensitive) |
 | `--query` | string | - | free text search filter |
@@ -136,6 +139,25 @@ s1ctl threats status <threat-id> [flags]
 |------|------|---------|-------------|
 | `--status` | string | - | incident status (unresolved, in_progress, resolved) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
+
+## threats timeline
+
+Show activity timeline for a threat
+
+```text
+s1ctl threats timeline <threat-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--all` | bool | false | fetch all pages |
+| `--cursor` | string | - | pagination cursor |
+| `--limit` | int | 0 | max results per page (default 50) |
+| `--query` | string | - | free text search |
+| `--sort-by` | string | - | sort field |
+| `--sort-order` | string | - | sort direction (asc, desc) |
 
 ## threats verdict
 
