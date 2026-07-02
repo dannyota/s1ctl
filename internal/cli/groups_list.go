@@ -19,6 +19,7 @@ func newGroupsCmd() *cobra.Command {
 	cmd.AddCommand(newGroupsCountCmd())
 	cmd.AddCommand(newGroupsGetCmd())
 	cmd.AddCommand(newGroupsCreateCmd())
+	cmd.AddCommand(newGroupsUpdateCmd())
 	cmd.AddCommand(newGroupsDeleteCmd())
 	return cmd
 }

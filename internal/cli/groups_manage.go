@@ -50,6 +50,48 @@ func newGroupsCreateCmd() *cobra.Command {
 	return cmd
 }
 
+func newGroupsUpdateCmd() *cobra.Command {
+	var name, description string
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "update <group-id>",
+		Short: "Update a group",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var data mgmt.GroupUpdate
+			if cmd.Flags().Changed("name") {
+				data.Name = &name
+			}
+			if cmd.Flags().Changed("description") {
+				data.Description = &description
+			}
+			if data == (mgmt.GroupUpdate{}) {
+				return fmt.Errorf("nothing to update: pass --name or --description")
+			}
+			return guard(cmd.OutOrStdout(), "groups update", "update group "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				g, err := c.GroupsUpdate(cmd.Context(), args[0], data)
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), g)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Updated group %s (%s)\n", g.Name, g.ID)
+				return nil
+			})
+		},
+	}
+	cmd.Flags().StringVar(&name, "name", "", "new group name")
+	cmd.Flags().StringVar(&description, "description", "", "new description")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
+}
+
 func newGroupsDeleteCmd() *cobra.Command {
 	var yes bool
 
