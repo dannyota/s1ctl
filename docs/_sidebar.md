@@ -59,6 +59,7 @@
   - [Catalog](design/catalog.md)
   - [CLI naming](design/cli-naming.md)
   - [CLI v1](design/cli-v1.md)
+  - [Reconcile engine](design/reconcile.md)
   - [Doc style](STYLE.md)
   - [Glossary](GLOSSARY.md)
 

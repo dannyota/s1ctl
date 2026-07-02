@@ -76,8 +76,9 @@ Each command's `--help` documents which protocol is the default and why.
 | **Operational** | query &rarr; review &rarr; act | Live instance | Agents, threats, alerts, vulns, misconfigs, data lake, remote ops, inventory |
 
 Control plane is narrow — most of SentinelOne is operational. Config-as-code
-surfaces use the same reconcile model as secopsctl: identity by server ID,
-canonical diff, dry-run by default, `--yes` to apply.
+surfaces share one reconcile model (see [Reconcile engine](reconcile.md)):
+per-object files, surface-defined identity, canonical diff, dry-run by
+default, `--yes` to apply.
 
 ## SDK strategy
 
