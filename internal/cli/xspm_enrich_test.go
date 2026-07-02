@@ -8,7 +8,7 @@ import (
 // Misconfigurations enrichment CLI.
 
 func TestMisconfigurationsNoteAddDryRun(t *testing.T) {
-	out, err := runCLI(t, "misconfigurations", "note-add", "m-1", "--text", "check this")
+	out, err := runCLI(t, "misconfigurations", "add-note", "m-1", "--text", "check this")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -18,14 +18,14 @@ func TestMisconfigurationsNoteAddDryRun(t *testing.T) {
 }
 
 func TestMisconfigurationsNoteAddRequiresText(t *testing.T) {
-	_, err := runCLI(t, "misconfigurations", "note-add", "m-1")
+	_, err := runCLI(t, "misconfigurations", "add-note", "m-1")
 	if err == nil || !strings.Contains(err.Error(), "--text is required") {
 		t.Fatalf("expected --text is required, got %v", err)
 	}
 }
 
 func TestMisconfigurationsNoteUpdateDryRun(t *testing.T) {
-	out, err := runCLI(t, "misconfigurations", "note-update", "note-1", "--text", "revised")
+	out, err := runCLI(t, "misconfigurations", "update-note", "note-1", "--text", "revised")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -35,14 +35,14 @@ func TestMisconfigurationsNoteUpdateDryRun(t *testing.T) {
 }
 
 func TestMisconfigurationsNoteUpdateRequiresText(t *testing.T) {
-	_, err := runCLI(t, "misconfigurations", "note-update", "note-1")
+	_, err := runCLI(t, "misconfigurations", "update-note", "note-1")
 	if err == nil || !strings.Contains(err.Error(), "--text is required") {
 		t.Fatalf("expected --text is required, got %v", err)
 	}
 }
 
 func TestMisconfigurationsNoteDeleteDryRun(t *testing.T) {
-	out, err := runCLI(t, "misconfigurations", "note-delete", "note-1")
+	out, err := runCLI(t, "misconfigurations", "delete-note", "note-1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -96,7 +96,7 @@ func TestMisconfigurationsExportRejectsBadScopeLevel(t *testing.T) {
 // Vulnerabilities enrichment CLI.
 
 func TestVulnerabilitiesNoteAddDryRun(t *testing.T) {
-	out, err := runCLI(t, "vulnerabilities", "note-add", "v-1", "--text", "patch")
+	out, err := runCLI(t, "vulnerabilities", "add-note", "v-1", "--text", "patch")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -106,21 +106,21 @@ func TestVulnerabilitiesNoteAddDryRun(t *testing.T) {
 }
 
 func TestVulnerabilitiesNoteAddRequiresText(t *testing.T) {
-	_, err := runCLI(t, "vulnerabilities", "note-add", "v-1")
+	_, err := runCLI(t, "vulnerabilities", "add-note", "v-1")
 	if err == nil || !strings.Contains(err.Error(), "--text is required") {
 		t.Fatalf("expected --text is required, got %v", err)
 	}
 }
 
 func TestVulnerabilitiesNoteUpdateRequiresText(t *testing.T) {
-	_, err := runCLI(t, "vulnerabilities", "note-update", "note-1")
+	_, err := runCLI(t, "vulnerabilities", "update-note", "note-1")
 	if err == nil || !strings.Contains(err.Error(), "--text is required") {
 		t.Fatalf("expected --text is required, got %v", err)
 	}
 }
 
 func TestVulnerabilitiesNoteDeleteDryRun(t *testing.T) {
-	out, err := runCLI(t, "vulnerabilities", "note-delete", "note-1")
+	out, err := runCLI(t, "vulnerabilities", "delete-note", "note-1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

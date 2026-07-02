@@ -6,7 +6,7 @@ import (
 )
 
 func TestAlertsNoteUpdateDryRun(t *testing.T) {
-	out, err := runCLI(t, "alerts", "note-update", "note-1", "--text", "revised")
+	out, err := runCLI(t, "alerts", "update-note", "note-1", "--text", "revised")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -16,14 +16,14 @@ func TestAlertsNoteUpdateDryRun(t *testing.T) {
 }
 
 func TestAlertsNoteUpdateRequiresText(t *testing.T) {
-	_, err := runCLI(t, "alerts", "note-update", "note-1")
+	_, err := runCLI(t, "alerts", "update-note", "note-1")
 	if err == nil || !strings.Contains(err.Error(), "--text is required") {
 		t.Fatalf("expected --text is required, got %v", err)
 	}
 }
 
 func TestAlertsNoteDeleteDryRun(t *testing.T) {
-	out, err := runCLI(t, "alerts", "note-delete", "note-1")
+	out, err := runCLI(t, "alerts", "delete-note", "note-1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

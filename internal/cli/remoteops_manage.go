@@ -324,7 +324,7 @@ func newRemoteOpsGuardrailsSetCmd() *cobra.Command {
 		Long: `Create or update (upsert) a guardrail from a JSON file, for example:
 
   {
-    "scopeId": "878572631641628675",
+    "scopeId": "000000000000000000",
     "scopeLevel": "site",
     "endpointsQuantity": 100,
     "scriptTypes": ["action"],

@@ -80,6 +80,7 @@ Scope must be one of: tenant, account, site. For account/site scope, pass
 				fmt.Fprintf(cmd.OutOrStdout(), "Created service user %s (%s)\n", created.ID, created.Name)
 				if created.APIToken.Value != "" {
 					printGeneratedToken(cmd.OutOrStdout(), created.APIToken.Value, created.APIToken.ExpiresAt)
+					noteSensitiveOutput(cmd.ErrOrStderr())
 				}
 				return nil
 			})
@@ -225,6 +226,7 @@ and replaces any existing token.`,
 					return printJSON(cmd.OutOrStdout(), tok)
 				}
 				printGeneratedToken(cmd.OutOrStdout(), tok.Token, tok.ExpiresAt)
+				noteSensitiveOutput(cmd.ErrOrStderr())
 				return nil
 			})
 		},

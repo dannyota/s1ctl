@@ -39,7 +39,7 @@ func newMisconfigurationsNoteAddCmd() *cobra.Command {
 	var text string
 
 	cmd := &cobra.Command{
-		Use:   "note-add <id> --text <text>",
+		Use:   "add-note <id> --text <text>",
 		Short: "Add an investigation note to a misconfiguration",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -73,7 +73,7 @@ func newMisconfigurationsNoteUpdateCmd() *cobra.Command {
 	var text string
 
 	cmd := &cobra.Command{
-		Use:   "note-update <note-id> --text <text>",
+		Use:   "update-note <note-id> --text <text>",
 		Short: "Update the text of a misconfiguration note",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -106,7 +106,7 @@ func newMisconfigurationsNoteDeleteCmd() *cobra.Command {
 	var yes bool
 
 	cmd := &cobra.Command{
-		Use:   "note-delete <note-id>",
+		Use:   "delete-note <note-id>",
 		Short: "Delete a misconfiguration note",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

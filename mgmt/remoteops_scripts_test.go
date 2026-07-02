@@ -195,7 +195,7 @@ func TestRemoteScriptsPendingList(t *testing.T) {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 		q := r.URL.Query()
-		if got := q["siteIds"]; !slices.Equal(got, []string{"878572631641628675"}) {
+		if got := q["siteIds"]; !slices.Equal(got, []string{"000000000000000000"}) {
 			t.Fatalf("unexpected siteIds: %v", got)
 		}
 		if q.Get("limit") != "25" {
@@ -222,7 +222,7 @@ func TestRemoteScriptsPendingList(t *testing.T) {
 	})
 	c := testClient(t, handler)
 	items, pag, err := c.RemoteScriptsPendingList(context.Background(), &RemoteScriptsPendingParams{
-		SiteIDs: []string{"878572631641628675"},
+		SiteIDs: []string{"000000000000000000"},
 		Limit:   25,
 		SortBy:  "createdAt",
 	})
@@ -320,7 +320,7 @@ func TestGuardrailsGet(t *testing.T) {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 		q := r.URL.Query()
-		if q.Get("scopeId") != "878572631641628675" {
+		if q.Get("scopeId") != "000000000000000000" {
 			t.Fatalf("unexpected scopeId: %s", q.Get("scopeId"))
 		}
 		if q.Get("scopeLevel") != "site" {
@@ -336,7 +336,7 @@ func TestGuardrailsGet(t *testing.T) {
 		})
 	})
 	c := testClient(t, handler)
-	g, err := c.GuardrailsGet(context.Background(), GuardrailScope{ScopeID: "878572631641628675", ScopeLevel: GuardrailScopeSite})
+	g, err := c.GuardrailsGet(context.Background(), GuardrailScope{ScopeID: "000000000000000000", ScopeLevel: GuardrailScopeSite})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -378,7 +378,7 @@ func TestGuardrailsUpsert(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatalf("decode: %v", err)
 		}
-		if body.Data.ScopeID != "878572631641628675" {
+		if body.Data.ScopeID != "000000000000000000" {
 			t.Fatalf("unexpected scopeId: %s", body.Data.ScopeID)
 		}
 		if body.Data.ScopeLevel != "site" {
@@ -395,7 +395,7 @@ func TestGuardrailsUpsert(t *testing.T) {
 	c := testClient(t, handler)
 	q := 50
 	if err := c.GuardrailsUpsert(context.Background(), GuardrailsUpsertInput{
-		ScopeID:           "878572631641628675",
+		ScopeID:           "000000000000000000",
 		ScopeLevel:        GuardrailScopeSite,
 		EndpointsQuantity: &q,
 		ScriptTypes:       []string{"action"},
@@ -423,13 +423,13 @@ func TestGuardrailsDelete(t *testing.T) {
 		if err := json.Unmarshal(data, &body); err != nil {
 			t.Fatalf("decode: %v", err)
 		}
-		if body.Data.ScopeID != "878572631641628675" || body.Data.ScopeLevel != "group" {
+		if body.Data.ScopeID != "000000000000000000" || body.Data.ScopeLevel != "group" {
 			t.Fatalf("unexpected delete body: %s", data)
 		}
 		w.WriteHeader(http.StatusOK)
 	})
 	c := testClient(t, handler)
-	if err := c.GuardrailsDelete(context.Background(), GuardrailScope{ScopeID: "878572631641628675", ScopeLevel: GuardrailScopeGroup}); err != nil {
+	if err := c.GuardrailsDelete(context.Background(), GuardrailScope{ScopeID: "000000000000000000", ScopeLevel: GuardrailScopeGroup}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

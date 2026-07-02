@@ -38,7 +38,7 @@ func newAlertsNoteUpdateCmd() *cobra.Command {
 	var text string
 
 	cmd := &cobra.Command{
-		Use:   "note-update <note-id> --text <text>",
+		Use:   "update-note <note-id> --text <text>",
 		Short: "Update the text of an alert note",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -72,7 +72,7 @@ func newAlertsNoteDeleteCmd() *cobra.Command {
 	var yes bool
 
 	cmd := &cobra.Command{
-		Use:   "note-delete <note-id>",
+		Use:   "delete-note <note-id>",
 		Short: "Delete an alert note",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

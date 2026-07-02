@@ -118,6 +118,7 @@ once and replaces any existing token for that user.`,
 					return printJSON(cmd.OutOrStdout(), map[string]string{"token": token})
 				}
 				printGeneratedToken(cmd.OutOrStdout(), token, "")
+				noteSensitiveOutput(cmd.ErrOrStderr())
 				return nil
 			})
 		},

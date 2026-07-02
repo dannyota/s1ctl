@@ -98,14 +98,14 @@ func TestRemoteOpsGuardrailsGetRequiresScope(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "--scope-id is required") {
 		t.Fatalf("expected scope-id required, got %v", err)
 	}
-	_, err = runCLI(t, "remoteops", "guardrails", "get", "--scope-id", "878572631641628675")
+	_, err = runCLI(t, "remoteops", "guardrails", "get", "--scope-id", "000000000000000000")
 	if err == nil || !strings.Contains(err.Error(), "--scope-level is required") {
 		t.Fatalf("expected scope-level required, got %v", err)
 	}
 }
 
 func TestRemoteOpsGuardrailsSetDryRun(t *testing.T) {
-	f := writeJSONFile(t, "gr.json", `{"scopeId":"878572631641628675","scopeLevel":"site","endpointsQuantity":100,"scriptTypes":["action"],"enabled":true}`)
+	f := writeJSONFile(t, "gr.json", `{"scopeId":"000000000000000000","scopeLevel":"site","endpointsQuantity":100,"scriptTypes":["action"],"enabled":true}`)
 	out, err := runCLI(t, "remoteops", "guardrails", "set", "--from-file", f)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -123,7 +123,7 @@ func TestRemoteOpsGuardrailsSetRequiresFromFile(t *testing.T) {
 }
 
 func TestRemoteOpsGuardrailsDeleteDryRun(t *testing.T) {
-	out, err := runCLI(t, "remoteops", "guardrails", "delete", "--scope-id", "878572631641628675", "--scope-level", "site")
+	out, err := runCLI(t, "remoteops", "guardrails", "delete", "--scope-id", "000000000000000000", "--scope-level", "site")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
