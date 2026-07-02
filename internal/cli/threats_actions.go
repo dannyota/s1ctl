@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -18,6 +19,37 @@ func addThreatActions(parent *cobra.Command) {
 		"--status", "incident status (unresolved, in_progress, resolved)", func(c *mgmt.Client, cmd *cobra.Command, val string, f mgmt.ActionFilter) (int, error) {
 			return c.ThreatsUpdateStatus(cmd.Context(), val, f)
 		}))
+	parent.AddCommand(newThreatPlainActionCmd("blacklist", "Add the threat file hash to the blacklist", (*mgmt.Client).ThreatsAddToBlacklist))
+	parent.AddCommand(newThreatPlainActionCmd("fetch-file", "Fetch the threat file from the endpoint to the console", (*mgmt.Client).ThreatsFetchFile))
+}
+
+func newThreatPlainActionCmd(verb, short string, call func(*mgmt.Client, context.Context, mgmt.ActionFilter) (int, error)) *cobra.Command {
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   verb + " <threat-id>",
+		Short: short,
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return guard(cmd.OutOrStdout(), "threats "+verb, verb+" threat "+args[0], args[0], yes, func() error {
+				c, err := mgmtClient()
+				if err != nil {
+					return err
+				}
+				affected, err := call(c, cmd.Context(), mgmt.ActionFilter{IDs: []string{args[0]}})
+				if err != nil {
+					return err
+				}
+				if outputFormat == "json" {
+					return printJSON(cmd.OutOrStdout(), map[string]int{"affected": affected})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s affected\n", verb, pluralize(affected, "threat"))
+				return nil
+			})
+		},
+	}
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
+	return cmd
 }
 
 type threatActionFn func(*mgmt.Client, *cobra.Command, string, mgmt.ActionFilter) (int, error)
