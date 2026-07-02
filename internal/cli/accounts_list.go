@@ -17,6 +17,9 @@ func newAccountsCmd() *cobra.Command {
 	cmd.AddCommand(newAccountsListCmd())
 	cmd.AddCommand(newAccountsCountCmd())
 	cmd.AddCommand(newAccountsGetCmd())
+	cmd.AddCommand(newAccountsReactivateCmd())
+	cmd.AddCommand(newAccountsExpireCmd())
+	cmd.AddCommand(newAccountsUninstallPasswordCmd())
 	return cmd
 }
 

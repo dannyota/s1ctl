@@ -94,3 +94,96 @@ func (c *Client) AccountsGet(ctx context.Context, id string) (*Account, error) {
 	}
 	return &items[0], nil
 }
+
+// UninstallPassword is the agent uninstall password for an account. The
+// password value is sensitive secret material.
+type UninstallPassword struct {
+	Password string `json:"password"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (p *UninstallPassword) UnmarshalJSON(b []byte) error {
+	type alias UninstallPassword
+	if err := json.Unmarshal(b, (*alias)(p)); err != nil {
+		return err
+	}
+	p.Raw = append(p.Raw[:0:0], b...)
+	return nil
+}
+
+// UninstallPasswordMeta describes an account's uninstall password without
+// exposing the secret itself.
+type UninstallPasswordMeta struct {
+	Expiration      string `json:"expiration"`
+	Version         int    `json:"version"`
+	CreatedAt       string `json:"createdAt"`
+	LastRevoked     string `json:"lastRevoked"`
+	RevokedByID     int    `json:"revokedById"`
+	RevokedByName   string `json:"revokedByName"`
+	GeneratedByID   int    `json:"generatedById"`
+	GeneratedByName string `json:"generatedByName"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (m *UninstallPasswordMeta) UnmarshalJSON(b []byte) error {
+	type alias UninstallPasswordMeta
+	if err := json.Unmarshal(b, (*alias)(m)); err != nil {
+		return err
+	}
+	m.Raw = append(m.Raw[:0:0], b...)
+	return nil
+}
+
+// AccountsReactivate reactivates an expired account. Pass unlimited=true to
+// reactivate with no expiration, or a non-empty RFC3339 expiration to bound the
+// license window. The caller chooses one; the spec requires the data wrapper.
+func (c *Client) AccountsReactivate(ctx context.Context, id string, unlimited bool, expiration string) error {
+	body := reactivateBody{Data: reactivateData{Unlimited: unlimited, Expiration: expiration}}
+	return c.put(ctx, fmt.Sprintf("/accounts/%s/reactivate", url.PathEscape(id)), body, nil)
+}
+
+// AccountsExpireNow expires an account immediately.
+func (c *Client) AccountsExpireNow(ctx context.Context, id string) error {
+	return c.post(ctx, fmt.Sprintf("/accounts/%s/expire-now", url.PathEscape(id)), nil, nil)
+}
+
+// AccountsUninstallPasswordMetadata returns metadata about an account's
+// uninstall password (no secret material).
+func (c *Client) AccountsUninstallPasswordMetadata(ctx context.Context, id string) (*UninstallPasswordMeta, error) {
+	var resp singleResponse[UninstallPasswordMeta]
+	if err := c.get(ctx, fmt.Sprintf("/accounts/%s/uninstall-password/metadata", url.PathEscape(id)), nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// AccountsUninstallPasswordView returns the account's current uninstall
+// password. The returned value is sensitive.
+func (c *Client) AccountsUninstallPasswordView(ctx context.Context, id string) (*UninstallPassword, error) {
+	var resp singleResponse[UninstallPassword]
+	if err := c.get(ctx, fmt.Sprintf("/accounts/%s/uninstall-password/view", url.PathEscape(id)), nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// AccountsUninstallPasswordGenerate generates (or regenerates) the account's
+// uninstall password and returns the resulting metadata. Per the spec this
+// endpoint returns metadata, not the password itself — read it back with
+// AccountsUninstallPasswordView. The spec requires data.expiration
+// (yyyy-mm-dd), so it is always sent; callers must supply a non-empty value.
+func (c *Client) AccountsUninstallPasswordGenerate(ctx context.Context, id, expiration string) (*UninstallPasswordMeta, error) {
+	body := map[string]any{"data": map[string]any{"expiration": expiration}}
+	var resp singleResponse[UninstallPasswordMeta]
+	if err := c.post(ctx, fmt.Sprintf("/accounts/%s/uninstall-password/generate", url.PathEscape(id)), body, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// AccountsUninstallPasswordRevoke revokes the account's uninstall password.
+func (c *Client) AccountsUninstallPasswordRevoke(ctx context.Context, id string) error {
+	return c.post(ctx, fmt.Sprintf("/accounts/%s/uninstall-password/revoke", url.PathEscape(id)), nil, nil)
+}

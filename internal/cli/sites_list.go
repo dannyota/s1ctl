@@ -21,6 +21,11 @@ func newSitesCmd() *cobra.Command {
 	cmd.AddCommand(newSitesCreateCmd())
 	cmd.AddCommand(newSitesUpdateCmd())
 	cmd.AddCommand(newSitesDeleteCmd())
+	cmd.AddCommand(newSitesReactivateCmd())
+	cmd.AddCommand(newSitesExpireCmd())
+	cmd.AddCommand(newSitesDuplicateCmd())
+	cmd.AddCommand(newSitesRegenerateKeyCmd())
+	cmd.AddCommand(newSitesTokenCmd())
 	addSiteSyncCmds(cmd)
 	return cmd
 }

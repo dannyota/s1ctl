@@ -32,9 +32,9 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | agents | list, get, count, outdated, versions, health | isolate, reconnect (by ID or filter), scan, abort-scan, decommission, uninstall, approve/reject-uninstall, upgrade (by package ID, file name, or path), move, fetch-logs, restart, shutdown, enable, disable, reset-config, mark-up-to-date, set-external-id, randomize-uuid, firewall-logging | -- | built |
 | threats | list, get, count, notes, timeline | mitigate, verdict, status, resolve, add-note, blacklist, fetch-file | -- | built |
 | alerts | list, get, count, history, stats (GraphQL) | status, verdict, resolve, add-note | -- | built |
-| sites | list, get, count, licenses | create, update, delete | pull/push | built |
+| sites | list, get, count, licenses, token | create, update, delete, reactivate, expire, duplicate, regenerate-key | pull/push | built |
 | groups | list, get, count | create, update, delete | pull/push | built |
-| accounts | list, get, count | -- | -- | built |
+| accounts | list, get, count, uninstall-password | reactivate, expire, uninstall-password generate/revoke | -- | built |
 | policies | list, get, diff (site, account, group scopes) | update, revert (per scope) | pull/push | built |
 | exclusions | list, get | create, update, delete | pull/push | built |
 | unified-exclusions | list, count, export | create | -- | built |

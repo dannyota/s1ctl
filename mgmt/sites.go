@@ -146,3 +146,102 @@ func (c *Client) SitesUpdate(ctx context.Context, id string, data SiteUpdate) (*
 func (c *Client) SitesDelete(ctx context.Context, id string) error {
 	return c.delete(ctx, fmt.Sprintf("/sites/%s", url.PathEscape(id)))
 }
+
+// SiteToken carries a site registration token. The GET token endpoint returns
+// it under "token"; regenerate-key returns it under "registrationToken". Both
+// values are sensitive registration material.
+type SiteToken struct {
+	Token             string `json:"token"`
+	RegistrationToken string `json:"registrationToken"`
+
+	Raw json.RawMessage `json:"-"`
+}
+
+func (t *SiteToken) UnmarshalJSON(b []byte) error {
+	type alias SiteToken
+	if err := json.Unmarshal(b, (*alias)(t)); err != nil {
+		return err
+	}
+	t.Raw = append(t.Raw[:0:0], b...)
+	return nil
+}
+
+// Value returns the registration token regardless of which field the API
+// populated.
+func (t *SiteToken) Value() string {
+	if t.RegistrationToken != "" {
+		return t.RegistrationToken
+	}
+	return t.Token
+}
+
+// SitePolicySource selects the policy origin for a duplicated site.
+type SitePolicySource string
+
+const (
+	PolicySourceInheritGlobal  SitePolicySource = "inherit_global"
+	PolicySourceCopySourceSite SitePolicySource = "copy_source_site"
+	PolicySourceCustom         SitePolicySource = "custom"
+)
+
+// SiteDuplicate is the request body for duplicating a site. Name, SourceSiteID,
+// PolicySource, and CopyUsers are required by the API.
+type SiteDuplicate struct {
+	Name              string           `json:"name"`
+	SourceSiteID      int64            `json:"sourceSiteId"`
+	PolicySource      SitePolicySource `json:"policySource"`
+	CopyUsers         bool             `json:"copyUsers"`
+	UnlimitedLicenses bool             `json:"unlimitedLicenses"`
+	TotalLicenses     *int             `json:"totalLicenses,omitempty"`
+}
+
+// reactivateBody is the request body shared by site and account reactivation.
+// The spec requires the data wrapper; unlimited is always sent, expiration is a
+// nullable field that is omitted when empty. Callers pass unlimited=true for a
+// perpetual license or a non-empty RFC3339 expiration to bound it.
+type reactivateBody struct {
+	Data reactivateData `json:"data"`
+}
+
+type reactivateData struct {
+	Unlimited  bool   `json:"unlimited"`
+	Expiration string `json:"expiration,omitempty"`
+}
+
+// SitesReactivate reactivates an expired site. Pass unlimited=true to reactivate
+// with no expiration, or a non-empty RFC3339 expiration to bound the license
+// window. The caller chooses one; the spec requires the data wrapper.
+func (c *Client) SitesReactivate(ctx context.Context, id string, unlimited bool, expiration string) error {
+	body := reactivateBody{Data: reactivateData{Unlimited: unlimited, Expiration: expiration}}
+	return c.put(ctx, fmt.Sprintf("/sites/%s/reactivate", url.PathEscape(id)), body, nil)
+}
+
+// SitesExpireNow expires a site immediately.
+func (c *Client) SitesExpireNow(ctx context.Context, id string) error {
+	return c.post(ctx, fmt.Sprintf("/sites/%s/expire-now", url.PathEscape(id)), nil, nil)
+}
+
+// SitesDuplicate creates a new site as a copy of an existing one.
+func (c *Client) SitesDuplicate(ctx context.Context, data SiteDuplicate) (*Site, error) {
+	return create[Site](c, ctx, "/sites/duplicate-site", data)
+}
+
+// SitesRegenerateKey regenerates a site's registration key and returns the new
+// registration token. The returned token is sensitive.
+func (c *Client) SitesRegenerateKey(ctx context.Context, id string) (*SiteToken, error) {
+	var resp singleResponse[SiteToken]
+	if err := c.put(ctx, fmt.Sprintf("/sites/%s/regenerate-key", url.PathEscape(id)), nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+// SitesToken returns a site's current registration token. The returned token is
+// sensitive.
+func (c *Client) SitesToken(ctx context.Context, id string) (*SiteToken, error) {
+	var resp singleResponse[SiteToken]
+	if err := c.get(ctx, fmt.Sprintf("/sites/%s/token", url.PathEscape(id)), nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
