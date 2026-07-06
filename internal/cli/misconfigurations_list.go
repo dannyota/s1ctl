@@ -173,7 +173,7 @@ func newMisconfigurationsVerdictCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "verdict <id> <verdict>",
-		Short: "Update misconfiguration analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)",
+		Short: "Update misconfiguration analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE)",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, verdict := args[0], args[1]

@@ -54,10 +54,19 @@ func runStatusEnums(cmd *cobra.Command, filter string) error {
 func allEnumGroups() []enumGroup {
 	return []enumGroup{
 		// Alerts (GraphQL UAM)
-		{"alerts", "severity", []string{"LOW", "MEDIUM", "HIGH", "CRITICAL"}},
-		{"alerts", "status", []string{"NEW", "IN_PROGRESS", "RESOLVED", "UNRESOLVED"}},
+		{"alerts", "severity", []string{"LOW", "MEDIUM", "HIGH", "CRITICAL", "INFO", "UNKNOWN"}},
+		{"alerts", "status", []string{"NEW", "IN_PROGRESS", "RESOLVED"}},
 		{"alerts", "analystVerdict", []string{
-			"UNDEFINED", "TRUE_POSITIVE", "FALSE_POSITIVE", "SUSPICIOUS",
+			"UNDEFINED",
+			"FALSE_POSITIVE_BENIGN", "FALSE_POSITIVE_BENIGN_BUT_SUSPICIOUS",
+			"FALSE_POSITIVE_SYSTEM_ERROR", "FALSE_POSITIVE_UNDEFINED", "FALSE_POSITIVE_USER_ERROR",
+			"TRUE_POSITIVE_ADVANCED_PERSISTENT_THREAT", "TRUE_POSITIVE_BENIGN",
+			"TRUE_POSITIVE_BENIGN_BUT_SUSPICIOUS", "TRUE_POSITIVE_DATA_EXFILTRATION",
+			"TRUE_POSITIVE_DENIAL_OF_SERVICE", "TRUE_POSITIVE_EXPLOITATION_TOOLS",
+			"TRUE_POSITIVE_INSIDER_THREAT", "TRUE_POSITIVE_MALWARE",
+			"TRUE_POSITIVE_PHISHING_ATTACK", "TRUE_POSITIVE_POLICY_VIOLATION",
+			"TRUE_POSITIVE_PUA_ADWARE", "TRUE_POSITIVE_RANSOMWARE",
+			"TRUE_POSITIVE_UNAUTHORIZED_ACCESS", "TRUE_POSITIVE_UNDEFINED",
 		}},
 		{"alerts", "source", []string{"STAR", "EDR", "CWS"}},
 
@@ -111,15 +120,18 @@ func allEnumGroups() []enumGroup {
 		{"policies", "mitigationModeSuspicious", []string{"detect", "protect"}},
 
 		// Misconfigurations (GraphQL xSPM)
-		{"misconfigurations", "severity", []string{"LOW", "MEDIUM", "HIGH", "CRITICAL"}},
-		{"misconfigurations", "status", []string{"NEW", "IN_PROGRESS", "RESOLVED"}},
-		{"misconfigurations", "analystVerdict", []string{
-			"UNDEFINED", "TRUE_POSITIVE", "FALSE_POSITIVE", "SUSPICIOUS",
+		{"misconfigurations", "severity", []string{"LOW", "MEDIUM", "HIGH", "CRITICAL", "INFO", "UNKNOWN"}},
+		{"misconfigurations", "status", []string{
+			"NEW", "IN_PROGRESS", "RESOLVED", "ON_HOLD", "RISK_ACKED", "SUPPRESSED", "TO_BE_PATCHED",
 		}},
+		{"misconfigurations", "analystVerdict", []string{"TRUE_POSITIVE", "FALSE_POSITIVE"}},
 
 		// Vulnerabilities (GraphQL xSPM)
-		{"vulnerabilities", "severity", []string{"LOW", "MEDIUM", "HIGH", "CRITICAL"}},
-		{"vulnerabilities", "status", []string{"NEW", "IN_PROGRESS", "RESOLVED"}},
+		{"vulnerabilities", "severity", []string{"LOW", "MEDIUM", "HIGH", "CRITICAL", "UNKNOWN"}},
+		{"vulnerabilities", "status", []string{
+			"NEW", "IN_PROGRESS", "RESOLVED", "ON_HOLD", "RISK_ACKED", "SUPPRESSED", "TO_BE_PATCHED",
+		}},
+		{"vulnerabilities", "analystVerdict", []string{"TRUE_POSITIVE", "FALSE_POSITIVE"}},
 
 		// Cloud Policies (GraphQL)
 		{"cloud-policies", "severity", []string{"LOW", "MEDIUM", "HIGH", "CRITICAL"}},

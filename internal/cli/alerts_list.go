@@ -128,7 +128,7 @@ func newAlertsListCmd() *cobra.Command {
 	}
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
 	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, IN_PROGRESS, RESOLVED)")
-	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)")
+	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE; see 'enums' cmd)")
 	cmd.Flags().StringSliceVar(&sources, "source", nil, "filter by detection source (STAR, EDR, CWS)")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
@@ -182,7 +182,7 @@ func newAlertsCountCmd() *cobra.Command {
 	}
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
 	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, IN_PROGRESS, RESOLVED)")
-	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)")
+	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE; see 'enums' cmd)")
 	return cmd
 }
 
@@ -269,7 +269,7 @@ func newAlertsVerdictCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "verdict <id> <verdict>",
-		Short: "Update alert analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)",
+		Short: "Update alert analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE)",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, verdict := args[0], args[1]
