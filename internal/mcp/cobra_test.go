@@ -124,6 +124,55 @@ func TestInputSchemaFlags(t *testing.T) {
 	t.Fatal("agents_isolate tool not found")
 }
 
+func TestGroupTools(t *testing.T) {
+	root := testCobraTree()
+	tools, err := GroupTools(root, "agents")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	names := map[string]bool{}
+	for _, tool := range tools {
+		names[tool.Name] = true
+	}
+	if !names["agents_list"] {
+		t.Error("missing agents_list")
+	}
+	if !names["agents_isolate"] {
+		t.Error("missing agents_isolate")
+	}
+	if len(tools) != 2 {
+		t.Errorf("got %d tools, want 2", len(tools))
+	}
+}
+
+func TestGroupToolsUnknown(t *testing.T) {
+	root := testCobraTree()
+	_, err := GroupTools(root, "nonexistent")
+	if err == nil {
+		t.Error("expected error for unknown group")
+	}
+}
+
+func TestShortDescriptionOnly(t *testing.T) {
+	root := &cobra.Command{Use: "test"}
+	leaf := &cobra.Command{
+		Use:   "thing",
+		Short: "Do the thing",
+		Long:  "This is a very long description that should not appear in the tool.",
+		RunE:  func(_ *cobra.Command, _ []string) error { return nil },
+	}
+	root.AddCommand(leaf)
+
+	tools := ToolsFromCobra(root)
+	if len(tools) != 1 {
+		t.Fatalf("got %d tools, want 1", len(tools))
+	}
+	if tools[0].Description != "Do the thing" {
+		t.Errorf("description = %q, want %q", tools[0].Description, "Do the thing")
+	}
+}
+
 func TestSkippedGlobalFlags(t *testing.T) {
 	root := &cobra.Command{Use: "test"}
 	root.PersistentFlags().String("output", "table", "output format")

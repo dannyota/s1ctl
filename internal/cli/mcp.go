@@ -42,9 +42,8 @@ Configure Claude Code to use this server:
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			bi := resolveBuildInfo()
 
-			tools := mcp.ToolsFromCobra(cmd.Root())
 			resources := mcp.ResourcesFromFS(guides.FS, "guide")
-			srv := mcp.NewServer("s1ctl", bi.Version, tools, resources)
+			srv := mcp.NewDynamicServer("s1ctl", bi.Version, cmd.Root(), resources)
 
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer stop()

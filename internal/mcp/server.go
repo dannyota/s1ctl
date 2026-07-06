@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 const protocolVersion = "2024-11-05"
@@ -18,6 +20,13 @@ type Server struct {
 	toolIndex map[string]Tool
 	resources []Resource
 	resIndex  map[string]Resource
+
+	// Dynamic tool loading (listChanged).
+	w            io.Writer
+	root         *cobra.Command
+	metaTools    []Tool
+	focused      map[string][]Tool
+	toolsVersion uint64
 }
 
 type Resource struct {
@@ -44,11 +53,55 @@ func NewServer(name, version string, tools []Tool, resources []Resource) *Server
 	}
 }
 
+func NewDynamicServer(name, version string, root *cobra.Command, resources []Resource) *Server {
+	ri := make(map[string]Resource, len(resources))
+	for _, r := range resources {
+		ri[r.URI] = r
+	}
+	s := &Server{
+		name:      name,
+		version:   version,
+		resources: resources,
+		resIndex:  ri,
+		root:      root,
+		focused:   make(map[string][]Tool),
+	}
+	s.metaTools = s.buildMetaTools()
+	s.rebuildToolList()
+	return s
+}
+
+func (s *Server) rebuildToolList() {
+	var all []Tool
+	all = append(all, s.metaTools...)
+	for _, gt := range s.focused {
+		all = append(all, gt...)
+	}
+	s.tools = all
+	s.toolIndex = make(map[string]Tool, len(all))
+	for _, t := range all {
+		s.toolIndex[t.Name] = t
+	}
+	s.toolsVersion++
+}
+
+func (s *Server) notifyToolsChanged() {
+	if s.w == nil {
+		return
+	}
+	data, _ := json.Marshal(struct {
+		JSONRPC string `json:"jsonrpc"`
+		Method  string `json:"method"`
+	}{JSONRPC: "2.0", Method: "notifications/tools/list_changed"})
+	fmt.Fprintf(s.w, "%s\n", data)
+}
+
 func (s *Server) Serve(ctx context.Context) error {
 	return s.serve(ctx, os.Stdin, os.Stdout)
 }
 
 func (s *Server) serve(ctx context.Context, r io.Reader, w io.Writer) error {
+	s.w = w
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 0, 1<<20), 1<<20)
 
@@ -83,10 +136,14 @@ func (s *Server) serve(ctx context.Context, r io.Reader, w io.Writer) error {
 func (s *Server) dispatch(w io.Writer, msg *jsonrpcMessage) {
 	switch msg.Method {
 	case "initialize":
+		tc := &toolCapability{}
+		if s.root != nil {
+			tc.ListChanged = true
+		}
 		result := initializeResult{
 			ProtocolVersion: protocolVersion,
 			Capabilities: capabilities{
-				Tools: &toolCapability{},
+				Tools: tc,
 			},
 			ServerInfo: serverInfo{Name: s.name, Version: s.version},
 		}
@@ -147,6 +204,7 @@ func (s *Server) handleToolCall(w io.Writer, msg *jsonrpcMessage) {
 		return
 	}
 
+	prevVersion := s.toolsVersion
 	output, err := tool.Run(params.Arguments)
 	if err != nil {
 		writeResult(w, msg.ID, toolCallResult{
@@ -159,6 +217,10 @@ func (s *Server) handleToolCall(w io.Writer, msg *jsonrpcMessage) {
 	writeResult(w, msg.ID, toolCallResult{
 		Content: []content{{Type: "text", Text: output}},
 	})
+
+	if s.toolsVersion != prevVersion {
+		s.notifyToolsChanged()
+	}
 }
 
 func (s *Server) handleResourceRead(w io.Writer, msg *jsonrpcMessage) {
@@ -230,7 +292,9 @@ type capabilities struct {
 	Resources *resourceCapability `json:"resources,omitempty"`
 }
 
-type toolCapability struct{}
+type toolCapability struct {
+	ListChanged bool `json:"listChanged,omitempty"`
+}
 
 type resourceCapability struct{}
 

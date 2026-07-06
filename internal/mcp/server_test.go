@@ -41,16 +41,32 @@ func testServer() *Server {
 
 func roundTrip(t *testing.T, srv *Server, request string) map[string]any {
 	t.Helper()
+	msgs := roundTripMulti(t, srv, request)
+	if len(msgs) == 0 {
+		t.Fatal("no response")
+	}
+	return msgs[0]
+}
+
+func roundTripMulti(t *testing.T, srv *Server, request string) []map[string]any {
+	t.Helper()
 	var out bytes.Buffer
 	r := strings.NewReader(request + "\n")
 	if err := srv.serve(context.Background(), r, &out); err != nil {
 		t.Fatal(err)
 	}
-	var resp map[string]any
-	if err := json.Unmarshal(out.Bytes(), &resp); err != nil {
-		t.Fatalf("unmarshal response: %v\nraw: %s", err, out.String())
+	var results []map[string]any
+	for line := range strings.SplitSeq(strings.TrimSpace(out.String()), "\n") {
+		if line == "" {
+			continue
+		}
+		var msg map[string]any
+		if err := json.Unmarshal([]byte(line), &msg); err != nil {
+			t.Fatalf("unmarshal: %v\nraw: %s", err, line)
+		}
+		results = append(results, msg)
 	}
-	return resp
+	return results
 }
 
 func TestInitialize(t *testing.T) {
@@ -197,5 +213,153 @@ func TestMultipleMessages(t *testing.T) {
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
 	if len(lines) != 2 {
 		t.Fatalf("got %d response lines, want 2 (initialize + tools/list; notification has no response)", len(lines))
+	}
+}
+
+// --- Dynamic server tests ---
+
+func testDynamicServer() *Server {
+	root := testCobraTree()
+	return NewDynamicServer("test-dynamic", "2.0.0", root, nil)
+}
+
+func TestListChangedCapability(t *testing.T) {
+	srv := testDynamicServer()
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	caps, _ := result["capabilities"].(map[string]any)
+	tools, _ := caps["tools"].(map[string]any)
+	if tools["listChanged"] != true {
+		t.Errorf("listChanged = %v, want true", tools["listChanged"])
+	}
+}
+
+func TestStaticServerNoListChanged(t *testing.T) {
+	srv := testServer()
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	caps, _ := result["capabilities"].(map[string]any)
+	tools, _ := caps["tools"].(map[string]any)
+	if tools["listChanged"] == true {
+		t.Error("static server should not advertise listChanged")
+	}
+}
+
+func TestDynamicServerMetaTools(t *testing.T) {
+	srv := testDynamicServer()
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	tools, _ := result["tools"].([]any)
+
+	names := make(map[string]bool)
+	for _, t := range tools {
+		tool, _ := t.(map[string]any)
+		names[tool["name"].(string)] = true
+	}
+
+	for _, want := range []string{"run", "help", "focus", "unfocus"} {
+		if !names[want] {
+			t.Errorf("missing meta-tool %q", want)
+		}
+	}
+	if len(tools) != 4 {
+		t.Errorf("got %d tools, want 4 meta-tools only", len(tools))
+	}
+}
+
+func TestFocusUnfocus(t *testing.T) {
+	srv := testDynamicServer()
+
+	// Focus on "agents" — should return response + notification.
+	msgs := roundTripMulti(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"focus","arguments":{"group":"agents"}}}`)
+	if len(msgs) < 2 {
+		t.Fatalf("got %d messages, want at least 2 (response + notification)", len(msgs))
+	}
+
+	// First message is the response.
+	result, _ := msgs[0]["result"].(map[string]any)
+	content, _ := result["content"].([]any)
+	if len(content) == 0 {
+		t.Fatal("no content in focus response")
+	}
+	item, _ := content[0].(map[string]any)
+	text, _ := item["text"].(string)
+	if !strings.Contains(text, "agents") {
+		t.Errorf("focus response should mention agents: %s", text)
+	}
+
+	// Second message is the notification.
+	notif := msgs[1]
+	if notif["method"] != "notifications/tools/list_changed" {
+		t.Errorf("notification method = %v, want notifications/tools/list_changed", notif["method"])
+	}
+
+	// Now tools/list should have meta-tools + agents tools.
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`)
+	toolsResult, _ := resp["result"].(map[string]any)
+	tools, _ := toolsResult["tools"].([]any)
+	if len(tools) <= 4 {
+		t.Errorf("after focus, got %d tools, want more than 4", len(tools))
+	}
+
+	hasAgentsList := false
+	for _, tt := range tools {
+		tool, _ := tt.(map[string]any)
+		if tool["name"] == "agents_list" {
+			hasAgentsList = true
+		}
+	}
+	if !hasAgentsList {
+		t.Error("agents_list should be present after focusing on agents")
+	}
+
+	// Unfocus — should shrink back to 4.
+	msgs = roundTripMulti(t, srv, `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"unfocus","arguments":{"group":"agents"}}}`)
+	if len(msgs) < 2 {
+		t.Fatalf("unfocus: got %d messages, want at least 2", len(msgs))
+	}
+
+	resp = roundTrip(t, srv, `{"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}}`)
+	toolsResult, _ = resp["result"].(map[string]any)
+	tools, _ = toolsResult["tools"].([]any)
+	if len(tools) != 4 {
+		t.Errorf("after unfocus, got %d tools, want 4", len(tools))
+	}
+}
+
+func TestHelpTool(t *testing.T) {
+	srv := testDynamicServer()
+
+	// Help with no group — lists all groups.
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"help","arguments":{}}}`)
+	result, _ := resp["result"].(map[string]any)
+	content, _ := result["content"].([]any)
+	item, _ := content[0].(map[string]any)
+	text, _ := item["text"].(string)
+	if !strings.Contains(text, "agents") {
+		t.Errorf("help output should list agents group: %s", text)
+	}
+
+	// Help with group — lists subcommands.
+	resp = roundTrip(t, srv, `{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"help","arguments":{"group":"agents"}}}`)
+	result, _ = resp["result"].(map[string]any)
+	content, _ = result["content"].([]any)
+	item, _ = content[0].(map[string]any)
+	text, _ = item["text"].(string)
+	if !strings.Contains(text, "list") || !strings.Contains(text, "isolate") {
+		t.Errorf("help agents should list subcommands: %s", text)
+	}
+}
+
+func TestFocusUnknownGroup(t *testing.T) {
+	srv := testDynamicServer()
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"focus","arguments":{"group":"nonexistent"}}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	if result["isError"] != true {
+		t.Error("focusing unknown group should return isError")
 	}
 }
