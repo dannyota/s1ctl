@@ -135,7 +135,7 @@ func newAlertsListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&after, "after", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. detectedAt, severity)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (ASC, DESC)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAlertsCountCmd() *cobra.Command {
@@ -183,11 +183,11 @@ func newAlertsCountCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
 	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, IN_PROGRESS, RESOLVED)")
 	cmd.Flags().StringSliceVar(&verdicts, "verdict", nil, "filter by analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE; see 'enums' cmd)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAlertsGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <id>",
 		Short: "Get alert details",
 		Args:  cobra.ExactArgs(1),
@@ -233,6 +233,7 @@ func newAlertsGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newAlertsStatusCmd() *cobra.Command {
@@ -261,7 +262,7 @@ func newAlertsStatusCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAlertsVerdictCmd() *cobra.Command {
@@ -290,7 +291,7 @@ func newAlertsVerdictCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func gqlClient() (*graphql.Client, error) {

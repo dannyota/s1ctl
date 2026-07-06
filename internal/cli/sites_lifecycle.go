@@ -63,7 +63,7 @@ window.`,
 	cmd.Flags().BoolVar(&unlimited, "unlimited", false, "reactivate with no expiration")
 	cmd.Flags().StringVar(&expiration, "expiration", "", "new expiration as an RFC3339 timestamp")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSitesExpireCmd() *cobra.Command {
@@ -91,7 +91,7 @@ func newSitesExpireCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSitesDuplicateCmd() *cobra.Command {
@@ -156,7 +156,7 @@ func newSitesDuplicateCmd() *cobra.Command {
 	cmd.Flags().IntVar(&totalLicenses, "total-licenses", 0, "total licenses for the new site")
 	cmd.Flags().BoolVar(&unlimitedLicenses, "unlimited-licenses", false, "unlimited licenses")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSitesRegenerateKeyCmd() *cobra.Command {
@@ -188,7 +188,7 @@ token is printed to stdout — treat it as a secret.`,
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSitesTokenCmd() *cobra.Command {
@@ -218,5 +218,5 @@ sensitive registration material.`,
 			return nil
 		},
 	}
-	return cmd
+	return markJSON(cmd)
 }

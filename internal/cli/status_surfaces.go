@@ -7,12 +7,13 @@ import (
 )
 
 func newStatusSurfacesCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "surfaces",
 		Short: "List all API surfaces and supported operations",
 		Args:  cobra.NoArgs,
 		RunE:  runStatusSurfaces,
 	}
+	return markJSON(cmd)
 }
 
 type surfaceEntry struct {

@@ -103,7 +103,7 @@ func newDLPSettingsCmd() *cobra.Command {
 		},
 	}
 	addDLPScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 // addDLPScopeFlags registers the shared --scope-level/--scope-id flags.

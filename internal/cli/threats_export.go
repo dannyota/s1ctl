@@ -11,7 +11,7 @@ import (
 )
 
 func newThreatQuarantinedFilesCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "quarantined-files <threat-id>",
 		Short: "List files quarantined for a threat",
 		Args:  cobra.ExactArgs(1),
@@ -32,10 +32,11 @@ func newThreatQuarantinedFilesCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, files, len(files), len(files), "file", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newThreatExclusionOptionsCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "exclusion-options <threat-id>",
 		Short: "Show the exclusion (whitening) options available for a threat",
 		Args:  cobra.ExactArgs(1),
@@ -60,6 +61,7 @@ func newThreatExclusionOptionsCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newThreatsExportCmd() *cobra.Command {

@@ -89,11 +89,11 @@ func newExclusionsListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. type, osType)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newExclusionsGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <exclusion-id>",
 		Short: "Get exclusion details",
 		Args:  cobra.ExactArgs(1),
@@ -124,6 +124,7 @@ func newExclusionsGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newExclusionsDeleteCmd() *cobra.Command {
@@ -153,5 +154,5 @@ func newExclusionsDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

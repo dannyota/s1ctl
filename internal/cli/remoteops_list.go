@@ -27,7 +27,7 @@ func newRemoteOpsCmd() *cobra.Command {
 }
 
 func newRemoteOpsGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <script-id>",
 		Short: "Get a remote script",
 		Args:  cobra.ExactArgs(1),
@@ -56,6 +56,7 @@ func newRemoteOpsGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newRemoteOpsListCmd() *cobra.Command {
@@ -117,5 +118,5 @@ func newRemoteOpsListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }

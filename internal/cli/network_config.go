@@ -69,7 +69,7 @@ func newNetworkConfigurationGetCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "scope: site IDs")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "scope: account IDs")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope: group IDs")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newNetworkConfigurationSetCmd() *cobra.Command {
@@ -136,5 +136,5 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().BoolVar(&reportBlocked, "report-blocked", false, "report blocked events")
 	cmd.Flags().StringSliceVar(&selectedTags, "selected-tag", nil, "selected tag IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

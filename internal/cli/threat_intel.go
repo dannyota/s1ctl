@@ -135,7 +135,7 @@ func newIOCsListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (id, creationTime, uploadTime, updatedAt, source, type)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newIOCsCreateCmd() *cobra.Command {
@@ -220,7 +220,7 @@ Dry-run by default; pass --yes to apply.`,
 	cmd.Flags().StringVar(&externalID, "external-id", "", "external reference ID")
 	cmd.Flags().StringVar(&validUntil, "valid-until", "", "expiration date (ISO 8601)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newIOCsDeleteCmd() *cobra.Command {
@@ -252,11 +252,11 @@ Dry-run by default; pass --yes to apply.`,
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newIOCsConfigCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "config",
 		Short: "Show threat intelligence configuration",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -284,4 +284,5 @@ func newIOCsConfigCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, cfgs, len(cfgs), len(cfgs), "config", false)
 		},
 	}
+	return markJSON(cmd)
 }

@@ -104,11 +104,11 @@ func newRulesListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. name, severity, createdAt)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRulesGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <rule-id>",
 		Short: "Get custom detection rule details",
 		Args:  cobra.ExactArgs(1),
@@ -148,4 +148,5 @@ func newRulesGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }

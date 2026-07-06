@@ -59,7 +59,7 @@ drift, so a CI job can fail on a non-zero exit.`,
 	}
 	cmd.Flags().StringSliceVar(&surfaces, "surface", nil, "limit to named surfaces (repeatable; default: all)")
 	cmd.Flags().StringVar(&dirRoot, "dir-root", ".", "root directory containing per-surface config directories")
-	return cmd
+	return markJSON(cmd)
 }
 
 // selectDriftSpecs returns every registered surface spec, or just the named

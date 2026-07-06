@@ -51,7 +51,7 @@ func newDatalakeFacetCmd() *cobra.Command {
 	cmd.Flags().StringVar(&start, "start", "", "start time, e.g. 24h or timestamp (required)")
 	cmd.Flags().StringVar(&end, "end", "", "end time")
 	cmd.Flags().IntVar(&maxCount, "max-count", 0, "max distinct values to return")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDatalakeTimeseriesCmd() *cobra.Command {
@@ -104,5 +104,5 @@ func newDatalakeTimeseriesCmd() *cobra.Command {
 	cmd.Flags().StringVar(&start, "start", "", "start time, e.g. 24h or timestamp (required)")
 	cmd.Flags().StringVar(&end, "end", "", "end time")
 	cmd.Flags().IntVar(&buckets, "buckets", 0, "number of time buckets")
-	return cmd
+	return markJSON(cmd)
 }

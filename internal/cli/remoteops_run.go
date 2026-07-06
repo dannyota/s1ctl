@@ -86,5 +86,5 @@ func newRemoteOpsRunCmd() *cobra.Command {
 	cmd.Flags().StringVar(&inputParams, "input-params", "", "script input parameters")
 	cmd.Flags().IntVar(&timeout, "timeout", 0, "script runtime timeout in seconds (60-172800)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

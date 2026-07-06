@@ -99,11 +99,11 @@ func newServiceUsersListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. id, name)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newServiceUsersGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <service-user-id>",
 		Short: "Get service user details",
 		Args:  cobra.ExactArgs(1),
@@ -132,6 +132,7 @@ func newServiceUsersGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newServiceUsersExportCmd() *cobra.Command {

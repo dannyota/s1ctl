@@ -82,11 +82,11 @@ func newUsersListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. fullName, email)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newUsersGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <user-id>",
 		Short: "Get user details",
 		Args:  cobra.ExactArgs(1),
@@ -116,4 +116,5 @@ func newUsersGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }

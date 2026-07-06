@@ -46,7 +46,7 @@ window.`,
 	cmd.Flags().BoolVar(&unlimited, "unlimited", false, "reactivate with no expiration")
 	cmd.Flags().StringVar(&expiration, "expiration", "", "new expiration as an RFC3339 timestamp")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAccountsExpireCmd() *cobra.Command {
@@ -74,7 +74,7 @@ func newAccountsExpireCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAccountsUninstallPasswordCmd() *cobra.Command {
@@ -123,7 +123,7 @@ sensitive secret material. Pass --metadata to print only non-secret metadata
 		},
 	}
 	cmd.Flags().BoolVar(&metadataOnly, "metadata", false, "show non-secret metadata instead of the password")
-	return cmd
+	return markJSON(cmd)
 }
 
 func uninstallPasswordShowMetadata(cmd *cobra.Command, c *mgmt.Client, id string) error {
@@ -188,7 +188,7 @@ still rotated and can be retrieved with "uninstall-password show".`,
 	}
 	cmd.Flags().StringVar(&expiration, "expiration", "", "password expiration date, yyyy-mm-dd (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newUninstallPasswordRevokeCmd() *cobra.Command {
@@ -216,5 +216,5 @@ func newUninstallPasswordRevokeCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

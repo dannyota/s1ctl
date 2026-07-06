@@ -110,11 +110,11 @@ Requires --scope (global, account, site, group) and --scope-id for non-global sc
 	cmd.Flags().IntVar(&limit, "limit", 0, fmt.Sprintf("max results per page (default %d)", defaultPageSize))
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDLSurfacesCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "surfaces",
 		Short: "List available detection surfaces",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -134,10 +134,11 @@ func newDLSurfacesCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, surfaces, len(surfaces), len(surfaces), "surface", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newDLDataSourcesCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "data-sources",
 		Short: "List available detection data sources",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -157,6 +158,7 @@ func newDLDataSourcesCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, sources, len(sources), len(sources), "data source", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newDLEnableCmd() *cobra.Command {
@@ -199,7 +201,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
 	cmd.Flags().StringVar(&scopeID, "scope-id", "", "account, site, or group ID (auto-detected if omitted)")
 	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level (auto-detected from rule if omitted)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDLDisableCmd() *cobra.Command {
@@ -242,7 +244,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
 	cmd.Flags().StringVar(&scopeID, "scope-id", "", "account, site, or group ID (auto-detected if omitted)")
 	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level (auto-detected from rule if omitted)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // resolveDLScope auto-detects the scope level for a platform rule action.

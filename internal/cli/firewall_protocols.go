@@ -37,5 +37,5 @@ func newFirewallProtocolsCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&query, "query", "", "search protocols")
-	return cmd
+	return markJSON(cmd)
 }

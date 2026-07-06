@@ -22,7 +22,7 @@ func newDatalakeFilesCmd() *cobra.Command {
 }
 
 func newDatalakeFilesListCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List configuration files",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -41,6 +41,7 @@ func newDatalakeFilesListCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), []string{"PATH"}, rows, resp, len(rows), len(rows), "file", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newDatalakeFilesGetCmd() *cobra.Command {
@@ -77,7 +78,7 @@ func newDatalakeFilesGetCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&outFile, "out", "", "write content to a local file instead of stdout")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDatalakeFilesPutCmd() *cobra.Command {
@@ -132,5 +133,5 @@ func newDatalakeFilesPutCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&deleteFile, "delete", false, "delete the remote file")
 	cmd.Flags().Int64Var(&expectedVersion, "expected-version", 0, "fail if the remote version differs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

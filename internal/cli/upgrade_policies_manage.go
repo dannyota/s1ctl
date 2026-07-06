@@ -122,7 +122,7 @@ Use "upgrade-policies packages" to find available package versions and file IDs.
 		},
 	}
 	f.register(cmd)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newUpgradePoliciesUpdateCmd() *cobra.Command {
@@ -164,7 +164,7 @@ Use "upgrade-policies packages" to find available package versions and file IDs.
 		},
 	}
 	f.register(cmd)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newUpgradePolicyToggleCmd(verb string, call func(*mgmt.Client, context.Context, string) error) *cobra.Command {
@@ -192,7 +192,7 @@ func newUpgradePolicyToggleCmd(verb string, call func(*mgmt.Client, context.Cont
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newUpgradePoliciesDeleteCmd() *cobra.Command {
@@ -221,5 +221,5 @@ func newUpgradePoliciesDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

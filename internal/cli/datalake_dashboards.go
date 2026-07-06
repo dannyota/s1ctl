@@ -20,7 +20,7 @@ func newDatalakeDashboardsCmd() *cobra.Command {
 }
 
 func newDatalakeDashboardsListCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List dashboards",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -63,10 +63,11 @@ func newDatalakeDashboardsListCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newDatalakeDashboardsGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <id>",
 		Short: "Get dashboard details",
 		Args:  cobra.ExactArgs(1),
@@ -90,4 +91,5 @@ func newDatalakeDashboardsGetCmd() *cobra.Command {
 			return printJSON(cmd.OutOrStdout(), d)
 		},
 	}
+	return markJSON(cmd)
 }

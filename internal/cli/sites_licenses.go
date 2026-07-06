@@ -124,7 +124,7 @@ expiration date, and a status indicator (OK, WARNING, CRITICAL).`,
 			return nil
 		},
 	}
-	return cmd
+	return markJSON(cmd)
 }
 
 func licenseStatus(utilization float64, expiration string, unlimited bool, now time.Time) string {

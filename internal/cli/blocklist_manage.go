@@ -91,7 +91,7 @@ to the global (tenant) blocklist when no scope flag is set.`,
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "target group IDs")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "target account IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newBlocklistUpdateCmd() *cobra.Command {
@@ -145,7 +145,7 @@ func newBlocklistUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&description, "description", "", "blocklist item description")
 	cmd.Flags().StringVar(&source, "source", "", "blocklist item source")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newBlocklistDeleteCmd() *cobra.Command {
@@ -175,7 +175,7 @@ func newBlocklistDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newBlocklistValidateCmd() *cobra.Command {
@@ -228,5 +228,5 @@ list before adding it to the blocklist. This is a read-only check.`,
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "scope site IDs")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope group IDs")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "scope account IDs")
-	return cmd
+	return markJSON(cmd)
 }

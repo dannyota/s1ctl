@@ -62,5 +62,5 @@ granularity and users with limited query permissions.`,
 	cmd.Flags().StringVar(&end, "end", "", "end time")
 	cmd.Flags().IntVar(&buckets, "buckets", 0, "number of buckets (1-5000)")
 	cmd.Flags().StringVar(&priority, "priority", "", "query priority (low, high)")
-	return cmd
+	return markJSON(cmd)
 }

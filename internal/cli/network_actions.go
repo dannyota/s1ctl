@@ -39,7 +39,7 @@ Dry-run by default — pass --yes to apply.`,
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newNetworkEnableCmd() *cobra.Command {
@@ -82,7 +82,7 @@ Dry-run by default — pass --yes to apply.`,
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newNetworkReorderCmd() *cobra.Command {
@@ -137,7 +137,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "scope: account IDs")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope: group IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newNetworkCopyCmd() *cobra.Command {
@@ -193,7 +193,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringVar(&targetAccountID, "target-account-id", "", "target account ID")
 	cmd.Flags().StringVar(&targetGroupID, "target-group-id", "", "target group ID")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // describeCopyTarget renders a human description of the copy/move destination

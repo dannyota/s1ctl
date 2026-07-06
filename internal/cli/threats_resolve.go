@@ -100,7 +100,7 @@ Filter flags only match unresolved threats. Dry-run by default.`,
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `key=value filter (e.g. --filter classifications=Malware)`)
 	cmd.Flags().StringVar(&query, "query", "", "free text search filter")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func applyThreatFilters(params *mgmt.ThreatListParams, filters []string) error {

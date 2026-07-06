@@ -95,7 +95,7 @@ func newMaintenanceGetCmd(flexible bool) *cobra.Command {
 		},
 	}
 	scope.register(cmd)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newMaintenanceSetCmd() *cobra.Command {
@@ -158,7 +158,7 @@ maintenanceWindowsByDay, inherit flags); the scope and task type come from the
 	scope.register(cmd)
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "configuration data JSON file (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newMaintenanceSetFlexibleCmd() *cobra.Command {
@@ -204,7 +204,7 @@ with the task type and scope. The body is sent verbatim.`,
 	}
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "full request body JSON file (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newMaintenanceExportCmd() *cobra.Command {

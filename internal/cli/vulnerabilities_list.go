@@ -105,11 +105,11 @@ func newVulnerabilitiesListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&after, "after", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <id>",
 		Short: "Get vulnerability details",
 		Args:  cobra.ExactArgs(1),
@@ -149,6 +149,7 @@ func newVulnerabilitiesGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesStatusCmd() *cobra.Command {
@@ -177,7 +178,7 @@ func newVulnerabilitiesStatusCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesVerdictCmd() *cobra.Command {
@@ -206,5 +207,5 @@ func newVulnerabilitiesVerdictCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

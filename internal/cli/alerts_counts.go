@@ -107,7 +107,7 @@ instead; for grouped alert volume prefer "alerts stats" (alertGroups).`,
 	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, IN_PROGRESS, RESOLVED)")
 	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level (account, site, group)")
 	cmd.Flags().StringVar(&scopeID, "scope-id", "", "account, site, or group ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAlertsExportCmd() *cobra.Command {

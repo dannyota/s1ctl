@@ -111,7 +111,7 @@ OS types: linux, macos, windows`,
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (default: priority)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc; default: asc)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newUpgradePoliciesGetCmd() *cobra.Command {
@@ -202,7 +202,7 @@ The API requires scope and OS filters even for a single lookup.`,
 	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level (account, group, site, tenant) [required]")
 	cmd.Flags().StringVar(&scopeID, "scope-id", "", "scope ID")
 	cmd.Flags().StringVar(&osType, "os-type", "", "OS type (linux, macos, windows) [required]")
-	return cmd
+	return markJSON(cmd)
 }
 
 // fetchAllUpgradePolicies pages through all upgrade policies using skip/limit.

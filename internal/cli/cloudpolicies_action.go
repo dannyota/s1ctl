@@ -59,5 +59,5 @@ func newCloudPolicyActionCmd(verb, short string, fn cloudPolicyActionFn) *cobra.
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

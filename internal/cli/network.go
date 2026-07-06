@@ -38,7 +38,7 @@ func newNetworkCmd() *cobra.Command {
 }
 
 func newNetworkGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <rule-id>",
 		Short: "Get a network quarantine rule",
 		Args:  cobra.ExactArgs(1),
@@ -67,6 +67,7 @@ func newNetworkGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newNetworkListCmd() *cobra.Command {
@@ -128,7 +129,7 @@ func newNetworkListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newNetworkProtocolsCmd() *cobra.Command {
@@ -157,7 +158,7 @@ func newNetworkProtocolsCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&query, "query", "", "search protocols")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newNetworkExportCmd() *cobra.Command {
@@ -240,5 +241,5 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "target account IDs")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "target group IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

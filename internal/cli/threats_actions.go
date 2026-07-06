@@ -85,7 +85,7 @@ Mode applies to path exclusions only (e.g. suppress, disable_all_monitors).`,
 	cmd.Flags().StringVar(&ticketID, "ticket-id", "", "external ticket ID to set on the threat")
 	cmd.Flags().StringVar(&pathExclusionType, "path-exclusion-type", "", "excluded path type (path exclusions only)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newThreatMitigateAlertsCmd() *cobra.Command {
@@ -131,7 +131,7 @@ Actions: kill, remediate, rollback-remediation, quarantine, un-quarantine, remov
 	cmd.Flags().StringVar(&storyline, "storyline", "", "storyline of the alert (required)")
 	cmd.Flags().StringVar(&action, "action", "", "mitigation action (kill, remediate, quarantine, etc.)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newThreatSetTicketCmd() *cobra.Command {
@@ -167,7 +167,7 @@ func newThreatSetTicketCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&ticketID, "ticket-id", "", "external ticket ID (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newThreatPlainActionCmd(verb, short string, call func(*mgmt.Client, context.Context, mgmt.ActionFilter) (int, error)) *cobra.Command {
@@ -196,7 +196,7 @@ func newThreatPlainActionCmd(verb, short string, call func(*mgmt.Client, context
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 type threatActionFn func(*mgmt.Client, *cobra.Command, string, mgmt.ActionFilter) (int, error)
@@ -232,7 +232,7 @@ func newThreatActionCmd(verb, short, flagName, flagDesc string, fn threatActionF
 	}
 	cmd.Flags().StringVar(&val, verb, "", flagDesc)
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newThreatMitigateCmd() *cobra.Command {
@@ -267,5 +267,5 @@ func newThreatMitigateCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&action, "action", "", "mitigation action (kill, quarantine, remediate, rollback-remediation)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

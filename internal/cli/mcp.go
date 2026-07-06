@@ -65,7 +65,7 @@ Idempotent — updates the entry if it already exists.`,
 			return runMCPInstall(cmd)
 		},
 	}
-	return cmd
+	return markJSON(cmd)
 }
 
 func runMCPInstall(cmd *cobra.Command) error {

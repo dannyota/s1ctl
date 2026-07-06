@@ -64,5 +64,5 @@ asset operations, mitigation actions, and related alerts, newest first.`,
 	}
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
-	return cmd
+	return markJSON(cmd)
 }

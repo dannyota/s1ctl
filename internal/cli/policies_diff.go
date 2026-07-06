@@ -90,5 +90,5 @@ like one site in detect mode while others are in protect mode.`,
 	}
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	return cmd
+	return markJSON(cmd)
 }

@@ -98,5 +98,5 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "target account IDs")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "target group IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

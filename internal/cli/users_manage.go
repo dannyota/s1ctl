@@ -46,7 +46,7 @@ func newUsersUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&email, "email", "", "new email address")
 	cmd.Flags().StringVar(&scope, "scope", "", "new scope")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newUsers2FACmd() *cobra.Command {
@@ -90,7 +90,7 @@ func newUsers2FAToggleCmd(mode string) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newUsersGenerateTokenCmd() *cobra.Command {
@@ -125,7 +125,7 @@ once and replaces any existing token for that user.`,
 	}
 	cmd.Flags().BoolVar(&forceLegacy, "force-legacy", false, "request a legacy token even when auth-tokens is enabled")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newUsersRevokeTokenCmd() *cobra.Command {
@@ -153,7 +153,7 @@ func newUsersRevokeTokenCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // redactUserTokenDetails returns a copy of the token metadata with the secret
@@ -168,7 +168,7 @@ func redactUserTokenDetails(d *mgmt.UserTokenDetails) mgmt.UserTokenDetails {
 }
 
 func newUsersTokenDetailsCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "token-details [<user-id>]",
 		Short: "Show API-token metadata (created/expires) for a user",
 		Long: `Show API-token metadata for a user. With no argument, reports the
@@ -200,6 +200,7 @@ timestamps are shown — any secret value is redacted.`,
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newUsersDeleteCmd() *cobra.Command {
@@ -227,5 +228,5 @@ func newUsersDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

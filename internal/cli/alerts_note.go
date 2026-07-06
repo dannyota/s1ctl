@@ -7,7 +7,7 @@ import (
 )
 
 func newAlertsNotesCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "notes <alert-id>",
 		Short: "List investigation notes on an alert",
 		Args:  cobra.ExactArgs(1),
@@ -31,6 +31,7 @@ func newAlertsNotesCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, notes, len(notes), len(notes), "note", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newAlertsNoteUpdateCmd() *cobra.Command {
@@ -65,7 +66,7 @@ func newAlertsNoteUpdateCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&text, "text", "", "new note text (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAlertsNoteDeleteCmd() *cobra.Command {
@@ -95,7 +96,7 @@ func newAlertsNoteDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAlertsAddNoteCmd() *cobra.Command {
@@ -124,5 +125,5 @@ func newAlertsAddNoteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

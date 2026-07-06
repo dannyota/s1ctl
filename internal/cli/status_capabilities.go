@@ -10,12 +10,13 @@ import (
 )
 
 func newStatusCapabilitiesCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "capabilities",
 		Short: "Show s1ctl version, config, and API reachability",
 		Args:  cobra.NoArgs,
 		RunE:  runStatusCapabilities,
 	}
+	return markJSON(cmd)
 }
 
 type capabilitiesOutput struct {

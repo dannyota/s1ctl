@@ -20,7 +20,7 @@ func newUpdatesCmd() *cobra.Command {
 }
 
 func newUpdatesGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <package-id>",
 		Short: "Get an update package",
 		Args:  cobra.ExactArgs(1),
@@ -48,6 +48,7 @@ func newUpdatesGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newUpdatesListCmd() *cobra.Command {
@@ -109,5 +110,5 @@ func newUpdatesListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func newMisconfigurationsNotesCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "notes <id>",
 		Short: "List investigation notes on a misconfiguration",
 		Args:  cobra.ExactArgs(1),
@@ -32,6 +32,7 @@ func newMisconfigurationsNotesCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, notes, len(notes), len(notes), "note", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newMisconfigurationsNoteAddCmd() *cobra.Command {
@@ -65,7 +66,7 @@ func newMisconfigurationsNoteAddCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&text, "text", "", "note text (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newMisconfigurationsNoteUpdateCmd() *cobra.Command {
@@ -99,7 +100,7 @@ func newMisconfigurationsNoteUpdateCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&text, "text", "", "new note text (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newMisconfigurationsNoteDeleteCmd() *cobra.Command {
@@ -128,7 +129,7 @@ func newMisconfigurationsNoteDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newMisconfigurationsAssignCmd() *cobra.Command {
@@ -162,11 +163,11 @@ func newMisconfigurationsAssignCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&userID, "user-id", "", "assignee user ID (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newMisconfigurationsHistoryCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "history <id>",
 		Short: "Show the history of a misconfiguration",
 		Args:  cobra.ExactArgs(1),
@@ -187,10 +188,11 @@ func newMisconfigurationsHistoryCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, items, len(items), len(items), "history item", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newMisconfigurationsRelatedAssetsCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "related-assets <id>",
 		Short: "List assets related to a misconfiguration",
 		Args:  cobra.ExactArgs(1),
@@ -214,6 +216,7 @@ func newMisconfigurationsRelatedAssetsCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, assets, len(assets), len(assets), "related asset", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newMisconfigurationsExportCmd() *cobra.Command {

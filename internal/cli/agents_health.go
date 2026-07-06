@@ -111,5 +111,5 @@ decommissioned, or infected. Helps identify endpoints that need attention.`,
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	return cmd
+	return markJSON(cmd)
 }

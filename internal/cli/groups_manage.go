@@ -47,7 +47,7 @@ func newGroupsCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", "", "group name (required)")
 	cmd.Flags().StringVar(&description, "description", "", "group description")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newGroupsUpdateCmd() *cobra.Command {
@@ -89,7 +89,7 @@ func newGroupsUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", "", "new group name")
 	cmd.Flags().StringVar(&description, "description", "", "new description")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newGroupsDeleteCmd() *cobra.Command {
@@ -119,5 +119,5 @@ func newGroupsDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

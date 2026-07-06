@@ -20,7 +20,7 @@ to a specific domain (e.g. alerts, threats, agents, rules, exclusions, policies)
 		},
 	}
 	cmd.Flags().StringVar(&group, "group", "", "filter to a specific enum group")
-	return cmd
+	return markJSON(cmd)
 }
 
 type enumGroup struct {

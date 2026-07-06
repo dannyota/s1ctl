@@ -63,7 +63,7 @@ func newPoliciesGetCmd() *cobra.Command {
 	cmd.Flags().StringVar(&siteID, "site-id", "", "site ID")
 	cmd.Flags().StringVar(&accountID, "account-id", "", "account ID")
 	cmd.Flags().StringVar(&groupID, "group-id", "", "group ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 // policyEntry combines scope info with a policy for list output.
@@ -126,7 +126,7 @@ Use --account-id or --site-id to narrow the scope.`,
 	}
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 // fetchSitesForPolicies returns sites filtered by the given account/site IDs.

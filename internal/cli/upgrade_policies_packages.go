@@ -90,5 +90,5 @@ when creating an upgrade policy (--file-id).`,
 	cmd.Flags().StringVar(&scopeID, "scope-id", "", "scope ID")
 	cmd.Flags().StringVar(&osType, "os-type", "", "OS type (linux, macos, windows) [required]")
 	cmd.Flags().StringVar(&query, "query", "", "filter by display name (partial match)")
-	return cmd
+	return markJSON(cmd)
 }

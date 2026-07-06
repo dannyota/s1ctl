@@ -34,7 +34,7 @@ func newTagsGetCmd() *cobra.Command {
 			return nil
 		},
 	}
-	return cmd
+	return markJSON(cmd)
 }
 
 func newTagsCreateCmd() *cobra.Command {
@@ -83,7 +83,7 @@ func newTagsCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&scope, "scope", "", "tag scope")
 	cmd.Flags().StringVar(&scopeID, "scope-id", "", "tag scope ID")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newTagsUpdateCmd() *cobra.Command {
@@ -131,7 +131,7 @@ func newTagsUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&value, "value", "", "new tag value")
 	cmd.Flags().StringVar(&description, "description", "", "new description")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newTagsDeleteCmd() *cobra.Command {
@@ -159,5 +159,5 @@ func newTagsDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

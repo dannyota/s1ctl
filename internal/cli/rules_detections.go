@@ -94,7 +94,7 @@ Shows what a specific rule is catching.`,
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (default: id)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (default: desc)")
 	cmd.Flags().StringVar(&groupBy, "group-by", "", "group results (agent)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func printDetectionsByAgent(cmd *cobra.Command, alerts []mgmt.CloudDetectionAlert, total int) error {

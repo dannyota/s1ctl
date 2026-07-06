@@ -74,5 +74,5 @@ func newAuditListCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&last, "last", 25, "number of recent entries to show")
-	return cmd
+	return markJSON(cmd)
 }

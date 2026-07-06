@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -60,6 +61,9 @@ func buildTool(cmd *cobra.Command, path []string) Tool {
 	desc := cmd.Short
 	if hasMutationFlag(cmd) {
 		desc += " [mutation: requires --yes to apply, dry-run by default]"
+	}
+	if hasJSONAnnotation(cmd) {
+		desc += " [supports --json output]"
 	}
 
 	schema := buildInputSchema(cmd)
@@ -141,11 +145,23 @@ func flagToProperty(f *pflag.Flag) map[string]any {
 		prop["default"] = f.DefValue
 	}
 
+	if vals := mcpEnumFromUsage(f.Usage); len(vals) > 0 {
+		enumAny := make([]any, len(vals))
+		for i, v := range vals {
+			enumAny[i] = v
+		}
+		prop["enum"] = enumAny
+	}
+
 	return prop
 }
 
 func hasMutationFlag(cmd *cobra.Command) bool {
 	return cmd.Flags().Lookup("yes") != nil
+}
+
+func hasJSONAnnotation(cmd *cobra.Command) bool {
+	return cmd.Annotations != nil && cmd.Annotations["s1ctl_json"] == "true"
 }
 
 func makeRunner(cmd *cobra.Command, path []string) func(map[string]any) (string, error) {
@@ -181,9 +197,6 @@ func makeRunner(cmd *cobra.Command, path []string) func(map[string]any) (string,
 			}
 		}
 
-		// Capture both cobra output and raw os.Stdout writes.
-		// Many commands write to os.Stdout directly via fmt.Printf;
-		// os.Pipe intercepts those writes too.
 		origStdout := os.Stdout
 		pr, pw, err := os.Pipe()
 		if err != nil {
@@ -229,7 +242,6 @@ func toBool(v any) (bool, bool) {
 	}
 }
 
-// GroupTools returns tools for a single top-level command group.
 func GroupTools(root *cobra.Command, group string) ([]Tool, error) {
 	for _, c := range root.Commands() {
 		if c.Name() == group && !c.Hidden {
@@ -411,12 +423,14 @@ func (s *Server) helpGroups() string {
 			continue
 		}
 		reads, muts := 0, 0
-		countByKind(c, &reads, &muts)
+		var names []string
+		collectLeafNamesForMCP(c, &reads, &muts, &names)
 		status := ""
 		if _, focused := s.focused[c.Name()]; focused {
 			status = " *"
 		}
 		fmt.Fprintf(&b, "  %-22s %s (%dr/%dm)%s\n", c.Name(), c.Short, reads, muts, status)
+		fmt.Fprintf(&b, "    %s\n", strings.Join(names, ", "))
 	}
 	return b.String()
 }
@@ -460,7 +474,14 @@ func (s *Server) helpCommand(groupCmd *cobra.Command, group, command string) (st
 	if hasMutationFlag(cmd) {
 		b.WriteString(" [mutation: dry-run by default, --yes to apply]")
 	}
+	if hasJSONAnnotation(cmd) {
+		b.WriteString(" [json]")
+	}
 	b.WriteString("\n")
+
+	if spec := positionalSpec(cmd); spec != "" {
+		fmt.Fprintf(&b, "  args: %s\n", spec)
+	}
 
 	var flags []flagDetail
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
@@ -482,25 +503,39 @@ func (s *Server) helpCommand(groupCmd *cobra.Command, group, command string) (st
 		b.WriteString("\nFlags:\n")
 		for _, fd := range flags {
 			fmt.Fprintf(&b, "  --%-20s %-8s %s", fd.Name, fd.Type, fd.Usage)
+			if fd.Required {
+				b.WriteString(" [required]")
+			}
+			if len(fd.Enum) > 0 {
+				b.WriteString(" {" + strings.Join(fd.Enum, "|") + "}")
+			}
 			if fd.Default != "" {
 				fmt.Fprintf(&b, " (default: %s)", fd.Default)
 			}
 			b.WriteString("\n")
 		}
 	}
-
 	return b.String(), nil
 }
 
 type flagDetail struct {
-	Name    string
-	Type    string
-	Usage   string
-	Default string
+	Name     string
+	Type     string
+	Usage    string
+	Default  string
+	Required bool
+	Enum     []string
 }
 
 func describeFlag(f *pflag.Flag) flagDetail {
-	fd := flagDetail{Name: f.Name, Type: f.Value.Type(), Usage: f.Usage}
+	_, required := f.Annotations[cobra.BashCompOneRequiredFlag]
+	fd := flagDetail{
+		Name:     f.Name,
+		Type:     f.Value.Type(),
+		Usage:    f.Usage,
+		Required: required,
+		Enum:     mcpEnumFromUsage(f.Usage),
+	}
 	if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" && f.DefValue != "[]" {
 		fd.Default = f.DefValue
 	}
@@ -524,33 +559,55 @@ func findSubcommand(parent *cobra.Command, name string) *cobra.Command {
 	return nil
 }
 
-func countByKind(cmd *cobra.Command, reads, muts *int) {
+func collectLeafNamesForMCP(cmd *cobra.Command, reads, muts *int, names *[]string) {
 	if !cmd.HasSubCommands() {
 		if cmd.RunE != nil || cmd.Run != nil {
+			n := cmd.Name()
 			if hasMutationFlag(cmd) {
 				*muts++
+				n += "*"
 			} else {
 				*reads++
 			}
+			if hasJSONAnnotation(cmd) {
+				n += "[j]"
+			}
+			*names = append(*names, n)
 		}
 		return
 	}
 	for _, c := range cmd.Commands() {
 		if !c.Hidden {
-			countByKind(c, reads, muts)
+			collectLeafNamesForMCP(c, reads, muts, names)
 		}
 	}
 }
 
 func writeHelpLine(b *strings.Builder, cmd *cobra.Command, indent string) {
-	line := indent + cmd.Name() + "  " + cmd.Short
+	line := indent + cmd.Name()
+	if spec := positionalSpec(cmd); spec != "" {
+		line += " " + spec
+	}
+	line += "  " + cmd.Short
 	if hasMutationFlag(cmd) {
 		line += " [mutation]"
+	}
+	if hasJSONAnnotation(cmd) {
+		line += " [json]"
 	}
 	if hints := flagHints(cmd); hints != "" {
 		line += "  " + hints
 	}
 	fmt.Fprintln(b, line)
+}
+
+func positionalSpec(c *cobra.Command) string {
+	use := strings.TrimSpace(c.Use)
+	i := strings.IndexAny(use, " \t")
+	if i < 0 {
+		return ""
+	}
+	return strings.TrimSpace(use[i+1:])
 }
 
 func flagHints(cmd *cobra.Command) string {
@@ -561,7 +618,14 @@ func flagHints(cmd *cobra.Command) string {
 			return
 		}
 		seen[f.Name] = true
-		flags = append(flags, "--"+f.Name)
+		hint := "--" + f.Name
+		if _, req := f.Annotations[cobra.BashCompOneRequiredFlag]; req {
+			hint += "*"
+		}
+		if vals := mcpEnumFromUsage(f.Usage); len(vals) > 0 {
+			hint += "={" + strings.Join(vals, "|") + "}"
+		}
+		flags = append(flags, hint)
 	}
 	cmd.Flags().VisitAll(add)
 	cmd.InheritedFlags().VisitAll(func(f *pflag.Flag) {
@@ -574,6 +638,29 @@ func flagHints(cmd *cobra.Command) string {
 		return ""
 	}
 	return "(" + strings.Join(flags, ", ") + ")"
+}
+
+var (
+	mcpEnumPattern   = regexp.MustCompile(`[A-Za-z][\w-]+(?:\s*\|\s*[A-Za-z][\w-]+)+`)
+	mcpPlaceholderRE = regexp.MustCompile(`<[^>]*>`)
+)
+
+func mcpEnumFromUsage(usage string) []string {
+	run := mcpEnumPattern.FindString(mcpPlaceholderRE.ReplaceAllString(usage, ""))
+	if run == "" {
+		return nil
+	}
+	parts := strings.Split(run, "|")
+	vals := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			vals = append(vals, p)
+		}
+	}
+	if len(vals) < 2 {
+		return nil
+	}
+	return vals
 }
 
 func (s *Server) execCommand(parts []string) (string, error) {

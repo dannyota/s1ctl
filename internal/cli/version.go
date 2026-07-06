@@ -83,7 +83,7 @@ func versionLine() string {
 }
 
 func newVersionCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print version, commit, and build info",
 		Args:  cobra.NoArgs,
@@ -106,4 +106,5 @@ func newVersionCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }

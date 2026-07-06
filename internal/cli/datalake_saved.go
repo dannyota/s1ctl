@@ -21,7 +21,7 @@ func newDatalakeSavedQueriesCmd() *cobra.Command {
 }
 
 func newDatalakeSavedQueriesListCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List saved PowerQueries",
 		Long: `List saved searches from the Singularity Data Lake console.
@@ -66,6 +66,7 @@ Shows both private and shared saved queries.`,
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newDatalakeSavedQueriesDeleteCmd() *cobra.Command {
@@ -100,5 +101,5 @@ func newDatalakeSavedQueriesDeleteCmd() *cobra.Command {
 	cmd.Flags().StringVar(&searchType, "type", "PRIVATE", "saved search type (PRIVATE, SHARED)")
 	cmd.Flags().IntVar(&index, "index", 0, "saved search index")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the mutation (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

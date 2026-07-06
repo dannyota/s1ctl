@@ -83,12 +83,13 @@ func runConfigInit(cmd *cobra.Command, _ []string) error {
 }
 
 func newConfigShowCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show resolved configuration",
 		Args:  cobra.NoArgs,
 		RunE:  runConfigShow,
 	}
+	return markJSON(cmd)
 }
 
 func runConfigShow(cmd *cobra.Command, _ []string) error {

@@ -97,7 +97,7 @@ Uses count queries — no bulk data fetch needed.`,
 			return nil
 		},
 	}
-	return cmd
+	return markJSON(cmd)
 }
 
 func countVulns(c *graphql.Client, ctx context.Context, severity, status string) (int, error) {

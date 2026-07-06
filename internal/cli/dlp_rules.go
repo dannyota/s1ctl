@@ -74,7 +74,7 @@ func newDLPRulesListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&page, "page", 0, "page number (1-indexed)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	addDLPScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDLPRulesGetCmd() *cobra.Command {
@@ -119,7 +119,7 @@ func newDLPRulesGetCmd() *cobra.Command {
 		},
 	}
 	addDLPScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 // addDLPRuleActions registers the guarded enable/disable/delete commands. Each
@@ -168,7 +168,7 @@ func newDLPRuleActionCmd(verb, short string) *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
 	addDLPScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 // runDLPRuleAction dispatches to the bulk enable/disable/delete SDK methods and

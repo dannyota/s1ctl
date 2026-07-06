@@ -76,7 +76,7 @@ The file holds the "data" object of the update body, for example:
 	}
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file with the update data object (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRemoteOpsContentCmd() *cobra.Command {
@@ -113,11 +113,11 @@ func newRemoteOpsContentCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&outFile, "out", "", "write script content to file (default: stdout)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRemoteOpsUploadLimitsCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "upload-limits",
 		Short: "Show package upload size limits",
 		Args:  cobra.NoArgs,
@@ -133,6 +133,7 @@ func newRemoteOpsUploadLimitsCmd() *cobra.Command {
 			return printJSON(cmd.OutOrStdout(), limits)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newRemoteOpsPendingCmd() *cobra.Command {
@@ -212,7 +213,7 @@ func newRemoteOpsPendingListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRemoteOpsPendingDecisionCmd(approve bool) *cobra.Command {
@@ -245,7 +246,7 @@ func newRemoteOpsPendingDecisionCmd(approve bool) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRemoteOpsGuardrailsCmd() *cobra.Command {
@@ -311,7 +312,7 @@ func newRemoteOpsGuardrailsGetCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&scopeID, "scope-id", "", "scope ID (required)")
 	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level: account, site, or group (required)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRemoteOpsGuardrailsSetCmd() *cobra.Command {
@@ -358,7 +359,7 @@ func newRemoteOpsGuardrailsSetCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file with the guardrail data (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRemoteOpsGuardrailsDeleteCmd() *cobra.Command {
@@ -394,7 +395,7 @@ func newRemoteOpsGuardrailsDeleteCmd() *cobra.Command {
 	cmd.Flags().StringVar(&scopeID, "scope-id", "", "scope ID (required)")
 	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level: account, site, or group (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRemoteOpsGuardrailsCheckCmd() *cobra.Command {
@@ -434,5 +435,5 @@ agents would trip a guardrail and require approval. The file holds:
 		},
 	}
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON file with scriptId and agentIds (required)")
-	return cmd
+	return markJSON(cmd)
 }

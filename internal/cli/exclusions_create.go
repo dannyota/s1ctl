@@ -84,7 +84,7 @@ For path exclusions, --path-type specifies the match type:
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "target site IDs")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "target group IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newExclusionsUpdateCmd() *cobra.Command {
@@ -137,5 +137,5 @@ func newExclusionsUpdateCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "target group IDs")
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "target site IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

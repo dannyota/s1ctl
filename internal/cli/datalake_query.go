@@ -59,7 +59,7 @@ the REST API, which requires S1_SDL_URL to be configured.`,
 	cmd.Flags().StringVar(&priority, "priority", "low", "query priority (low, high) [REST only]")
 	cmd.Flags().StringVar(&protocol, "protocol", "graphql", "API protocol (graphql, rest)")
 	cmd.Flags().IntVar(&pqColWidth, "col-width", 120, "max column width in table output")
-	return cmd
+	return markJSON(cmd)
 }
 
 func runPowerQueryGraphQL(cmd *cobra.Command, query, startTime, endTime string) error {
@@ -163,7 +163,7 @@ continuation token, or --max-events to cap the total number of events.`,
 	cmd.Flags().IntVar(&maxEvents, "max-events", 0, "max total events across all pages (0 = no limit)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages via continuation token")
 	cmd.Flags().StringVar(&protocol, "protocol", "rest", "API protocol (rest)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func runDatalakeQuery(cmd *cobra.Command, query, startTime, endTime string, maxCount, maxEvents int, all bool) error {

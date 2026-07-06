@@ -60,5 +60,5 @@ detectionSource.product, assets.name.`,
 	cmd.Flags().StringVar(&groupBy, "group-by", "severity", "field to group by (e.g. severity, status, analystVerdict)")
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
 	cmd.Flags().StringSliceVar(&statuses, "status", nil, "filter by status (NEW, RESOLVED, etc.)")
-	return cmd
+	return markJSON(cmd)
 }

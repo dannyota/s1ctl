@@ -104,7 +104,7 @@ func newCloudRulesListCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&after, "after", "", "pagination cursor")
 	addCloudRuleScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newCloudRulesGetCmd() *cobra.Command {
@@ -158,7 +158,7 @@ func newCloudRulesGetCmd() *cobra.Command {
 		},
 	}
 	addCloudRuleScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newCloudRulesTypesCmd() *cobra.Command {
@@ -192,7 +192,7 @@ func newCloudRulesTypesCmd() *cobra.Command {
 		},
 	}
 	addCloudRuleScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 // addCloudRuleScopeFlags registers the shared --scope-level/--scope-id flags.

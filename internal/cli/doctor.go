@@ -14,12 +14,13 @@ import (
 )
 
 func newDoctorCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "doctor",
 		Short: "Verify connectivity to all SentinelOne API surfaces",
 		Args:  cobra.NoArgs,
 		RunE:  runDoctor,
 	}
+	return markJSON(cmd)
 }
 
 type checkResult struct {

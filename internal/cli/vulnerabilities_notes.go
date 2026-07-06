@@ -7,7 +7,7 @@ import (
 )
 
 func newVulnerabilitiesNotesCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "notes <id>",
 		Short: "List investigation notes on a vulnerability",
 		Args:  cobra.ExactArgs(1),
@@ -31,6 +31,7 @@ func newVulnerabilitiesNotesCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, notes, len(notes), len(notes), "note", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesNoteAddCmd() *cobra.Command {
@@ -64,7 +65,7 @@ func newVulnerabilitiesNoteAddCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&text, "text", "", "note text (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesNoteUpdateCmd() *cobra.Command {
@@ -98,7 +99,7 @@ func newVulnerabilitiesNoteUpdateCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&text, "text", "", "new note text (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesNoteDeleteCmd() *cobra.Command {
@@ -127,7 +128,7 @@ func newVulnerabilitiesNoteDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesAssignCmd() *cobra.Command {
@@ -161,11 +162,11 @@ func newVulnerabilitiesAssignCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&userID, "user-id", "", "assignee user ID (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesHistoryCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "history <id>",
 		Short: "Show the history of a vulnerability",
 		Args:  cobra.ExactArgs(1),
@@ -186,10 +187,11 @@ func newVulnerabilitiesHistoryCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, items, len(items), len(items), "history item", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesRelatedAssetsCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "related-assets <id>",
 		Short: "List assets related to a vulnerability",
 		Args:  cobra.ExactArgs(1),
@@ -213,6 +215,7 @@ func newVulnerabilitiesRelatedAssetsCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, assets, len(assets), len(assets), "related asset", true)
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesExportCmd() *cobra.Command {

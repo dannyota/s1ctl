@@ -105,5 +105,5 @@ Filter flags only match alerts with status NEW. Dry-run by default.`,
 	cmd.Flags().StringVar(&name, "name", "", "match alerts by name (contains, case-insensitive)")
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL)")
 	cmd.Flags().StringSliceVar(&sources, "source", nil, "filter by detection source (STAR, EDR, CWS)")
-	return cmd
+	return markJSON(cmd)
 }

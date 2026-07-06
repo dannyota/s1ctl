@@ -92,11 +92,11 @@ func newCloudPoliciesListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&after, "after", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newCloudPoliciesGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <id>",
 		Short: "Get cloud policy details",
 		Args:  cobra.ExactArgs(1),
@@ -137,6 +137,7 @@ func newCloudPoliciesGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 // joinOrDash joins a string slice with commas, returning "-" if empty.

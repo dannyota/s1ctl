@@ -40,7 +40,7 @@ Dry-run by default — pass --yes to apply.`,
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDeviceControlDisableCmd() *cobra.Command {
@@ -73,7 +73,7 @@ Dry-run by default — pass --yes to apply.`,
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDeviceControlReorderCmd() *cobra.Command {
@@ -129,7 +129,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "scope: account IDs")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope: group IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDeviceControlCopyCmd() *cobra.Command {
@@ -205,7 +205,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringVar(&targetAccountID, "target-account-id", "", "target account ID")
 	cmd.Flags().StringSliceVar(&targetGroupIDs, "target-group-id", nil, "target group IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // parseRuleOrders parses "id:order" pairs from command-line arguments.

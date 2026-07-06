@@ -94,7 +94,7 @@ Scope must be one of: tenant, account, site. For account/site scope, pass
 	cmd.Flags().StringVar(&roleID, "role-id", "", "RBAC role ID to assign")
 	cmd.Flags().StringVar(&roleName, "role-name", "", "predefined role name to assign")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newServiceUsersUpdateCmd() *cobra.Command {
@@ -137,7 +137,7 @@ func newServiceUsersUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&roleID, "role-id", "", "RBAC role ID to assign")
 	cmd.Flags().StringVar(&roleName, "role-name", "", "predefined role name to assign")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newServiceUsersDeleteCmd() *cobra.Command {
@@ -165,7 +165,7 @@ func newServiceUsersDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newServiceUsersBulkDeleteCmd() *cobra.Command {
@@ -195,7 +195,7 @@ func newServiceUsersBulkDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newServiceUsersGenerateTokenCmd() *cobra.Command {
@@ -233,5 +233,5 @@ and replaces any existing token.`,
 	}
 	cmd.Flags().StringVar(&expiration, "expiration", "", "token expiration, RFC3339 (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

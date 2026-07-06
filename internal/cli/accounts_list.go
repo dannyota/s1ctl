@@ -83,11 +83,11 @@ func newAccountsListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAccountsGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <account-id>",
 		Short: "Get account details",
 		Args:  cobra.ExactArgs(1),
@@ -117,6 +117,7 @@ func newAccountsGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newAccountsCountCmd() *cobra.Command {
@@ -139,5 +140,5 @@ func newAccountsCountCmd() *cobra.Command {
 			return nil
 		},
 	}
-	return cmd
+	return markJSON(cmd)
 }

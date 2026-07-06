@@ -9,7 +9,7 @@ import (
 // newAgentLocalUpgradeStatusCmd reads an agent's current local upgrade/downgrade
 // authorization. It is a read: no guard, no audit.
 func newAgentLocalUpgradeStatusCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "local-upgrade-status <agent-id>",
 		Short: "Show an agent's local upgrade/downgrade authorization",
 		Args:  cobra.ExactArgs(1),
@@ -32,6 +32,7 @@ func newAgentLocalUpgradeStatusCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 // newAgentsPassphrasesCmd lists agent maintenance passphrases. The passphrase
@@ -105,5 +106,5 @@ accordingly. Values are never written to the audit log.`,
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
-	return cmd
+	return markJSON(cmd)
 }

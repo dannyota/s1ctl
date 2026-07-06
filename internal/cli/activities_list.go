@@ -89,7 +89,7 @@ func newActivitiesListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newActivitiesCountCmd() *cobra.Command {
@@ -119,5 +119,5 @@ func newActivitiesCountCmd() *cobra.Command {
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
-	return cmd
+	return markJSON(cmd)
 }

@@ -53,7 +53,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringVar(&targetAccountID, "target-account-id", "", "target account ID")
 	cmd.Flags().StringVar(&targetGroupID, "target-group-id", "", "target group ID")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newNetworkSetLocationCmd() *cobra.Command {
@@ -106,7 +106,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringVar(&locType, "type", "all", "location type: all, specific, or fallback")
 	cmd.Flags().StringSliceVar(&locationIDs, "location-id", nil, "location IDs (for --type specific)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newNetworkTagsCmd() *cobra.Command {
@@ -165,5 +165,5 @@ func newNetworkTagsChangeCmd(verb string) *cobra.Command {
 	}
 	cmd.Flags().StringSliceVar(&tagIDs, "tag-id", nil, "tag IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

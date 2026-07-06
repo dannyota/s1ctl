@@ -7,7 +7,7 @@ import (
 )
 
 func newActivitiesTypesCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "types",
 		Short: "List available activity types",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -27,4 +27,5 @@ func newActivitiesTypesCmd() *cobra.Command {
 			return printOutput(cmd.OutOrStdout(), headers, rows, types, len(types), len(types), "activity type", true)
 		},
 	}
+	return markJSON(cmd)
 }

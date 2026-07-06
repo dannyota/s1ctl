@@ -28,7 +28,7 @@ func newSettingsCmd() *cobra.Command {
 }
 
 func newSettingsListCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List settings categories",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -55,6 +55,7 @@ func newSettingsListCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newSettingsGetCmd() *cobra.Command {
@@ -101,7 +102,7 @@ Types: notifications, sso, smtp, syslog, sms, recipients, ad, ad-scope-mapping`,
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 func settingsGetNotifications(cmd *cobra.Command, c *mgmt.Client, params *mgmt.SettingsParams) error {
@@ -330,7 +331,7 @@ Types: smtp, syslog, ad`,
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func settingsTestSMTP(cmd *cobra.Command, c *mgmt.Client, params *mgmt.SettingsParams) error {
@@ -445,7 +446,7 @@ file to disk; otherwise print its metadata and PEM.`,
 	cmd.Flags().StringVar(&out, "out", "", "write the downloaded certificate to this file")
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSettingsCancelPendingEmailsCmd() *cobra.Command {
@@ -482,7 +483,7 @@ func newSettingsCancelPendingEmailsCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "scope to site IDs")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "scope to account IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSettingsDeleteRecipientCmd() *cobra.Command {
@@ -511,5 +512,5 @@ func newSettingsDeleteRecipientCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

@@ -141,11 +141,11 @@ func newRolesListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. name, createdAt)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRolesGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <role-id>",
 		Short: "Get a role definition, including its permission tree",
 		Args:  cobra.ExactArgs(1),
@@ -175,10 +175,11 @@ func newRolesGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newRolesTemplateCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "template",
 		Short: "Print the blank role template for editing",
 		Long: `Fetch the blank role template (description and the full permission tree with
@@ -197,6 +198,7 @@ role: edit the values, then create the role with 'roles create --from-file'.`,
 			return printJSON(cmd.OutOrStdout(), tmpl)
 		},
 	}
+	return markJSON(cmd)
 }
 
 // readRoleFile reads and parses a declarative role file (YAML or JSON, since
@@ -259,7 +261,7 @@ func newRolesCreateCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "create in these group IDs")
 	cmd.Flags().BoolVar(&tenant, "tenant", false, "create at the global (tenant) scope")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRolesUpdateCmd() *cobra.Command {
@@ -302,7 +304,7 @@ func newRolesUpdateCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "role definition file, YAML or JSON (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRolesDeleteCmd() *cobra.Command {
@@ -331,5 +333,5 @@ func newRolesDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

@@ -82,11 +82,11 @@ filter the full result set rather than a single page.`,
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&after, "after", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesCveCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "cve <id>",
 		Short: "Get CVE details",
 		Args:  cobra.ExactArgs(1),
@@ -120,6 +120,7 @@ func newVulnerabilitiesCveCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newVulnerabilitiesStatsCmd() *cobra.Command {
@@ -217,7 +218,7 @@ assets, and OS types. Pass --top applications|assets|os to show only one list.`,
 	cmd.Flags().StringSliceVar(&severities, "severity", nil, "filter by severity (HIGH, CRITICAL, etc.)")
 	cmd.Flags().StringVar(&scopeLevel, "scope-level", "", "scope level (account, site, group)")
 	cmd.Flags().StringVar(&scopeID, "scope-id", "", "account, site, or group ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 func printApplicationStats(cmd *cobra.Command, apps []graphql.ApplicationStats) error {

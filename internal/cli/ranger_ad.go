@@ -84,7 +84,7 @@ func newRADStatusCmd() *cobra.Command {
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRADExposuresCmd() *cobra.Command {
@@ -173,7 +173,7 @@ func newRADExposuresCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().IntVar(&limit, "limit", 0, fmt.Sprintf("max results per page (default %d)", defaultPageSize))
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRADAffectedObjectsCmd() *cobra.Command {
@@ -262,7 +262,7 @@ Requires --detection and --domain flags to identify the exposure.`,
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().IntVar(&limit, "limit", 0, fmt.Sprintf("max results per page (default %d)", defaultPageSize))
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newRADAssessCmd() *cobra.Command {
@@ -326,7 +326,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringVar(&scanSource, "scan-source", "", "scan source (AD, Azure)")
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 // deref returns the value of a string pointer, or empty string if nil.

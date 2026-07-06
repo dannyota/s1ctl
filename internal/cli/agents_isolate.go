@@ -50,7 +50,7 @@ Both can be combined. Dry-run by default; pass --yes to apply.`,
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `key=value filter (e.g. --filter infected=true)`)
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentsReconnectCmd() *cobra.Command {
@@ -93,7 +93,7 @@ Both can be combined. Dry-run by default; pass --yes to apply.`,
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `key=value filter (e.g. --filter networkStatuses=disconnected)`)
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // collectAgentIDs merges positional IDs with filter-matched agent IDs.

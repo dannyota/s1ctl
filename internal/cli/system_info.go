@@ -17,7 +17,7 @@ func newSystemCmd() *cobra.Command {
 }
 
 func newSystemInfoCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Show console version, build, and health status",
 		Args:  cobra.NoArgs,
@@ -62,4 +62,5 @@ func newSystemInfoCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }

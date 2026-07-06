@@ -40,7 +40,7 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringVar(&scope, "scope", "site", "policy scope: site, account, or group")
 	cmd.Flags().StringVar(&id, "id", "", "target scope ID (site, account, or group ID)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the revert (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func revertSitePolicy(cmd *cobra.Command, siteID string, yes bool) error {

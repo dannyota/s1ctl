@@ -141,5 +141,5 @@ by name, and show what differs. Helps review changes before pushing.`,
 		},
 	}
 	cmd.Flags().StringVar(&inDir, "dir", "rules", "directory containing rule YAML files")
-	return cmd
+	return markJSON(cmd)
 }

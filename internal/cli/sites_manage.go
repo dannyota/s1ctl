@@ -60,7 +60,7 @@ func newSitesCreateCmd() *cobra.Command {
 	cmd.Flags().IntVar(&totalLicenses, "total-licenses", 0, "total licenses")
 	cmd.Flags().BoolVar(&unlimitedLicenses, "unlimited-licenses", false, "unlimited licenses")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSitesUpdateCmd() *cobra.Command {
@@ -118,7 +118,7 @@ func newSitesUpdateCmd() *cobra.Command {
 	cmd.Flags().IntVar(&totalLicenses, "total-licenses", 0, "new total licenses")
 	cmd.Flags().BoolVar(&unlimitedLicenses, "unlimited-licenses", false, "unlimited licenses")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSitesDeleteCmd() *cobra.Command {
@@ -146,5 +146,5 @@ func newSitesDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

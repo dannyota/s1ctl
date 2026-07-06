@@ -25,7 +25,7 @@ func newDeviceControlCmd() *cobra.Command {
 }
 
 func newDeviceControlGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <rule-id>",
 		Short: "Get a device control rule",
 		Args:  cobra.ExactArgs(1),
@@ -54,6 +54,7 @@ func newDeviceControlGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newDeviceControlListCmd() *cobra.Command {
@@ -115,5 +116,5 @@ func newDeviceControlListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }

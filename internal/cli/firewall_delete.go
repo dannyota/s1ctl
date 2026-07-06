@@ -37,5 +37,5 @@ Dry-run by default — pass --yes to apply.`,
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

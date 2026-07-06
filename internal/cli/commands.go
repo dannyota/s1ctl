@@ -2,10 +2,22 @@ package cli
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
+
+const jsonAnnotation = "s1ctl_json"
+
+func markJSON(cmd *cobra.Command) *cobra.Command {
+	if cmd.Annotations == nil {
+		cmd.Annotations = map[string]string{}
+	}
+	cmd.Annotations[jsonAnnotation] = "true"
+	return cmd
+}
 
 func newCommandsCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -28,13 +40,15 @@ type cmdEntry struct {
 	Name  string `json:"name"`
 	Short string `json:"short"`
 	Kind  string `json:"kind"`
+	JSON  bool   `json:"json"`
 }
 
 type groupEntry struct {
-	Name  string `json:"name"`
-	Short string `json:"short"`
-	Reads int    `json:"reads"`
-	Muts  int    `json:"mutations"`
+	Name  string   `json:"name"`
+	Short string   `json:"short"`
+	Reads int      `json:"reads"`
+	Muts  int      `json:"mutations"`
+	Cmds  []string `json:"commands"`
 }
 
 func runCommands(cmd *cobra.Command, args []string) error {
@@ -62,10 +76,11 @@ func commandsGroups(cmd *cobra.Command) error {
 			continue
 		}
 		reads, muts := 0, 0
-		countKinds(c, &reads, &muts)
+		var names []string
+		collectLeafNames(c, &reads, &muts, &names)
 		groups = append(groups, groupEntry{
 			Name: c.Name(), Short: c.Short,
-			Reads: reads, Muts: muts,
+			Reads: reads, Muts: muts, Cmds: names,
 		})
 	}
 
@@ -76,14 +91,15 @@ func commandsGroups(cmd *cobra.Command) error {
 	var rows [][]string
 	for _, g := range groups {
 		count := fmt.Sprintf("%dr/%dm", g.Reads, g.Muts)
-		rows = append(rows, []string{g.Name, g.Short, count})
+		cmds := strings.Join(g.Cmds, ", ")
+		rows = append(rows, []string{g.Name, g.Short, cmds, count})
 	}
-	printTable([]string{"Group", "Description", "Commands"}, rows)
+	printTable([]string{"Group", "Description", "Commands", "Count"}, rows)
 	total := 0
 	for _, g := range groups {
 		total += g.Reads + g.Muts
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "\n%d groups, %d commands. Use: commands <group> for details.\n", len(groups), total)
+	fmt.Fprintf(cmd.OutOrStdout(), "\n%d groups, %d commands (* = mutation). Use: commands <group> for details.\n", len(groups), total)
 	return nil
 }
 
@@ -109,6 +125,19 @@ func commandsGroup(cmd *cobra.Command, group string) error {
 	return nil
 }
 
+var boilerplateFlags = map[string]bool{
+	"yes": true, "json": true,
+}
+
+type flagInfo struct {
+	Name     string   `json:"name"`
+	Type     string   `json:"type"`
+	Default  string   `json:"default,omitempty"`
+	Required bool     `json:"required,omitempty"`
+	Enum     []string `json:"enum,omitempty"`
+	Usage    string   `json:"usage"`
+}
+
 func commandsDetail(cmd *cobra.Command, group, name string) error {
 	root := cmd.Root()
 	groupCmd := findGroupCmd(root, group)
@@ -121,31 +150,20 @@ func commandsDetail(cmd *cobra.Command, group, name string) error {
 		return fmt.Errorf("unknown command: %s %s", group, name)
 	}
 
-	type flagInfo struct {
-		Name    string `json:"name"`
-		Type    string `json:"type"`
-		Usage   string `json:"usage"`
-		Default string `json:"default,omitempty"`
-	}
-
-	var flags []flagInfo
-	sub.Flags().VisitAll(func(f *pflag.Flag) {
-		if f.Hidden || f.Name == "help" {
-			return
-		}
-		fi := flagInfo{Name: f.Name, Type: f.Value.Type(), Usage: f.Usage}
-		if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" && f.DefValue != "[]" {
-			fi.Default = f.DefValue
-		}
-		flags = append(flags, fi)
-	})
+	flags := localFlagInfos(sub)
 
 	if outputFormat == "json" {
 		detail := map[string]any{
 			"name":  group + " " + name,
 			"short": sub.Short,
 			"kind":  commandKind(sub),
-			"flags": flags,
+			"json":  sub.Annotations[jsonAnnotation] == "true",
+		}
+		if spec := positionalSpec(sub); spec != "" {
+			detail["args"] = spec
+		}
+		if len(flags) > 0 {
+			detail["flags"] = flags
 		}
 		return printJSON(cmd.OutOrStdout(), detail)
 	}
@@ -155,20 +173,49 @@ func commandsDetail(cmd *cobra.Command, group, name string) error {
 		fmt.Fprint(cmd.OutOrStdout(), " [mutation]")
 	}
 	fmt.Fprintln(cmd.OutOrStdout())
+	if spec := positionalSpec(sub); spec != "" {
+		fmt.Fprintf(cmd.OutOrStdout(), "  args: %s\n", spec)
+	}
 
 	if len(flags) > 0 {
 		fmt.Fprintln(cmd.OutOrStdout(), "\nFlags:")
 		var rows [][]string
 		for _, f := range flags {
-			def := ""
-			if f.Default != "" {
-				def = f.Default
+			extra := ""
+			if f.Required {
+				extra = " [required]"
 			}
-			rows = append(rows, []string{"--" + f.Name, f.Type, f.Usage, def})
+			if len(f.Enum) > 0 {
+				extra += " {" + strings.Join(f.Enum, "|") + "}"
+			}
+			rows = append(rows, []string{"--" + f.Name, f.Type, f.Usage + extra, f.Default})
 		}
 		printTable([]string{"Flag", "Type", "Description", "Default"}, rows)
+		fmt.Fprintln(cmd.OutOrStdout(), "\nStandard flags (--yes, --json) omitted.")
 	}
 	return nil
+}
+
+func localFlagInfos(c *cobra.Command) []flagInfo {
+	var infos []flagInfo
+	c.LocalFlags().VisitAll(func(f *pflag.Flag) {
+		if f.Hidden || f.Name == "help" || boilerplateFlags[f.Name] {
+			return
+		}
+		_, required := f.Annotations[cobra.BashCompOneRequiredFlag]
+		fi := flagInfo{
+			Name:     f.Name,
+			Type:     f.Value.Type(),
+			Required: required,
+			Enum:     enumFromUsage(f.Usage),
+			Usage:    f.Usage,
+		}
+		if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" && f.DefValue != "[]" {
+			fi.Default = f.DefValue
+		}
+		infos = append(infos, fi)
+	})
+	return infos
 }
 
 func findGroupCmd(root *cobra.Command, name string) *cobra.Command {
@@ -202,6 +249,7 @@ func collectGroupEntries(cmd *cobra.Command, prefix string, entries *[]cmdEntry)
 		if cmd.HasSubCommands() {
 			*entries = append(*entries, cmdEntry{
 				Name: prefix, Short: cmd.Short, Kind: commandKind(cmd),
+				JSON: cmd.Annotations[jsonAnnotation] == "true",
 			})
 		}
 	}
@@ -215,6 +263,7 @@ func collectGroupEntries(cmd *cobra.Command, prefix string, entries *[]cmdEntry)
 		} else if c.RunE != nil || c.Run != nil {
 			*entries = append(*entries, cmdEntry{
 				Name: name, Short: c.Short, Kind: commandKind(c),
+				JSON: c.Annotations[jsonAnnotation] == "true",
 			})
 		}
 	}
@@ -235,20 +284,23 @@ func commandKind(cmd *cobra.Command) string {
 	return "read"
 }
 
-func countKinds(cmd *cobra.Command, reads, muts *int) {
+func collectLeafNames(cmd *cobra.Command, reads, muts *int, names *[]string) {
 	if !cmd.HasSubCommands() {
 		if cmd.RunE != nil || cmd.Run != nil {
+			n := cmd.Name()
 			if cmd.Flags().Lookup("yes") != nil {
 				*muts++
+				n += "*"
 			} else {
 				*reads++
 			}
+			*names = append(*names, n)
 		}
 		return
 	}
 	for _, c := range cmd.Commands() {
 		if !c.Hidden {
-			countKinds(c, reads, muts)
+			collectLeafNames(c, reads, muts, names)
 		}
 	}
 }
@@ -271,8 +323,41 @@ func collectCommands(cmd *cobra.Command, prefix string) []cmdEntry {
 				Name:  name,
 				Short: c.Short,
 				Kind:  kind,
+				JSON:  c.Annotations[jsonAnnotation] == "true",
 			})
 		}
 	}
 	return entries
+}
+
+func positionalSpec(c *cobra.Command) string {
+	use := strings.TrimSpace(c.Use)
+	i := strings.IndexAny(use, " \t")
+	if i < 0 {
+		return ""
+	}
+	return strings.TrimSpace(use[i+1:])
+}
+
+var (
+	enumPattern   = regexp.MustCompile(`[A-Za-z][\w-]+(?:\s*\|\s*[A-Za-z][\w-]+)+`)
+	placeholderRE = regexp.MustCompile(`<[^>]*>`)
+)
+
+func enumFromUsage(usage string) []string {
+	run := enumPattern.FindString(placeholderRE.ReplaceAllString(usage, ""))
+	if run == "" {
+		return nil
+	}
+	parts := strings.Split(run, "|")
+	vals := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			vals = append(vals, p)
+		}
+	}
+	if len(vals) < 2 {
+		return nil
+	}
+	return vals
 }

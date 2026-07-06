@@ -72,7 +72,7 @@ func newDLPClassificationsListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&page, "page", 0, "page number (1-indexed)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	addDLPScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDLPClassificationsGetCmd() *cobra.Command {
@@ -115,7 +115,7 @@ func newDLPClassificationsGetCmd() *cobra.Command {
 		},
 	}
 	addDLPScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDLPClassificationDeleteCmd() *cobra.Command {
@@ -144,7 +144,7 @@ func newDLPClassificationDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // dlpClassificationFilter builds a classification filter from flags, or nil.

@@ -101,7 +101,7 @@ func newReportsListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. name, createdAt, status)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newReportTasksListCmd() *cobra.Command {
@@ -181,7 +181,7 @@ func newReportTasksListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. name, frequency, scope)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newReportTypesCmd() *cobra.Command {
@@ -211,7 +211,7 @@ func newReportTypesCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "filter by group ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newReportCreateCmd() *cobra.Command {
@@ -304,7 +304,7 @@ as a JSON array via --insight-types.`,
 	cmd.Flags().StringVar(&scope, "scope", "", "scope filter")
 	cmd.Flags().BoolVar(&trend, "trend", false, "trend report (period = last month)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newReportDownloadCmd() *cobra.Command {

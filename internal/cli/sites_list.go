@@ -95,11 +95,11 @@ func newSitesListCmd() *cobra.Command {
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "sort field (e.g. name, state)")
 	cmd.Flags().StringVar(&sortOrder, "sort-order", "", "sort direction (asc, desc)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSitesGetCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get <site-id>",
 		Short: "Get site details",
 		Args:  cobra.ExactArgs(1),
@@ -129,6 +129,7 @@ func newSitesGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return markJSON(cmd)
 }
 
 func newSitesCountCmd() *cobra.Command {
@@ -154,5 +155,5 @@ func newSitesCountCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
-	return cmd
+	return markJSON(cmd)
 }

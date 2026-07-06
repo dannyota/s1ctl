@@ -265,5 +265,5 @@ NEW alerts, site count, and policy mode warnings.`,
 	cmd.AddCommand(newStatusCapabilitiesCmd())
 	cmd.AddCommand(newStatusSurfacesCmd())
 	cmd.AddCommand(newStatusEnumsCmd())
-	return cmd
+	return markJSON(cmd)
 }

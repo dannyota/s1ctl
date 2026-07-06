@@ -186,5 +186,5 @@ func newEnginePushCmd(spec surfaceSpec) *cobra.Command {
 	if spec.RegisterPushFlags != nil {
 		spec.RegisterPushFlags(cmd, &scope)
 	}
-	return cmd
+	return markJSON(cmd)
 }

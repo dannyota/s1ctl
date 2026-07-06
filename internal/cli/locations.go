@@ -97,7 +97,7 @@ func newLocationsListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newLocationsCreateCmd() *cobra.Command {
@@ -145,7 +145,7 @@ func newLocationsCreateCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "create in these site IDs")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "create in these account IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newLocationsUpdateCmd() *cobra.Command {
@@ -193,7 +193,7 @@ parameters not expressible as flags are managed through 'locations push'.`,
 	cmd.Flags().StringVar(&description, "description", "", "location description")
 	cmd.Flags().StringVar(&operator, "operator", "any", "match operator: all, any, none")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newLocationsDeleteCmd() *cobra.Command {
@@ -221,5 +221,5 @@ func newLocationsDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

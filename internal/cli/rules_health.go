@@ -135,7 +135,7 @@ with alerts), silent (active with zero alerts), disabled, or erroring
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 var (

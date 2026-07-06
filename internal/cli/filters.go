@@ -110,7 +110,7 @@ func newFiltersListCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	cmd.Flags().StringVar(&cursor, "cursor", "", "pagination cursor")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newFiltersCreateCmd() *cobra.Command {
@@ -158,7 +158,7 @@ func newFiltersCreateCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "create in these site IDs (default: global/tenant)")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "create in these account IDs")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newFiltersUpdateCmd() *cobra.Command {
@@ -199,7 +199,7 @@ func newFiltersUpdateCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "filter definition JSON file (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newFiltersDeleteCmd() *cobra.Command {
@@ -227,5 +227,5 @@ func newFiltersDeleteCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

@@ -25,7 +25,7 @@ func newSettingsUpdateCmd() *cobra.Command {
 	cmd.AddCommand(newSettingsUpdateSubCmd("recipients", "Set a notification recipient", (*mgmt.Client).SettingsRecipientsUpdate))
 	cmd.AddCommand(newSettingsUpdateSubCmd("ad", "Update Active Directory settings", (*mgmt.Client).SettingsADUpdate))
 	cmd.AddCommand(newSettingsUpdateSubCmd("ad-scope-mapping", "Update Active Directory scope mapping", (*mgmt.Client).SettingsADScopeMappingUpdate))
-	return cmd
+	return markJSON(cmd)
 }
 
 func newSettingsUpdateSubCmd[T any](name, short string, update func(*mgmt.Client, context.Context, *mgmt.SettingsParams, T) (*T, error)) *cobra.Command {

@@ -440,7 +440,7 @@ Dry-run by default — pass --yes to apply changes.`,
 	}
 	cmd.Flags().StringVar(&inDir, "dir", "policies", "directory containing policy YAML files")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func getPolicyForScope(cmd *cobra.Command, c *mgmt.Client, pf policyFile) (*mgmt.Policy, error) {

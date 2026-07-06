@@ -98,7 +98,7 @@ to target agents by filter. Dry-run by default.`,
 	cmd.Flags().BoolVar(&ignoreConflicts, "ignore-conflicts", false, "ignore conflicts with active upgrade policies")
 	cmd.Flags().BoolVar(&scheduled, "scheduled", false, "upgrade according to agent upgrade schedule")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentsOutdatedCmd() *cobra.Command {
@@ -157,7 +157,7 @@ func newAgentsOutdatedCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().IntVar(&limit, "limit", 0, "max results per page (default 50)")
 	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentsVersionsCmd() *cobra.Command {
@@ -237,7 +237,7 @@ func newAgentsVersionsCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 func describeFilter(f mgmt.ActionFilter) string {

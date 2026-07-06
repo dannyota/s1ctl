@@ -74,5 +74,5 @@ func newRulesTrendsCmd() *cobra.Command {
 	}
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().IntVar(&top, "top", 0, "show only top N rules (default: all)")
-	return cmd
+	return markJSON(cmd)
 }

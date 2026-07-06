@@ -117,7 +117,7 @@ func newAssetsOverviewCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "filter by group ID")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAssetsCategoriesCmd() *cobra.Command {
@@ -170,5 +170,5 @@ func newAssetsCategoriesCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "filter by group ID")
-	return cmd
+	return markJSON(cmd)
 }

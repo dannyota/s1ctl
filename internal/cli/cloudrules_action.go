@@ -75,7 +75,7 @@ func newCloudRuleActionCmd(verb string, action graphql.CNSRuleAction, short stri
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
 	addCloudRuleScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newCloudRuleCreateCmd() *cobra.Command {
@@ -121,7 +121,7 @@ func newCloudRuleCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "path to rule JSON file (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply (default: dry-run)")
 	addCloudRuleScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newCloudRuleUpdateCmd() *cobra.Command {
@@ -164,7 +164,7 @@ func newCloudRuleUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "path to rule JSON file (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply (default: dry-run)")
 	addCloudRuleScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }
 
 func newCloudRuleEvaluateCmd() *cobra.Command {
@@ -251,5 +251,5 @@ when set. The asset JSON to test against is read from --resource.`,
 	cmd.Flags().StringVar(&config, "config", "", "inline rule config parameters JSON string")
 	cmd.Flags().StringVar(&policyID, "policy-id", "", "policy ID to source mandatory parameters")
 	addCloudRuleScopeFlags(cmd, &scopeLevel, &scopeID)
-	return cmd
+	return markJSON(cmd)
 }

@@ -79,7 +79,7 @@ func newAgentActionCmd(verb, short string, fn agentActionFn) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentMoveCmd() *cobra.Command {
@@ -115,7 +115,7 @@ func newAgentMoveCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&groupID, "group-id", "", "target group ID (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentMoveToSiteCmd() *cobra.Command {
@@ -149,7 +149,7 @@ func newAgentMoveToSiteCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&siteID, "site-id", "", "target site ID (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentSetExternalIDCmd() *cobra.Command {
@@ -183,7 +183,7 @@ func newAgentSetExternalIDCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&externalID, "external-id", "", "external ID value (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentFirewallLoggingCmd() *cobra.Command {
@@ -217,7 +217,7 @@ func newAgentFirewallLoggingCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&state, "state", "", `"on" or "off" (required)`)
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentBroadcastCmd() *cobra.Command {
@@ -251,7 +251,7 @@ func newAgentBroadcastCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&message, "message", "", "message text to broadcast (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentFetchFilesCmd() *cobra.Command {
@@ -296,7 +296,7 @@ resulting archive). The password is never written to the audit log.`,
 	cmd.Flags().StringArrayVar(&paths, "path", nil, "absolute file path to fetch (repeatable, up to 10) (required)")
 	cmd.Flags().StringVar(&password, "password", "", "archive encryption password")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentRangerCmd() *cobra.Command {
@@ -330,7 +330,7 @@ func newAgentRangerCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&state, "state", "", `"on" or "off" (required)`)
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newAgentLocalUpgradeCmd() *cobra.Command {
@@ -377,5 +377,5 @@ the authorization.`,
 	cmd.Flags().StringVar(&state, "state", "", `"on" or "off" (required)`)
 	cmd.Flags().StringVar(&until, "until", "", "authorization expiration timestamp (RFC3339); required with --state on")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }

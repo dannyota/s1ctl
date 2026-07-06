@@ -70,7 +70,7 @@ func newDatalakeIngestEventsCmd() *cobra.Command {
 	cmd.Flags().StringVar(&file, "file", "", "JSON file containing an array of events (required)")
 	cmd.Flags().StringVar(&session, "session", "", "unique session ID for this uploader (required)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 func newDatalakeIngestLogsCmd() *cobra.Command {
@@ -122,5 +122,5 @@ func newDatalakeIngestLogsCmd() *cobra.Command {
 	cmd.Flags().StringVar(&serverHost, "server-host", "", "serverHost attribute for the events")
 	cmd.Flags().StringVar(&logfile, "logfile", "", "logfile attribute for the events")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the action (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
