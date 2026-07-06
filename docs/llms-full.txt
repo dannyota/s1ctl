@@ -6315,16 +6315,15 @@ pass `--yes` to apply, same as the CLI).
 
 ## mcp install
 
-Configure Claude Code to use s1ctl as an MCP server.
+Register s1ctl in the project `.mcp.json`.
 
 ```text
-s1ctl mcp install                # project scope (.claude/settings.json)
-s1ctl mcp install --scope user   # user scope (~/.claude/settings.json)
+s1ctl mcp install
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--scope` | `project` | Settings scope (`project` or `user`) |
+Writes to `.mcp.json` in the current directory, merging with any existing
+entries. Idempotent — updates the entry if it already exists. Restart
+Claude Code to pick up the new server.
 
 ---
 

@@ -33,6 +33,19 @@ archives:
 checksum:
   name_template: checksums.txt
 
+# Keyless cosign signature of the checksums file (verifiable with
+# `cosign verify-blob --bundle checksums.txt.bundle checksums.txt`).
+# Requires cosign v2.5+ on the runner + id-token: write (both set in release.yml).
+signs:
+  - cmd: cosign
+    signature: ${artifact}.bundle
+    args:
+      - sign-blob
+      - --bundle=${signature}
+      - ${artifact}
+      - --yes
+    artifacts: checksum
+
 changelog:
   use: github
   sort: asc

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -56,92 +55,63 @@ Configure Claude Code to use this server:
 }
 
 func newMCPInstallCmd() *cobra.Command {
-	var scope string
-
 	cmd := &cobra.Command{
 		Use:   "install",
-		Short: "Configure Claude Code to use s1ctl as an MCP server",
-		Long: `Add the s1ctl MCP server to Claude Code's settings so every command is
-available as a tool and every guide as a resource.
-
-Scopes:
-  project   .claude/settings.json in current directory (default)
-  user      ~/.claude/settings.json (global, all projects)`,
+		Short: "Register s1ctl in the project .mcp.json",
+		Long: `Add s1ctl as an MCP server in the project-level .mcp.json so every
+Claude Code session in this directory gets s1ctl tools automatically.
+Idempotent — updates the entry if it already exists.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runMCPInstall(cmd, scope)
+			return runMCPInstall(cmd)
 		},
 	}
-	cmd.Flags().StringVar(&scope, "scope", "project", "settings scope (project, user)")
 	return cmd
 }
 
-func runMCPInstall(cmd *cobra.Command, scope string) error {
-	var settingsPath string
-	switch scope {
-	case "project":
-		settingsPath = filepath.Join(".claude", "settings.json")
-	case "user":
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		settingsPath = filepath.Join(home, ".claude", "settings.json")
-	default:
-		return fmt.Errorf("invalid scope %q (valid: project, user)", scope)
-	}
-
+func runMCPInstall(cmd *cobra.Command) error {
 	bin, err := s1ctlPath()
 	if err != nil {
 		return err
 	}
 
-	settings := map[string]any{}
-	if data, readErr := os.ReadFile(settingsPath); readErr == nil {
-		_ = json.Unmarshal(data, &settings)
+	const mcpFile = ".mcp.json"
+
+	config := map[string]any{}
+	if data, readErr := os.ReadFile(mcpFile); readErr == nil {
+		_ = json.Unmarshal(data, &config)
 	}
 
-	servers, _ := settings["mcpServers"].(map[string]any)
+	servers, _ := config["mcpServers"].(map[string]any)
 	if servers == nil {
 		servers = map[string]any{}
-	}
-
-	if _, exists := servers["s1ctl"]; exists {
-		status := "unchanged"
-		if outputFormat == "json" {
-			return printJSON(cmd.OutOrStdout(), map[string]string{
-				"path": settingsPath, "status": status,
-			})
-		}
-		fmt.Fprintf(cmd.OutOrStdout(), "s1ctl MCP server already configured in %s\n", settingsPath)
-		return nil
 	}
 
 	servers["s1ctl"] = map[string]any{
 		"command": bin,
 		"args":    []string{"mcp", "serve"},
 	}
-	settings["mcpServers"] = servers
+	config["mcpServers"] = servers
 
-	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o750); err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(settings, "", "  ")
+	data, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return err
 	}
-	data = append(data, '\n')
-	if err := os.WriteFile(settingsPath, data, 0o644); err != nil {
+	if err := os.WriteFile(mcpFile, append(data, '\n'), 0o644); err != nil {
 		return err
 	}
 
-	status := "installed"
 	if outputFormat == "json" {
 		return printJSON(cmd.OutOrStdout(), map[string]string{
-			"path": settingsPath, "status": status,
+			"path":    mcpFile,
+			"binary":  bin,
+			"status":  "installed",
+			"command": "s1ctl mcp serve",
 		})
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "s1ctl MCP server added to %s\n", settingsPath)
+	fmt.Fprintf(cmd.OutOrStdout(), "Registered s1ctl MCP server in %s\n", mcpFile)
+	fmt.Fprintf(cmd.OutOrStdout(), "  command: %s mcp serve\n", bin)
+	fmt.Fprintln(cmd.OutOrStdout(), "Restart Claude Code to pick up the new server.")
 	return nil
 }
 
