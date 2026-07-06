@@ -12,7 +12,7 @@ import (
 func newVisibilityCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "visibility",
-		Short: "Deep Visibility threat hunting",
+		Short: "Run Deep Visibility queries",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newVisibilityQueryCmd())

@@ -17,7 +17,7 @@ import (
 func newMCPCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "mcp",
-		Short: "Model Context Protocol server",
+		Short: "Run Model Context Protocol server",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newMCPServeCmd())

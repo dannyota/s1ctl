@@ -9,7 +9,7 @@ import (
 func newFirewallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "firewall",
-		Short: "Firewall control rules",
+		Short: "Manage firewall control rules",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newFirewallListCmd())

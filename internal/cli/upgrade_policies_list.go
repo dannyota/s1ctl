@@ -13,7 +13,7 @@ func newUpgradePoliciesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "upgrade-policies",
 		Aliases: []string{"up"},
-		Short:   "Agent auto-upgrade policies",
+		Short:   "Manage agent auto-upgrade policies",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newUpgradePoliciesListCmd())

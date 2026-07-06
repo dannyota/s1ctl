@@ -14,7 +14,7 @@ import (
 func newDocsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "docs",
-		Short:  "Documentation tools",
+		Short:  "Generate documentation",
 		Hidden: true,
 	}
 	requireSubcommand(cmd)

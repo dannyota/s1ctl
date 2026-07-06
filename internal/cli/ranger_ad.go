@@ -14,7 +14,7 @@ func newRangerADCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "ranger-ad",
 		Aliases: []string{"rad"},
-		Short:   "Ranger AD exposure assessment (ISPM)",
+		Short:   "Manage Ranger AD exposure assessments (ISPM)",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newRADStatusCmd())

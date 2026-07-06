@@ -9,7 +9,7 @@ import (
 func newDeviceControlCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "devicecontrol",
-		Short: "Device control rules",
+		Short: "Manage device control rules",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newDeviceControlListCmd())

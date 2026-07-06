@@ -9,7 +9,7 @@ import (
 func newSystemCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "system",
-		Short: "Console system information",
+		Short: "Show console system information",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newSystemInfoCmd())

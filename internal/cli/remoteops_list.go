@@ -11,7 +11,7 @@ import (
 func newRemoteOpsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "remoteops",
-		Short: "Remote operations and scripts",
+		Short: "Manage remote operations and scripts",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newRemoteOpsListCmd())

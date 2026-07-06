@@ -12,7 +12,7 @@ import (
 func newAssetsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "assets",
-		Short: "XDR asset inventory",
+		Short: "Manage XDR asset inventory",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newAssetsOverviewCmd())

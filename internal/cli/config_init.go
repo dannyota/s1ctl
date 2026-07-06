@@ -24,7 +24,7 @@ func newConfigCmd() *cobra.Command {
 func newConfigInitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
-		Short: "Interactive configuration wizard",
+		Short: "Configure s1ctl interactively",
 		Args:  cobra.NoArgs,
 		RunE:  runConfigInit,
 	}

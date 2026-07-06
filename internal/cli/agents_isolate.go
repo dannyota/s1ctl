@@ -16,7 +16,7 @@ func newAgentsIsolateCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "isolate [agent-id...]",
-		Short: "Network-isolate agents",
+		Short: "Isolate agents from the network",
 		Long: `Disconnect agents from the network.
 
 Specify agent IDs as arguments, or use --filter to match agents by API

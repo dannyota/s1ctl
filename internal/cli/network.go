@@ -16,7 +16,7 @@ import (
 func newNetworkCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "network",
-		Short: "Network quarantine control rules",
+		Short: "Manage network quarantine rules",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newNetworkListCmd())

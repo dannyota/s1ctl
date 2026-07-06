@@ -12,7 +12,7 @@ import (
 func newPoliciesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "policies",
-		Short: "View endpoint policies",
+		Short: "Manage endpoint policies",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newPoliciesListCmd())

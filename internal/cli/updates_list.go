@@ -11,7 +11,7 @@ import (
 func newUpdatesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "updates",
-		Short: "Agent update packages",
+		Short: "Manage agent update packages",
 	}
 	requireSubcommand(cmd)
 	cmd.AddCommand(newUpdatesListCmd())
