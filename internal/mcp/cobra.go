@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -56,7 +57,7 @@ var skipFlags = map[string]bool{
 }
 
 func buildTool(cmd *cobra.Command, path []string) Tool {
-	name := strings.Join(path, "_")
+	name := strings.ReplaceAll(strings.Join(path, "_"), "-", "_")
 
 	desc := cmd.Short
 	if hasMutationFlag(cmd) {
@@ -260,6 +261,7 @@ func (s *Server) buildMetaTools() []Tool {
 	return []Tool{
 		s.buildRunTool(),
 		s.buildHelpTool(),
+		s.buildUsageTool(),
 		s.buildFocusTool(),
 		s.buildUnfocusTool(),
 	}
@@ -292,7 +294,7 @@ func (s *Server) buildRunTool() Tool {
 func (s *Server) buildHelpTool() Tool {
 	return Tool{
 		Name:        "help",
-		Description: "List command groups, subcommands within a group, or full flag detail for one command.",
+		Description: "List command groups, or subcommands within a group.",
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -300,16 +302,11 @@ func (s *Server) buildHelpTool() Tool {
 					"type":        "string",
 					"description": "group name (e.g. 'agents'). Omit to list all groups.",
 				},
-				"command": map[string]any{
-					"type":        "string",
-					"description": "subcommand name within the group (e.g. 'isolate'). Returns full flag detail for that command.",
-				},
 			},
 		},
 		Run: func(args map[string]any) (string, error) {
 			group, _ := args["group"].(string)
-			command, _ := args["command"].(string)
-			return s.helpOutput(group, command)
+			return s.helpOutput(group)
 		},
 	}
 }
@@ -381,7 +378,47 @@ func (s *Server) buildUnfocusTool() Tool {
 	}
 }
 
-func (s *Server) helpOutput(group, command string) (string, error) {
+func (s *Server) buildUsageTool() Tool {
+	return Tool{
+		Name:        "usage",
+		Description: "Show flags, args, and description for one command. Use before run to learn a command's interface.",
+		InputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"command": map[string]any{
+					"type":        "string",
+					"description": "command path (e.g. 'agents list', 'threats mitigate')",
+				},
+			},
+			"required": []string{"command"},
+		},
+		Run: func(args map[string]any) (string, error) {
+			cmd, _ := args["command"].(string)
+			if cmd == "" {
+				return "", fmt.Errorf("command is required")
+			}
+			return s.usageOutput(cmd)
+		},
+	}
+}
+
+func (s *Server) usageOutput(cmd string) (string, error) {
+	toolName := strings.ReplaceAll(strings.ReplaceAll(cmd, " ", "_"), "-", "_")
+
+	tool, ok := s.allToolIndex[toolName]
+	if !ok {
+		return "", fmt.Errorf("unknown command: %s. Use help to see available commands", cmd)
+	}
+
+	b, _ := json.MarshalIndent(map[string]any{
+		"name":        tool.Name,
+		"description": tool.Description,
+		"inputSchema": tool.InputSchema,
+	}, "", "  ")
+	return string(b), nil
+}
+
+func (s *Server) helpOutput(group string) (string, error) {
 	if s.root == nil {
 		return "no command tree available", nil
 	}
@@ -393,10 +430,6 @@ func (s *Server) helpOutput(group, command string) (string, error) {
 	groupCmd := findGroup(s.root, group)
 	if groupCmd == nil {
 		return "", fmt.Errorf("unknown group: %s", group)
-	}
-
-	if command != "" {
-		return s.helpCommand(groupCmd, group, command)
 	}
 	return s.helpGroup(groupCmd, group), nil
 }
@@ -414,7 +447,7 @@ func findGroup(root *cobra.Command, name string) *cobra.Command {
 
 func (s *Server) helpGroups() string {
 	var b strings.Builder
-	b.WriteString("Command groups (help {group} for subcommands, help {group} {command} for flags):\n\n")
+	b.WriteString("Command groups (help {group} for subcommands):\n\n")
 	for _, c := range s.root.Commands() {
 		if c.Hidden {
 			continue
@@ -422,15 +455,12 @@ func (s *Server) helpGroups() string {
 		if _, ok := skipCommands[c.Name()]; ok {
 			continue
 		}
-		reads, muts := 0, 0
-		var names []string
-		collectLeafNamesForMCP(c, &reads, &muts, &names)
+		reads, muts := countLeaves(c)
 		status := ""
 		if _, focused := s.focused[c.Name()]; focused {
 			status = " *"
 		}
 		fmt.Fprintf(&b, "  %-22s %s (%dr/%dm)%s\n", c.Name(), c.Short, reads, muts, status)
-		fmt.Fprintf(&b, "    %s\n", strings.Join(names, ", "))
 	}
 	return b.String()
 }
@@ -439,17 +469,29 @@ func (s *Server) helpGroup(cmd *cobra.Command, group string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "## %s — %s\n\n", group, cmd.Short)
 
+	writeCmd := func(c *cobra.Command, indent string) {
+		line := indent + c.Name()
+		if hasMutationFlag(c) {
+			line += " [mutation]"
+		}
+		if hasJSONAnnotation(c) {
+			line += " [json]"
+		}
+		line += "  " + c.Short
+		fmt.Fprintln(&b, line)
+	}
+
 	if cmd.RunE != nil || cmd.Run != nil {
-		writeHelpLine(&b, cmd, "  ")
+		writeCmd(cmd, "  ")
 	}
 	for _, sub := range cmd.Commands() {
 		if sub.Hidden {
 			continue
 		}
-		writeHelpLine(&b, sub, "  ")
+		writeCmd(sub, "  ")
 		for _, subsub := range sub.Commands() {
 			if !subsub.Hidden {
-				writeHelpLine(&b, subsub, "    ")
+				writeCmd(subsub, "    ")
 			}
 		}
 	}
@@ -457,187 +499,30 @@ func (s *Server) helpGroup(cmd *cobra.Command, group string) string {
 	if _, focused := s.focused[group]; focused {
 		b.WriteString("\n[focused]")
 	} else {
-		fmt.Fprintf(&b, "\nUse help {group} {command} for flag detail, or focus to load typed tools.")
+		b.WriteString("\nUse usage {command} for flags, or focus to load typed tools.")
 	}
 	return b.String()
 }
 
-func (s *Server) helpCommand(groupCmd *cobra.Command, group, command string) (string, error) {
-	cmd := findSubcommand(groupCmd, command)
-	if cmd == nil {
-		return "", fmt.Errorf("unknown command: %s %s", group, command)
-	}
-
-	var b strings.Builder
-	fullName := group + " " + command
-	fmt.Fprintf(&b, "## %s\n%s", fullName, cmd.Short)
-	if hasMutationFlag(cmd) {
-		b.WriteString(" [mutation: dry-run by default, --yes to apply]")
-	}
-	if hasJSONAnnotation(cmd) {
-		b.WriteString(" [json]")
-	}
-	b.WriteString("\n")
-
-	if spec := positionalSpec(cmd); spec != "" {
-		fmt.Fprintf(&b, "  args: %s\n", spec)
-	}
-
-	var flags []flagDetail
-	cmd.Flags().VisitAll(func(f *pflag.Flag) {
-		if skipFlags[f.Name] || f.Hidden || f.Name == "yes" {
-			return
-		}
-		flags = append(flags, describeFlag(f))
-	})
-	cmd.InheritedFlags().VisitAll(func(f *pflag.Flag) {
-		if skipFlags[f.Name] || f.Hidden {
-			return
-		}
-		if f.Name == "site-id" || f.Name == "read-only" {
-			flags = append(flags, describeFlag(f))
-		}
-	})
-
-	if len(flags) > 0 {
-		b.WriteString("\nFlags:\n")
-		for _, fd := range flags {
-			fmt.Fprintf(&b, "  --%-20s %-8s %s", fd.Name, fd.Type, fd.Usage)
-			if fd.Required {
-				b.WriteString(" [required]")
-			}
-			if len(fd.Enum) > 0 {
-				b.WriteString(" {" + strings.Join(fd.Enum, "|") + "}")
-			}
-			if fd.Default != "" {
-				fmt.Fprintf(&b, " (default: %s)", fd.Default)
-			}
-			b.WriteString("\n")
-		}
-	}
-	return b.String(), nil
-}
-
-type flagDetail struct {
-	Name     string
-	Type     string
-	Usage    string
-	Default  string
-	Required bool
-	Enum     []string
-}
-
-func describeFlag(f *pflag.Flag) flagDetail {
-	_, required := f.Annotations[cobra.BashCompOneRequiredFlag]
-	fd := flagDetail{
-		Name:     f.Name,
-		Type:     f.Value.Type(),
-		Usage:    f.Usage,
-		Required: required,
-		Enum:     mcpEnumFromUsage(f.Usage),
-	}
-	if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" && f.DefValue != "[]" {
-		fd.Default = f.DefValue
-	}
-	return fd
-}
-
-func findSubcommand(parent *cobra.Command, name string) *cobra.Command {
-	for _, c := range parent.Commands() {
-		if c.Hidden {
-			continue
-		}
-		if c.Name() == name {
-			return c
-		}
-		for _, sub := range c.Commands() {
-			if !sub.Hidden && sub.Name() == name {
-				return sub
-			}
-		}
-	}
-	return nil
-}
-
-func collectLeafNamesForMCP(cmd *cobra.Command, reads, muts *int, names *[]string) {
+func countLeaves(cmd *cobra.Command) (int, int) {
 	if !cmd.HasSubCommands() {
-		if cmd.RunE != nil || cmd.Run != nil {
-			n := cmd.Name()
-			if hasMutationFlag(cmd) {
-				*muts++
-				n += "*"
-			} else {
-				*reads++
-			}
-			if hasJSONAnnotation(cmd) {
-				n += "[j]"
-			}
-			*names = append(*names, n)
+		if (cmd.RunE != nil || cmd.Run != nil) && hasMutationFlag(cmd) {
+			return 0, 1
 		}
-		return
+		if cmd.RunE != nil || cmd.Run != nil {
+			return 1, 0
+		}
+		return 0, 0
 	}
+	reads, muts := 0, 0
 	for _, c := range cmd.Commands() {
 		if !c.Hidden {
-			collectLeafNamesForMCP(c, reads, muts, names)
+			r, m := countLeaves(c)
+			reads += r
+			muts += m
 		}
 	}
-}
-
-func writeHelpLine(b *strings.Builder, cmd *cobra.Command, indent string) {
-	line := indent + cmd.Name()
-	if spec := positionalSpec(cmd); spec != "" {
-		line += " " + spec
-	}
-	line += "  " + cmd.Short
-	if hasMutationFlag(cmd) {
-		line += " [mutation]"
-	}
-	if hasJSONAnnotation(cmd) {
-		line += " [json]"
-	}
-	if hints := flagHints(cmd); hints != "" {
-		line += "  " + hints
-	}
-	fmt.Fprintln(b, line)
-}
-
-func positionalSpec(c *cobra.Command) string {
-	use := strings.TrimSpace(c.Use)
-	i := strings.IndexAny(use, " \t")
-	if i < 0 {
-		return ""
-	}
-	return strings.TrimSpace(use[i+1:])
-}
-
-func flagHints(cmd *cobra.Command) string {
-	seen := map[string]bool{}
-	var flags []string
-	add := func(f *pflag.Flag) {
-		if skipFlags[f.Name] || f.Hidden || f.Name == "yes" || seen[f.Name] {
-			return
-		}
-		seen[f.Name] = true
-		hint := "--" + f.Name
-		if _, req := f.Annotations[cobra.BashCompOneRequiredFlag]; req {
-			hint += "*"
-		}
-		if vals := mcpEnumFromUsage(f.Usage); len(vals) > 0 {
-			hint += "={" + strings.Join(vals, "|") + "}"
-		}
-		flags = append(flags, hint)
-	}
-	cmd.Flags().VisitAll(add)
-	cmd.InheritedFlags().VisitAll(func(f *pflag.Flag) {
-		if skipFlags[f.Name] || f.Hidden || f.Name == "yes" || f.Name == "read-only" || f.Name == "site-id" {
-			return
-		}
-		add(f)
-	})
-	if len(flags) == 0 {
-		return ""
-	}
-	return "(" + strings.Join(flags, ", ") + ")"
+	return reads, muts
 }
 
 var (

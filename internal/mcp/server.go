@@ -24,6 +24,7 @@ type Server struct {
 	// Dynamic tool loading (listChanged).
 	w            io.Writer
 	root         *cobra.Command
+	allToolIndex map[string]Tool
 	metaTools    []Tool
 	focused      map[string][]Tool
 	toolsVersion uint64
@@ -58,13 +59,19 @@ func NewDynamicServer(name, version string, root *cobra.Command, resources []Res
 	for _, r := range resources {
 		ri[r.URI] = r
 	}
+	allTools := ToolsFromCobra(root)
+	ati := make(map[string]Tool, len(allTools))
+	for _, t := range allTools {
+		ati[t.Name] = t
+	}
 	s := &Server{
-		name:      name,
-		version:   version,
-		resources: resources,
-		resIndex:  ri,
-		root:      root,
-		focused:   make(map[string][]Tool),
+		name:         name,
+		version:      version,
+		resources:    resources,
+		resIndex:     ri,
+		root:         root,
+		allToolIndex: ati,
+		focused:      make(map[string][]Tool),
 	}
 	s.metaTools = s.buildMetaTools()
 	s.rebuildToolList()
@@ -292,13 +299,13 @@ type initializeResult struct {
 const serverInstructions = `s1ctl — CLI and SDK for SentinelOne Singularity Platform.
 
 Discovery flow:
-1. help → list command groups with counts
-2. help {group} → list subcommands with [mutation] tags and flag hints
-3. help {group} {command} → full flag detail (names, types, defaults)
-4. focus {group} → load typed tool schemas for that group (enables structured calls)
-5. run {command} → run any command directly (e.g. "agents list --site-id 123 --limit 5")
+1. help → list command groups
+2. help {group} → list subcommands
+3. usage {command} → flags, args, and description for one command
+4. focus {group} → load typed tool schemas (enables structured calls)
+5. run {command} → execute any command (e.g. "agents list --site-id 123 --limit 5")
 
-Use "run" for quick one-off commands. Use "focus" when you need repeated structured calls within a group. Use "unfocus" to free context when done.
+Use "run" for quick one-off commands. Use "focus" when you need repeated structured calls within a group.
 
 All mutations are dry-run by default — pass --yes to apply.
 Always scope to the correct --site-id.

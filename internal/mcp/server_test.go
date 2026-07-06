@@ -260,13 +260,13 @@ func TestDynamicServerMetaTools(t *testing.T) {
 		names[tool["name"].(string)] = true
 	}
 
-	for _, want := range []string{"run", "help", "focus", "unfocus"} {
+	for _, want := range []string{"run", "help", "usage", "focus", "unfocus"} {
 		if !names[want] {
 			t.Errorf("missing meta-tool %q", want)
 		}
 	}
-	if len(tools) != 4 {
-		t.Errorf("got %d tools, want 4 meta-tools only", len(tools))
+	if len(tools) != 5 {
+		t.Errorf("got %d tools, want 5 meta-tools only", len(tools))
 	}
 }
 
@@ -301,8 +301,8 @@ func TestFocusUnfocus(t *testing.T) {
 	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`)
 	toolsResult, _ := resp["result"].(map[string]any)
 	tools, _ := toolsResult["tools"].([]any)
-	if len(tools) <= 4 {
-		t.Errorf("after focus, got %d tools, want more than 4", len(tools))
+	if len(tools) <= 5 {
+		t.Errorf("after focus, got %d tools, want more than 5", len(tools))
 	}
 
 	hasAgentsList := false
@@ -316,7 +316,7 @@ func TestFocusUnfocus(t *testing.T) {
 		t.Error("agents_list should be present after focusing on agents")
 	}
 
-	// Unfocus — should shrink back to 4.
+	// Unfocus — should shrink back to 5.
 	msgs = roundTripMulti(t, srv, `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"unfocus","arguments":{"group":"agents"}}}`)
 	if len(msgs) < 2 {
 		t.Fatalf("unfocus: got %d messages, want at least 2", len(msgs))
@@ -325,8 +325,8 @@ func TestFocusUnfocus(t *testing.T) {
 	resp = roundTrip(t, srv, `{"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}}`)
 	toolsResult, _ = resp["result"].(map[string]any)
 	tools, _ = toolsResult["tools"].([]any)
-	if len(tools) != 4 {
-		t.Errorf("after unfocus, got %d tools, want 4", len(tools))
+	if len(tools) != 5 {
+		t.Errorf("after unfocus, got %d tools, want 5", len(tools))
 	}
 }
 
