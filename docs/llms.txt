@@ -47,6 +47,7 @@
 - [iocs](https://s1.danny.vn/#/commands/iocs): Manage threat intelligence IOCs 
 - [locations](https://s1.danny.vn/#/commands/locations): Manage firewall locations 
 - [maintenance](https://s1.danny.vn/#/commands/maintenance): Manage task maintenance-window configuration 
+- [mcp](https://s1.danny.vn/#/commands/mcp): Model Context Protocol server for AI agent integration. 
 - [misconfigurations](https://s1.danny.vn/#/commands/misconfigurations): Manage xSPM misconfigurations 
 - [network](https://s1.danny.vn/#/commands/network): Network quarantine control rules 
 - [policies](https://s1.danny.vn/#/commands/policies): View endpoint policies 

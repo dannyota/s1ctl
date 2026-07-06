@@ -24,6 +24,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | config | init wizard, show | built |
 | commands | list all commands | built |
 | completion | shell completions | built |
+| mcp | serve (stdio MCP server), install (Claude Code config) | built |
 
 ## Endpoint security
 

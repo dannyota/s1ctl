@@ -104,6 +104,7 @@ s1ctl exclusions list|get|pull|push|...
 s1ctl datalake query|powerquery|...
 s1ctl config
 s1ctl doctor
+s1ctl mcp serve|install
 ```
 
 ### Cross-cutting flags

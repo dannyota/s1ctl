@@ -3264,6 +3264,7 @@ Auto-generated from the command tree. Run `s1ctl docs generate` to update.
 | [iocs](iocs.md) | config, create, delete, list | Manage threat intelligence IOCs |
 | [locations](locations.md) | create, delete, list, pull, push, update | Manage firewall locations |
 | [maintenance](maintenance.md) | export, get, get-flexible, set, set-flexible | Manage task maintenance-window configuration |
+| [mcp](mcp.md) | install, serve | Model Context Protocol server for AI agent integration |
 | [misconfigurations](misconfigurations.md) | assign, export, get, history, list, note-add, note-delete, note-update, notes, related-assets, status, verdict | Manage xSPM misconfigurations |
 | [network](network.md) | configuration, copy, delete, disable, enable, export, get, import, list, move, protocols, pull, push, reorder, set-location, tags | Network quarantine control rules |
 | [policies](policies.md) | diff, get, list, pull, push, revert | View endpoint policies |
@@ -6286,6 +6287,44 @@ with the task type and scope. The body is sent verbatim.
 |------|------|---------|-------------|
 | `--from-file` | string | - | full request body JSON file (required) |
 | `--yes` | bool | false | apply the action (default: dry-run) |
+
+---
+
+# mcp
+
+Model Context Protocol server for AI agent integration.
+
+Every CLI command is automatically exposed as an MCP tool, and every
+guide page as an MCP resource — zero maintenance when commands are added.
+
+## mcp serve
+
+Start the MCP server on stdio.
+
+```text
+s1ctl mcp serve
+```
+
+The server exposes:
+
+- **Tools** — one per CLI leaf command (auto-generated from the command tree)
+- **Resources** — one per `docs/guides/*.md` file (`guide://{name}`)
+
+All tool output is JSON. Mutations are dry-run by default (the agent must
+pass `--yes` to apply, same as the CLI).
+
+## mcp install
+
+Configure Claude Code to use s1ctl as an MCP server.
+
+```text
+s1ctl mcp install                # project scope (.claude/settings.json)
+s1ctl mcp install --scope user   # user scope (~/.claude/settings.json)
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--scope` | `project` | Settings scope (`project` or `user`) |
 
 ---
 
@@ -9491,6 +9530,7 @@ s1ctl exclusions list|get|pull|push|...
 s1ctl datalake query|powerquery|...
 s1ctl config
 s1ctl doctor
+s1ctl mcp serve|install
 ```
 
 ### Cross-cutting flags
@@ -9648,6 +9688,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | config | init wizard, show | built |
 | commands | list all commands | built |
 | completion | shell completions | built |
+| mcp | serve (stdio MCP server), install (Claude Code config) | built |
 
 ## Endpoint security
 

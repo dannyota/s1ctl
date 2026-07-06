@@ -27,6 +27,7 @@ Auto-generated from the command tree. Run `s1ctl docs generate` to update.
 | [iocs](iocs.md) | config, create, delete, list | Manage threat intelligence IOCs |
 | [locations](locations.md) | create, delete, list, pull, push, update | Manage firewall locations |
 | [maintenance](maintenance.md) | export, get, get-flexible, set, set-flexible | Manage task maintenance-window configuration |
+| [mcp](mcp.md) | install, serve | Model Context Protocol server for AI agent integration |
 | [misconfigurations](misconfigurations.md) | assign, export, get, history, list, note-add, note-delete, note-update, notes, related-assets, status, verdict | Manage xSPM misconfigurations |
 | [network](network.md) | configuration, copy, delete, disable, enable, export, get, import, list, move, protocols, pull, push, reorder, set-location, tags | Network quarantine control rules |
 | [policies](policies.md) | diff, get, list, pull, push, revert | View endpoint policies |

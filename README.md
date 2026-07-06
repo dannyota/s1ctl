@@ -18,8 +18,8 @@ API (v2.1), Singularity Data Lake (REST + GraphQL), and four GraphQL domains
 review the `git diff` → push it back** — one reconcile engine, every surface,
 with `drift` to verify. It's **tenant-neutral** (nothing baked in; everything
 comes from config) and built for humans and LLM agents alike: deterministic
-flags, `--json` everywhere, clear `--help`, and an embedded agent operating
-guide (`s1ctl skill`).
+flags, `--json` everywhere, clear `--help`, and a built-in MCP server
+(`s1ctl mcp serve`) for zero-config AI agent integration.
 
 > **⚠️ Every mutation is dry-run by default.** Nothing changes until you pass
 > `--yes`. Always preview, read it, then apply.
@@ -47,8 +47,8 @@ guide (`s1ctl skill`).
 - **Built for agents** — a hard read-only mode (`S1_READONLY=1`), a
   machine-readable command catalog (`s1ctl commands --json`), a local mutation
   audit log (`~/.s1ctl/audit.jsonl`), secret-output notices on sensitive
-  commands, and an embedded operating guide (`s1ctl skill` / `s1ctl skill
-  install`) for LLM agent harnesses.
+  commands, and a built-in MCP server (`s1ctl mcp serve` / `s1ctl mcp
+  install`) for AI agent integration.
 
 ## Install
 
@@ -133,16 +133,17 @@ resp, err := client.PowerQuery(ctx, &sdl.PowerQueryRequest{
 370+ CLI commands across 48 groups. Run `s1ctl commands --json` for the
 full live catalog.
 
-## Agent integration
+## Agent integration (MCP)
+
+s1ctl includes a built-in [Model Context Protocol](https://modelcontextprotocol.io)
+server. Every CLI command is automatically exposed as an MCP tool, and every
+guide page as an MCP resource — zero maintenance when commands are added.
 
 ```bash
-s1ctl skill                    # print the embedded operating guide
-s1ctl skill --json             # structured {name, description, body}
-s1ctl skill install            # write to ~/.claude/skills/s1ctl/ for auto-detection
+s1ctl mcp install              # add to Claude Code's .claude/settings.json
+s1ctl mcp install --scope user # or to ~/.claude/settings.json (global)
+s1ctl mcp serve                # start the MCP server on stdio
 ```
-
-The guide covers the mutation ritual, config-as-code loop, secret-output
-conventions, self-discovery commands, and common recipes.
 
 ## Documentation
 
