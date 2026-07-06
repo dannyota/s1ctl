@@ -43,6 +43,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&noProgress, "no-progress", false, "disable spinners and progress output")
 	cmd.PersistentFlags().StringVar(&configFile, "config", "", "config file (default ~/.s1ctl/config.yaml)")
 	cmd.PersistentFlags().BoolVar(&readOnly, "read-only", false, "block all mutations (dry-run everything)")
+	cmd.Version = resolveBuildInfo().Version
 	return cmd
 }
 

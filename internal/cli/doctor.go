@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -37,15 +38,13 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 	ctx, cancel := context.WithTimeout(cmd.Context(), 30*time.Second)
 	defer cancel()
 
-	var sdlURL string
-	if cfg, loadErr := loadConfig(); loadErr == nil {
-		sdlURL = cfg.SDLURL
-	}
-	results := []checkResult{
-		checkMGMT(ctx, consoleURL, token),
-		checkGraphQL(ctx, consoleURL, token),
-		checkSDL(ctx, sdlURL, token),
-	}
+	results := make([]checkResult, 3)
+	var wg sync.WaitGroup
+	wg.Add(3)
+	go func() { defer wg.Done(); results[0] = checkMGMT(ctx, consoleURL, token) }()
+	go func() { defer wg.Done(); results[1] = checkGraphQL(ctx, consoleURL, token) }()
+	go func() { defer wg.Done(); results[2] = checkSDL(ctx, consoleURL, token) }()
+	wg.Wait()
 
 	if outputFormat == "json" {
 		return printJSON(cmd.OutOrStdout(), results)
@@ -73,7 +72,7 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 func checkMGMT(ctx context.Context, consoleURL, token string) checkResult {
 	c := mgmt.NewClient(consoleURL, token)
 	start := time.Now()
-	_, err := c.AgentsCount(ctx, nil)
+	_, err := c.SystemStatus(ctx)
 	elapsed := time.Since(start).Round(time.Millisecond)
 	r := checkResult{Surface: "REST MGMT", Latency: elapsed.String()}
 	if err != nil {
@@ -87,7 +86,7 @@ func checkMGMT(ctx context.Context, consoleURL, token string) checkResult {
 func checkGraphQL(ctx context.Context, consoleURL, token string) checkResult {
 	c := graphql.NewClient(consoleURL, token)
 	start := time.Now()
-	_, err := c.AlertsList(ctx, &graphql.AlertsListParams{First: 1})
+	_, err := c.AlertsFiltersCount(ctx, []string{"severity"}, nil, nil)
 	elapsed := time.Since(start).Round(time.Millisecond)
 	r := checkResult{Surface: "GraphQL", Latency: elapsed.String()}
 	if err != nil {
@@ -98,16 +97,10 @@ func checkGraphQL(ctx context.Context, consoleURL, token string) checkResult {
 	return r
 }
 
-func checkSDL(ctx context.Context, sdlURL, token string) checkResult {
-	if sdlURL == "" {
-		return checkResult{Surface: "SDL", Latency: "-", Error: "not configured (set S1_SDL_URL)"}
-	}
-	c := sdl.NewClient(sdlURL, token)
+func checkSDL(ctx context.Context, consoleURL, token string) checkResult {
+	c := sdl.NewClient(consoleURL, token)
 	start := time.Now()
-	_, err := c.PowerQuery(ctx, &sdl.PowerQueryRequest{
-		Query:     "\"*\" | limit 1",
-		StartTime: "1h",
-	})
+	_, err := c.DashboardsList(ctx)
 	elapsed := time.Since(start).Round(time.Millisecond)
 	r := checkResult{Surface: "SDL", Latency: elapsed.String()}
 	if err != nil {
