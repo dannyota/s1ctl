@@ -1,7 +1,7 @@
 ---
 name: s1ctl
 description: >
-  Operating guide for AI agents driving the s1ctl CLI (v0.7.3) against a
+  Operating guide for AI agents driving the s1ctl CLI (v0.7.4) against a
   SentinelOne Singularity Platform instance. Covers the three API surfaces,
   the full 370-command map across 48 groups, the mutation ritual, the
   config-as-code reconcile engine with drift detection, secret-output
@@ -29,7 +29,7 @@ s1ctl commands --json             # every verb: name, kind (read/guarded-mutatio
 
 `doctor` is the gate: if it reports unhealthy, fix config/auth before
 proceeding. `commands --json` is the **live source of truth** for what this
-binary supports (370 commands across 48 groups at v0.7.3).
+binary supports (370 commands across 48 groups at v0.7.4).
 
 ## The three API surfaces
 
