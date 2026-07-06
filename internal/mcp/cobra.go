@@ -280,7 +280,7 @@ func (s *Server) buildRunTool() Tool {
 func (s *Server) buildHelpTool() Tool {
 	return Tool{
 		Name:        "help",
-		Description: "List available command groups, or subcommands within a group.",
+		Description: "List command groups, subcommands within a group, or full flag detail for one command.",
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -288,11 +288,16 @@ func (s *Server) buildHelpTool() Tool {
 					"type":        "string",
 					"description": "group name (e.g. 'agents'). Omit to list all groups.",
 				},
+				"command": map[string]any{
+					"type":        "string",
+					"description": "subcommand name within the group (e.g. 'isolate'). Returns full flag detail for that command.",
+				},
 			},
 		},
 		Run: func(args map[string]any) (string, error) {
 			group, _ := args["group"].(string)
-			return s.helpOutput(group)
+			command, _ := args["command"].(string)
+			return s.helpOutput(group, command)
 		},
 	}
 }
@@ -364,46 +369,40 @@ func (s *Server) buildUnfocusTool() Tool {
 	}
 }
 
-func (s *Server) helpOutput(group string) (string, error) {
+func (s *Server) helpOutput(group, command string) (string, error) {
 	if s.root == nil {
 		return "no command tree available", nil
 	}
 
-	if group != "" {
-		for _, c := range s.root.Commands() {
-			if c.Name() != group || c.Hidden {
-				continue
-			}
-			if _, ok := skipCommands[c.Name()]; ok {
-				continue
-			}
-			var b strings.Builder
-			fmt.Fprintf(&b, "## %s\n%s\n\n", c.Name(), c.Short)
-			if c.RunE != nil || c.Run != nil {
-				fmt.Fprintf(&b, "  %s (root command)\n", c.Name())
-			}
-			for _, sub := range c.Commands() {
-				if sub.Hidden {
-					continue
-				}
-				writeHelpLine(&b, sub, "  ")
-				for _, subsub := range sub.Commands() {
-					if subsub.Hidden {
-						continue
-					}
-					writeHelpLine(&b, subsub, "    ")
-				}
-			}
-			if _, focused := s.focused[group]; focused {
-				fmt.Fprintf(&b, "\n[focused — typed tools loaded]")
-			}
-			return b.String(), nil
-		}
+	if group == "" {
+		return s.helpGroups(), nil
+	}
+
+	groupCmd := findGroup(s.root, group)
+	if groupCmd == nil {
 		return "", fmt.Errorf("unknown group: %s", group)
 	}
 
+	if command != "" {
+		return s.helpCommand(groupCmd, group, command)
+	}
+	return s.helpGroup(groupCmd, group), nil
+}
+
+func findGroup(root *cobra.Command, name string) *cobra.Command {
+	for _, c := range root.Commands() {
+		if c.Name() == name && !c.Hidden {
+			if _, ok := skipCommands[c.Name()]; !ok {
+				return c
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Server) helpGroups() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Available command groups (use focus to load typed tools):\n\n")
+	b.WriteString("Command groups (help {group} for subcommands, help {group} {command} for flags):\n\n")
 	for _, c := range s.root.Commands() {
 		if c.Hidden {
 			continue
@@ -411,15 +410,136 @@ func (s *Server) helpOutput(group string) (string, error) {
 		if _, ok := skipCommands[c.Name()]; ok {
 			continue
 		}
-		n := 0
-		countLeaves(c, &n)
+		reads, muts := 0, 0
+		countByKind(c, &reads, &muts)
 		status := ""
 		if _, focused := s.focused[c.Name()]; focused {
-			status = " [focused]"
+			status = " *"
 		}
-		fmt.Fprintf(&b, "  %-24s %s (%d commands)%s\n", c.Name(), c.Short, n, status)
+		fmt.Fprintf(&b, "  %-22s %s (%dr/%dm)%s\n", c.Name(), c.Short, reads, muts, status)
 	}
+	return b.String()
+}
+
+func (s *Server) helpGroup(cmd *cobra.Command, group string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "## %s — %s\n\n", group, cmd.Short)
+
+	if cmd.RunE != nil || cmd.Run != nil {
+		writeHelpLine(&b, cmd, "  ")
+	}
+	for _, sub := range cmd.Commands() {
+		if sub.Hidden {
+			continue
+		}
+		writeHelpLine(&b, sub, "  ")
+		for _, subsub := range sub.Commands() {
+			if !subsub.Hidden {
+				writeHelpLine(&b, subsub, "    ")
+			}
+		}
+	}
+
+	if _, focused := s.focused[group]; focused {
+		b.WriteString("\n[focused]")
+	} else {
+		fmt.Fprintf(&b, "\nUse help {group} {command} for flag detail, or focus to load typed tools.")
+	}
+	return b.String()
+}
+
+func (s *Server) helpCommand(groupCmd *cobra.Command, group, command string) (string, error) {
+	cmd := findSubcommand(groupCmd, command)
+	if cmd == nil {
+		return "", fmt.Errorf("unknown command: %s %s", group, command)
+	}
+
+	var b strings.Builder
+	fullName := group + " " + command
+	fmt.Fprintf(&b, "## %s\n%s", fullName, cmd.Short)
+	if hasMutationFlag(cmd) {
+		b.WriteString(" [mutation: dry-run by default, --yes to apply]")
+	}
+	b.WriteString("\n")
+
+	var flags []flagDetail
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if skipFlags[f.Name] || f.Hidden || f.Name == "yes" {
+			return
+		}
+		flags = append(flags, describeFlag(f))
+	})
+	cmd.InheritedFlags().VisitAll(func(f *pflag.Flag) {
+		if skipFlags[f.Name] || f.Hidden {
+			return
+		}
+		if f.Name == "site-id" || f.Name == "read-only" {
+			flags = append(flags, describeFlag(f))
+		}
+	})
+
+	if len(flags) > 0 {
+		b.WriteString("\nFlags:\n")
+		for _, fd := range flags {
+			fmt.Fprintf(&b, "  --%-20s %-8s %s", fd.Name, fd.Type, fd.Usage)
+			if fd.Default != "" {
+				fmt.Fprintf(&b, " (default: %s)", fd.Default)
+			}
+			b.WriteString("\n")
+		}
+	}
+
 	return b.String(), nil
+}
+
+type flagDetail struct {
+	Name    string
+	Type    string
+	Usage   string
+	Default string
+}
+
+func describeFlag(f *pflag.Flag) flagDetail {
+	fd := flagDetail{Name: f.Name, Type: f.Value.Type(), Usage: f.Usage}
+	if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" && f.DefValue != "[]" {
+		fd.Default = f.DefValue
+	}
+	return fd
+}
+
+func findSubcommand(parent *cobra.Command, name string) *cobra.Command {
+	for _, c := range parent.Commands() {
+		if c.Hidden {
+			continue
+		}
+		if c.Name() == name {
+			return c
+		}
+		for _, sub := range c.Commands() {
+			if !sub.Hidden && sub.Name() == name {
+				return sub
+			}
+		}
+	}
+	return nil
+}
+
+func countByKind(cmd *cobra.Command, reads, muts *int) {
+	if !cmd.HasSubCommands() {
+		if cmd.RunE != nil || cmd.Run != nil {
+			if hasMutationFlag(cmd) {
+				*muts++
+			} else {
+				*reads++
+			}
+		}
+		return
+	}
+	for _, c := range cmd.Commands() {
+		if !c.Hidden {
+			countByKind(c, reads, muts)
+		}
+	}
 }
 
 func writeHelpLine(b *strings.Builder, cmd *cobra.Command, indent string) {
@@ -454,20 +574,6 @@ func flagHints(cmd *cobra.Command) string {
 		return ""
 	}
 	return "(" + strings.Join(flags, ", ") + ")"
-}
-
-func countLeaves(cmd *cobra.Command, n *int) {
-	if !cmd.HasSubCommands() {
-		if cmd.RunE != nil || cmd.Run != nil {
-			*n++
-		}
-		return
-	}
-	for _, c := range cmd.Commands() {
-		if !c.Hidden {
-			countLeaves(c, n)
-		}
-	}
 }
 
 func (s *Server) execCommand(parts []string) (string, error) {

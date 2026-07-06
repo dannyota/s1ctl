@@ -145,7 +145,8 @@ func (s *Server) dispatch(w io.Writer, msg *jsonrpcMessage) {
 			Capabilities: capabilities{
 				Tools: tc,
 			},
-			ServerInfo: serverInfo{Name: s.name, Version: s.version},
+			ServerInfo:   serverInfo{Name: s.name, Version: s.version},
+			Instructions: serverInstructions,
 		}
 		if len(s.resources) > 0 {
 			result.Capabilities.Resources = &resourceCapability{}
@@ -285,7 +286,23 @@ type initializeResult struct {
 	ProtocolVersion string       `json:"protocolVersion"`
 	Capabilities    capabilities `json:"capabilities"`
 	ServerInfo      serverInfo   `json:"serverInfo"`
+	Instructions    string       `json:"instructions,omitempty"`
 }
+
+const serverInstructions = `s1ctl — CLI and SDK for SentinelOne Singularity Platform.
+
+Discovery flow:
+1. help → list command groups with counts
+2. help {group} → list subcommands with [mutation] tags and flag hints
+3. help {group} {command} → full flag detail (names, types, defaults)
+4. focus {group} → load typed tool schemas for that group (enables structured calls)
+5. run {command} → run any command directly (e.g. "agents list --site-id 123 --limit 5")
+
+Use "run" for quick one-off commands. Use "focus" when you need repeated structured calls within a group. Use "unfocus" to free context when done.
+
+All mutations are dry-run by default — pass --yes to apply.
+Always scope to the correct --site-id.
+Output is JSON by default when called via MCP.`
 
 type capabilities struct {
 	Tools     *toolCapability     `json:"tools,omitempty"`
