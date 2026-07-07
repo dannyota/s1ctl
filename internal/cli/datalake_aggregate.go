@@ -17,7 +17,7 @@ func newDatalakeFacetCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "facet",
-		Short: "Aggregate the most common values of a field (SDL REST)",
+		Short: "Aggregate the most common values of a field (SDL REST) [supports --json output]",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if field == "" {
 				return fmt.Errorf("--field is required")

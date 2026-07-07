@@ -33,7 +33,7 @@ func newDatalakePowerQueryCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "powerquery",
-		Short: "Execute a PowerQuery",
+		Short: "Execute a PowerQuery (filter, group, sort, columns) [supports --json, --csv output]",
 		Long: `Execute a PowerQuery against the Singularity Data Lake.
 
 By default, uses the GraphQL protocol which connects through the management
