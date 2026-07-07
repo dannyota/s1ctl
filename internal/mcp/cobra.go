@@ -286,7 +286,7 @@ func (s *Server) buildRunTool() Tool {
 			if cmdStr == "" {
 				return "", fmt.Errorf("command is required")
 			}
-			return s.execCommand(strings.Fields(cmdStr))
+			return s.execCommand(splitCommand(cmdStr))
 		},
 	}
 }
@@ -582,4 +582,41 @@ func (s *Server) execCommand(parts []string) (string, error) {
 		out = execErr.Error()
 	}
 	return out, execErr
+}
+
+// splitCommand tokenises a command string with shell-style quoting.
+// Single-quoted, double-quoted, and backslash-escaped characters are
+// kept as single tokens so that filter expressions like
+//
+//	--filter 'event.type = "Login"'
+//
+// survive as one argument.
+func splitCommand(s string) []string {
+	var args []string
+	var cur []byte
+	inSingle, inDouble := false, false
+
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case c == '\\' && !inSingle && i+1 < len(s):
+			i++
+			cur = append(cur, s[i])
+		case c == '\'' && !inDouble:
+			inSingle = !inSingle
+		case c == '"' && !inSingle:
+			inDouble = !inDouble
+		case (c == ' ' || c == '\t') && !inSingle && !inDouble:
+			if len(cur) > 0 {
+				args = append(args, string(cur))
+				cur = cur[:0]
+			}
+		default:
+			cur = append(cur, c)
+		}
+	}
+	if len(cur) > 0 {
+		args = append(args, string(cur))
+	}
+	return args
 }

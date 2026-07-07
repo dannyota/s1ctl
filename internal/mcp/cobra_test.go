@@ -173,6 +173,33 @@ func TestShortDescriptionOnly(t *testing.T) {
 	}
 }
 
+func TestSplitCommand(t *testing.T) {
+	tests := []struct {
+		input string
+		want  []string
+	}{
+		{"agents list", []string{"agents", "list"}},
+		{`datalake facet --filter 'event.type = "Login"'`, []string{"datalake", "facet", "--filter", `event.type = "Login"`}},
+		{`datalake facet --filter "event.type = 'Login'"`, []string{"datalake", "facet", "--filter", "event.type = 'Login'"}},
+		{`--filter "A AND B" --field x`, []string{"--filter", "A AND B", "--field", "x"}},
+		{`say hello\ world`, []string{"say", "hello world"}},
+		{"  spaces  everywhere  ", []string{"spaces", "everywhere"}},
+		{"", nil},
+	}
+	for _, tt := range tests {
+		got := splitCommand(tt.input)
+		if len(got) != len(tt.want) {
+			t.Errorf("splitCommand(%q) = %v, want %v", tt.input, got, tt.want)
+			continue
+		}
+		for i := range got {
+			if got[i] != tt.want[i] {
+				t.Errorf("splitCommand(%q)[%d] = %q, want %q", tt.input, i, got[i], tt.want[i])
+			}
+		}
+	}
+}
+
 func TestSkippedGlobalFlags(t *testing.T) {
 	root := &cobra.Command{Use: "test"}
 	root.PersistentFlags().String("output", "table", "output format")
