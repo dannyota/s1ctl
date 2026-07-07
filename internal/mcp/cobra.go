@@ -270,7 +270,7 @@ func (s *Server) buildMetaTools() []Tool {
 func (s *Server) buildRunTool() Tool {
 	return Tool{
 		Name:        "run",
-		Description: "Run any s1ctl command. Pass the full command (e.g. 'agents list --site-id 123').",
+		Description: "Run any s1ctl command. Pass the full command (e.g. 'agents list --site-id 123'). For filter expressions use shell quoting: --filter 'event.type = \"Login\"'. Prefer focus + typed tools for complex filters.",
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{

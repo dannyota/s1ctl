@@ -306,6 +306,8 @@ Discovery flow:
 5. run {command} → execute any command (e.g. "agents list --site-id 123 --limit 5")
 
 Use "run" for quick one-off commands. Use "focus" when you need repeated structured calls within a group.
+Prefer "focus" for commands with filter expressions — typed parameters avoid quoting issues.
+In "run", use shell-style quoting for values with spaces: --filter 'event.type = "Login"'.
 
 All mutations are dry-run by default — pass --yes to apply.
 Always scope to the correct --site-id.
