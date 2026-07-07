@@ -16,6 +16,7 @@ const (
 type QueryStatus string
 
 const (
+	QueryStatusPending QueryStatus = "PENDING"
 	QueryStatusRunning QueryStatus = "RUNNING"
 	QueryStatusDone    QueryStatus = "DONE"
 	QueryStatusError   QueryStatus = "ERROR"

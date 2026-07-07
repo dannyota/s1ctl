@@ -117,18 +117,30 @@ func (c *Client) RemoveQuery(ctx context.Context, token string) error {
 // pollUntilDone polls a running query until it reaches a terminal state.
 // On context cancellation, it removes the query token before returning.
 func (c *Client) pollUntilDone(ctx context.Context, result *QueriesResult) (*QueriesResult, error) {
-	for result.Status == QueryStatusRunning {
+	const maxNotFound = 30
+	notFoundCount := 0
+
+	for result.Status == QueryStatusRunning || result.Status == QueryStatusPending {
+		delay := 500 * time.Millisecond
+		if notFoundCount > 0 {
+			delay = 2 * time.Second
+		}
 		select {
 		case <-ctx.Done():
 			_ = c.RemoveQuery(context.Background(), result.Token)
 			return nil, ctx.Err()
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(delay):
 		}
-		var err error
-		result, err = c.PingQuery(ctx, result.IDs, result.StepsCompleted, result.Token)
+		next, err := c.PingQuery(ctx, result.IDs, result.StepsCompleted, result.Token)
 		if err != nil {
+			if notFoundCount < maxNotFound && strings.Contains(err.Error(), "Failed to find query with token") {
+				notFoundCount++
+				continue
+			}
 			return nil, err
 		}
+		notFoundCount = 0
+		result = next
 	}
 	return result, nil
 }
@@ -167,6 +179,9 @@ func (c *Client) PowerQueryGraphQL(ctx context.Context, req *PowerQueryRequest) 
 	result, err := c.LaunchQuery(ctx, group)
 	if err != nil {
 		return nil, err
+	}
+	if result == nil {
+		return nil, fmt.Errorf("sdl graphql: launchQuery returned nil result")
 	}
 
 	result, err = c.pollUntilDone(ctx, result)
