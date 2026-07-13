@@ -205,6 +205,13 @@ func makeRunner(cmd *cobra.Command, path []string) func(map[string]any) (string,
 		}
 		os.Stdout = pw
 
+		var stdout bytes.Buffer
+		done := make(chan struct{})
+		go func() {
+			_, _ = stdout.ReadFrom(pr)
+			close(done)
+		}()
+
 		var stderr bytes.Buffer
 		root.SetArgs(cliArgs)
 		root.SetOut(pw)
@@ -214,9 +221,7 @@ func makeRunner(cmd *cobra.Command, path []string) func(map[string]any) (string,
 
 		_ = pw.Close()
 		os.Stdout = origStdout
-
-		var stdout bytes.Buffer
-		_, _ = stdout.ReadFrom(pr)
+		<-done
 		_ = pr.Close()
 
 		out := stdout.String()
@@ -560,6 +565,13 @@ func (s *Server) execCommand(parts []string) (string, error) {
 	}
 	os.Stdout = pw
 
+	var stdout bytes.Buffer
+	done := make(chan struct{})
+	go func() {
+		_, _ = stdout.ReadFrom(pr)
+		close(done)
+	}()
+
 	var stderr bytes.Buffer
 	s.root.SetArgs(cliArgs)
 	s.root.SetOut(pw)
@@ -569,9 +581,7 @@ func (s *Server) execCommand(parts []string) (string, error) {
 
 	_ = pw.Close()
 	os.Stdout = origStdout
-
-	var stdout bytes.Buffer
-	_, _ = stdout.ReadFrom(pr)
+	<-done
 	_ = pr.Close()
 
 	out := stdout.String()
