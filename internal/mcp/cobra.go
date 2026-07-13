@@ -2,12 +2,15 @@ package mcp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -167,8 +170,6 @@ func hasJSONAnnotation(cmd *cobra.Command) bool {
 
 func makeRunner(cmd *cobra.Command, path []string) func(map[string]any) (string, error) {
 	return func(args map[string]any) (string, error) {
-		root := cmd.Root()
-
 		cliArgs := append([]string(nil), path...)
 		cliArgs = append(cliArgs, "--json", "--no-progress")
 
@@ -198,41 +199,7 @@ func makeRunner(cmd *cobra.Command, path []string) func(map[string]any) (string,
 			}
 		}
 
-		origStdout := os.Stdout
-		pr, pw, err := os.Pipe()
-		if err != nil {
-			return "", fmt.Errorf("create pipe: %w", err)
-		}
-		os.Stdout = pw
-
-		var stdout bytes.Buffer
-		done := make(chan struct{})
-		go func() {
-			_, _ = stdout.ReadFrom(pr)
-			close(done)
-		}()
-
-		var stderr bytes.Buffer
-		root.SetArgs(cliArgs)
-		root.SetOut(pw)
-		root.SetErr(&stderr)
-
-		execErr := root.Execute()
-
-		_ = pw.Close()
-		os.Stdout = origStdout
-		<-done
-		_ = pr.Close()
-
-		out := stdout.String()
-		if errOut := stderr.String(); errOut != "" && out == "" {
-			out = errOut
-		}
-		if out == "" && execErr != nil {
-			out = execErr.Error()
-		}
-
-		return out, execErr
+		return execSubprocess(cliArgs)
 	}
 }
 
@@ -339,8 +306,10 @@ func (s *Server) buildFocusTool() Tool {
 			if err != nil {
 				return "", err
 			}
+			s.mu.Lock()
 			s.focused[group] = tools
 			s.rebuildToolList()
+			s.mu.Unlock()
 
 			names := make([]string, len(tools))
 			for i, t := range tools {
@@ -368,16 +337,21 @@ func (s *Server) buildUnfocusTool() Tool {
 		Run: func(args map[string]any) (string, error) {
 			group, _ := args["group"].(string)
 			if group == "" {
+				s.mu.Lock()
 				count := len(s.focused)
 				s.focused = make(map[string][]Tool)
 				s.rebuildToolList()
+				s.mu.Unlock()
 				return fmt.Sprintf("Unloaded all %d groups.", count), nil
 			}
+			s.mu.Lock()
 			if _, ok := s.focused[group]; !ok {
+				s.mu.Unlock()
 				return fmt.Sprintf("Group %q is not focused.", group), nil
 			}
 			delete(s.focused, group)
 			s.rebuildToolList()
+			s.mu.Unlock()
 			return fmt.Sprintf("Unloaded %s.", group), nil
 		},
 	}
@@ -451,6 +425,13 @@ func findGroup(root *cobra.Command, name string) *cobra.Command {
 }
 
 func (s *Server) helpGroups() string {
+	s.mu.Lock()
+	focused := make(map[string]bool, len(s.focused))
+	for g := range s.focused {
+		focused[g] = true
+	}
+	s.mu.Unlock()
+
 	var b strings.Builder
 	b.WriteString("Command groups (help {group} for subcommands):\n\n")
 	for _, c := range s.root.Commands() {
@@ -462,7 +443,7 @@ func (s *Server) helpGroups() string {
 		}
 		reads, muts := countLeaves(c)
 		status := ""
-		if _, focused := s.focused[c.Name()]; focused {
+		if focused[c.Name()] {
 			status = " *"
 		}
 		fmt.Fprintf(&b, "  %-22s %s (%dr/%dm)%s\n", c.Name(), c.Short, reads, muts, status)
@@ -501,7 +482,10 @@ func (s *Server) helpGroup(cmd *cobra.Command, group string) string {
 		}
 	}
 
-	if _, focused := s.focused[group]; focused {
+	s.mu.Lock()
+	_, isFocused := s.focused[group]
+	s.mu.Unlock()
+	if isFocused {
 		b.WriteString("\n[focused]")
 	} else {
 		b.WriteString("\nUse usage {command} for flags, or focus to load typed tools.")
@@ -557,32 +541,25 @@ func (s *Server) execCommand(parts []string) (string, error) {
 	cliArgs := make([]string, 0, len(parts)+2)
 	cliArgs = append(cliArgs, parts...)
 	cliArgs = append(cliArgs, "--json", "--no-progress")
+	return execSubprocess(cliArgs)
+}
 
-	origStdout := os.Stdout
-	pr, pw, err := os.Pipe()
+func execSubprocess(args []string) (string, error) {
+	self, err := os.Executable()
 	if err != nil {
-		return "", fmt.Errorf("create pipe: %w", err)
+		return "", fmt.Errorf("find executable: %w", err)
 	}
-	os.Stdout = pw
 
-	var stdout bytes.Buffer
-	done := make(chan struct{})
-	go func() {
-		_, _ = stdout.ReadFrom(pr)
-		close(done)
-	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
 
-	var stderr bytes.Buffer
-	s.root.SetArgs(cliArgs)
-	s.root.SetOut(pw)
-	s.root.SetErr(&stderr)
+	cmd := exec.CommandContext(ctx, self, args...) //nolint:gosec // self is os.Executable, args from tool schema
+	cmd.Env = os.Environ()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
-	execErr := s.root.Execute()
-
-	_ = pw.Close()
-	os.Stdout = origStdout
-	<-done
-	_ = pr.Close()
+	execErr := cmd.Run()
 
 	out := stdout.String()
 	if errOut := stderr.String(); errOut != "" && out == "" {

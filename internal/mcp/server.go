@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/spf13/cobra"
 )
@@ -28,6 +29,8 @@ type Server struct {
 	metaTools    []Tool
 	focused      map[string][]Tool
 	toolsVersion uint64
+
+	mu sync.Mutex // guards w, focused, tools, toolIndex, toolsVersion
 }
 
 type Resource struct {
@@ -78,6 +81,7 @@ func NewDynamicServer(name, version string, root *cobra.Command, resources []Res
 	return s
 }
 
+// rebuildToolList must be called with s.mu held.
 func (s *Server) rebuildToolList() {
 	var all []Tool
 	all = append(all, s.metaTools...)
@@ -100,7 +104,9 @@ func (s *Server) notifyToolsChanged() {
 		JSONRPC string `json:"jsonrpc"`
 		Method  string `json:"method"`
 	}{JSONRPC: "2.0", Method: "notifications/tools/list_changed"})
+	s.mu.Lock()
 	fmt.Fprintf(s.w, "%s\n", data)
+	s.mu.Unlock()
 }
 
 func (s *Server) Serve(ctx context.Context) error {
@@ -111,6 +117,9 @@ func (s *Server) serve(ctx context.Context, r io.Reader, w io.Writer) error {
 	s.w = w
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 0, 1<<20), 1<<20)
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
 
 	for scanner.Scan() {
 		select {
@@ -126,7 +135,7 @@ func (s *Server) serve(ctx context.Context, r io.Reader, w io.Writer) error {
 
 		var msg jsonrpcMessage
 		if err := json.Unmarshal(line, &msg); err != nil {
-			writeError(w, nil, codeParseError, "parse error")
+			s.writeError(nil, codeParseError, "parse error")
 			continue
 		}
 
@@ -134,13 +143,22 @@ func (s *Server) serve(ctx context.Context, r io.Reader, w io.Writer) error {
 			continue
 		}
 
-		s.dispatch(w, &msg)
+		if msg.Method == "tools/call" {
+			wg.Add(1)
+			go func(m jsonrpcMessage) {
+				defer wg.Done()
+				s.dispatch(&m)
+			}(msg)
+			continue
+		}
+
+		s.dispatch(&msg)
 	}
 
 	return scanner.Err()
 }
 
-func (s *Server) dispatch(w io.Writer, msg *jsonrpcMessage) {
+func (s *Server) dispatch(msg *jsonrpcMessage) {
 	switch msg.Method {
 	case "initialize":
 		tc := &toolCapability{}
@@ -158,11 +176,12 @@ func (s *Server) dispatch(w io.Writer, msg *jsonrpcMessage) {
 		if len(s.resources) > 0 {
 			result.Capabilities.Resources = &resourceCapability{}
 		}
-		writeResult(w, msg.ID, result)
+		s.writeResult(msg.ID, result)
 
 	case "notifications/initialized":
 
 	case "tools/list":
+		s.mu.Lock()
 		defs := make([]toolDef, len(s.tools))
 		for i, t := range s.tools {
 			defs[i] = toolDef{
@@ -171,10 +190,11 @@ func (s *Server) dispatch(w io.Writer, msg *jsonrpcMessage) {
 				InputSchema: t.InputSchema,
 			}
 		}
-		writeResult(w, msg.ID, toolListResult{Tools: defs})
+		s.mu.Unlock()
+		s.writeResult(msg.ID, toolListResult{Tools: defs})
 
 	case "tools/call":
-		s.handleToolCall(w, msg)
+		s.handleToolCall(msg)
 
 	case "resources/list":
 		defs := make([]resourceDef, len(s.resources))
@@ -186,71 +206,77 @@ func (s *Server) dispatch(w io.Writer, msg *jsonrpcMessage) {
 				MimeType:    r.MimeType,
 			}
 		}
-		writeResult(w, msg.ID, resourceListResult{Resources: defs})
+		s.writeResult(msg.ID, resourceListResult{Resources: defs})
 
 	case "resources/read":
-		s.handleResourceRead(w, msg)
+		s.handleResourceRead(msg)
 
 	case "ping":
-		writeResult(w, msg.ID, struct{}{})
+		s.writeResult(msg.ID, struct{}{})
 
 	default:
-		writeError(w, msg.ID, codeMethodNotFound, fmt.Sprintf("unknown method: %s", msg.Method))
+		s.writeError(msg.ID, codeMethodNotFound, fmt.Sprintf("unknown method: %s", msg.Method))
 	}
 }
 
-func (s *Server) handleToolCall(w io.Writer, msg *jsonrpcMessage) {
+func (s *Server) handleToolCall(msg *jsonrpcMessage) {
 	var params toolCallParams
 	if err := json.Unmarshal(msg.Params, &params); err != nil {
-		writeError(w, msg.ID, codeInvalidParams, "invalid params")
+		s.writeError(msg.ID, codeInvalidParams, "invalid params")
 		return
 	}
 
+	s.mu.Lock()
 	tool, ok := s.toolIndex[params.Name]
+	prevVersion := s.toolsVersion
+	s.mu.Unlock()
+
 	if !ok {
-		writeError(w, msg.ID, codeInvalidParams, fmt.Sprintf("unknown tool: %s", params.Name))
+		s.writeError(msg.ID, codeInvalidParams, fmt.Sprintf("unknown tool: %s", params.Name))
 		return
 	}
 
-	prevVersion := s.toolsVersion
 	output, err := tool.Run(params.Arguments)
 	if err != nil {
-		writeResult(w, msg.ID, toolCallResult{
+		s.writeResult(msg.ID, toolCallResult{
 			Content: []content{{Type: "text", Text: fmt.Sprintf("error: %s", err)}},
 			IsError: true,
 		})
 		return
 	}
 
-	writeResult(w, msg.ID, toolCallResult{
+	s.writeResult(msg.ID, toolCallResult{
 		Content: []content{{Type: "text", Text: output}},
 	})
 
-	if s.toolsVersion != prevVersion {
+	s.mu.Lock()
+	changed := s.toolsVersion != prevVersion
+	s.mu.Unlock()
+	if changed {
 		s.notifyToolsChanged()
 	}
 }
 
-func (s *Server) handleResourceRead(w io.Writer, msg *jsonrpcMessage) {
+func (s *Server) handleResourceRead(msg *jsonrpcMessage) {
 	var params resourceReadParams
 	if err := json.Unmarshal(msg.Params, &params); err != nil {
-		writeError(w, msg.ID, codeInvalidParams, "invalid params")
+		s.writeError(msg.ID, codeInvalidParams, "invalid params")
 		return
 	}
 
 	res, ok := s.resIndex[params.URI]
 	if !ok {
-		writeError(w, msg.ID, codeInvalidParams, fmt.Sprintf("unknown resource: %s", params.URI))
+		s.writeError(msg.ID, codeInvalidParams, fmt.Sprintf("unknown resource: %s", params.URI))
 		return
 	}
 
 	text, err := res.Read()
 	if err != nil {
-		writeError(w, msg.ID, codeInternalError, err.Error())
+		s.writeError(msg.ID, codeInternalError, err.Error())
 		return
 	}
 
-	writeResult(w, msg.ID, resourceReadResult{
+	s.writeResult(msg.ID, resourceReadResult{
 		Contents: []resourceContent{{
 			URI:      res.URI,
 			MimeType: res.MimeType,
@@ -379,14 +405,18 @@ type resourceContent struct {
 	Text     string `json:"text"`
 }
 
-func writeResult(w io.Writer, id json.RawMessage, result any) {
+func (s *Server) writeResult(id json.RawMessage, result any) {
 	resp := jsonrpcResponse{JSONRPC: "2.0", ID: id, Result: result}
 	data, _ := json.Marshal(resp)
-	fmt.Fprintf(w, "%s\n", data)
+	s.mu.Lock()
+	fmt.Fprintf(s.w, "%s\n", data)
+	s.mu.Unlock()
 }
 
-func writeError(w io.Writer, id json.RawMessage, code int, message string) {
+func (s *Server) writeError(id json.RawMessage, code int, message string) {
 	resp := jsonrpcResponse{JSONRPC: "2.0", ID: id, Error: &jsonrpcError{Code: code, Message: message}}
 	data, _ := json.Marshal(resp)
-	fmt.Fprintf(w, "%s\n", data)
+	s.mu.Lock()
+	fmt.Fprintf(s.w, "%s\n", data)
+	s.mu.Unlock()
 }
