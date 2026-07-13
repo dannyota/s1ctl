@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -361,5 +362,58 @@ func TestFocusUnknownGroup(t *testing.T) {
 	result, _ := resp["result"].(map[string]any)
 	if result["isError"] != true {
 		t.Error("focusing unknown group should return isError")
+	}
+}
+
+func TestToolCallErrorIncludesMessage(t *testing.T) {
+	tools := []Tool{
+		{
+			Name:        "fail",
+			Description: "Always fails with a message",
+			InputSchema: map[string]any{"type": "object"},
+			Run: func(args map[string]any) (string, error) {
+				return "", fmt.Errorf("connection refused: dial tcp 10.0.0.1:443")
+			},
+		},
+	}
+	srv := NewServer("test", "1.0.0", tools, nil)
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"fail","arguments":{}}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	if result["isError"] != true {
+		t.Fatal("expected isError")
+	}
+	content, _ := result["content"].([]any)
+	if len(content) == 0 {
+		t.Fatal("expected content")
+	}
+	text, _ := content[0].(map[string]any)["text"].(string)
+	if !strings.Contains(text, "connection refused") {
+		t.Errorf("error text = %q, want it to contain the actual error message", text)
+	}
+}
+
+func TestToolCallErrorPrefersOutput(t *testing.T) {
+	tools := []Tool{
+		{
+			Name:        "partial",
+			Description: "Fails but has output",
+			InputSchema: map[string]any{"type": "object"},
+			Run: func(args map[string]any) (string, error) {
+				return `{"detail":"Bad Request - could not parse query"}`, fmt.Errorf("exit status 1")
+			},
+		},
+	}
+	srv := NewServer("test", "1.0.0", tools, nil)
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"partial","arguments":{}}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	if result["isError"] != true {
+		t.Fatal("expected isError")
+	}
+	content, _ := result["content"].([]any)
+	text, _ := content[0].(map[string]any)["text"].(string)
+	if !strings.Contains(text, "could not parse query") {
+		t.Errorf("error text = %q, should prefer output over generic exit status", text)
 	}
 }

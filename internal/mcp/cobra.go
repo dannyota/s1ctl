@@ -544,6 +544,8 @@ func (s *Server) execCommand(parts []string) (string, error) {
 	return execSubprocess(cliArgs)
 }
 
+const maxOutputBytes = 4 << 20 // 4 MiB
+
 func execSubprocess(args []string) (string, error) {
 	self, err := os.Executable()
 	if err != nil {
@@ -562,13 +564,45 @@ func execSubprocess(args []string) (string, error) {
 	execErr := cmd.Run()
 
 	out := stdout.String()
-	if errOut := stderr.String(); errOut != "" && out == "" {
-		out = errOut
+	errOut := stderr.String()
+
+	if execErr != nil {
+		// Build a useful error message from all available output.
+		var parts []string
+		if errOut != "" {
+			parts = append(parts, strings.TrimSpace(errOut))
+		}
+		if out != "" {
+			parts = append(parts, strings.TrimSpace(out))
+		}
+		if len(parts) == 0 {
+			parts = append(parts, execErr.Error())
+		}
+		return "", fmt.Errorf("%s", strings.Join(parts, "\n"))
 	}
-	if out == "" && execErr != nil {
-		out = execErr.Error()
+
+	if len(out) > maxOutputBytes {
+		f, err := os.CreateTemp("", "s1ctl-mcp-*.json")
+		if err != nil {
+			return "", fmt.Errorf("output too large (%d bytes, limit %d) and failed to write temp file: %w", len(out), maxOutputBytes, err)
+		}
+		_, err = f.WriteString(out)
+		closeErr := f.Close()
+		if err != nil || closeErr != nil {
+			_ = os.Remove(f.Name())
+			if err == nil {
+				err = closeErr
+			}
+			return "", fmt.Errorf("output too large (%d bytes, limit %d) and failed to write temp file: %w", len(out), maxOutputBytes, err)
+		}
+		result, _ := json.Marshal(map[string]any{
+			"file":    f.Name(),
+			"bytes":   len(out),
+			"message": "Output exceeded 4 MiB limit. Results saved to file. Read the file to analyze, or use --max-results or narrower filters to reduce output.",
+		})
+		return string(result), nil
 	}
-	return out, execErr
+	return out, nil
 }
 
 // splitCommand tokenises a command string with shell-style quoting.

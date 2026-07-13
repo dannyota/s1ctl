@@ -222,6 +222,15 @@ func printDVEvents(cmd *cobra.Command, events []mgmt.DVEvent, total int) error {
 		return nil
 	}
 
+	if outputFormat == "json" && total > len(events) {
+		return printJSON(cmd.OutOrStdout(), map[string]any{
+			"data":     events,
+			"returned": len(events),
+			"total":    total,
+			"message":  fmt.Sprintf("Showing %d of %d events. Use --max-results to fetch more. Large results are automatically saved to a file.", len(events), total),
+		})
+	}
+
 	headers := []string{"Timestamp", "EventType", "Process", "Agent", "User", "File/Dst"}
 	rows := make([][]string, len(events))
 	for i, e := range events {

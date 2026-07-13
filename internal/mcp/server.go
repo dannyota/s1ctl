@@ -238,8 +238,12 @@ func (s *Server) handleToolCall(msg *jsonrpcMessage) {
 
 	output, err := tool.Run(params.Arguments)
 	if err != nil {
+		errText := err.Error()
+		if output != "" {
+			errText = output
+		}
 		s.writeResult(msg.ID, toolCallResult{
-			Content: []content{{Type: "text", Text: fmt.Sprintf("error: %s", err)}},
+			Content: []content{{Type: "text", Text: fmt.Sprintf("error: %s", errText)}},
 			IsError: true,
 		})
 		return
