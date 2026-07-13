@@ -67,8 +67,9 @@ llms="$outdir/llms.txt"
 {
   echo "# s1ctl"
   echo ""
-  echo "> CLI and Go SDK for operating SentinelOne Singularity Platform as code."
-  echo "> Pull live state, review in git diff, push back. 370+ commands across REST, SDL, and GraphQL surfaces."
+  echo "> Open-source MCP server, CLI, and Go SDK for SentinelOne Singularity Platform."
+  echo "> Give AI agents access to 370+ SentinelOne commands via Model Context Protocol,"
+  echo "> or operate your console as code from the terminal."
   echo ""
 
   while IFS= read -r line; do
@@ -121,8 +122,9 @@ llmsfull="$outdir/llms-full.txt"
 {
   echo "# s1ctl — full documentation"
   echo ""
-  echo "> CLI and Go SDK for operating SentinelOne Singularity Platform as code."
-  echo "> Pull live state, review in git diff, push back. 370+ commands across REST, SDL, and GraphQL surfaces."
+  echo "> Open-source MCP server, CLI, and Go SDK for SentinelOne Singularity Platform."
+  echo "> Give AI agents access to 370+ SentinelOne commands via Model Context Protocol,"
+  echo "> or operate your console as code from the terminal."
   echo ""
   echo "---"
 

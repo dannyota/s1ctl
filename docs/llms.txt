@@ -1,12 +1,14 @@
 # s1ctl
 
-> CLI and Go SDK for operating SentinelOne Singularity Platform as code.
-> Pull live state, review in git diff, push back. 370+ commands across REST, SDL, and GraphQL surfaces.
+> Open-source MCP server, CLI, and Go SDK for SentinelOne Singularity Platform.
+> Give AI agents access to 370+ SentinelOne commands via Model Context Protocol,
+> or operate your console as code from the terminal.
 
-- [Home](https://s1.danny.vn/#/): Operate...
+- [Home](https://s1.danny.vn/#/): Open-source...
 
 ## Getting started
 
+- [MCP server](https://s1.danny.vn/#/guides/mcp): Use...
 - [Install](https://s1.danny.vn/#/guides/install): Install s1ctl via go install, from source, or with a pre-built binary for Linux, macOS, or Windows (amd64 and arm64). 
 - [Configure](https://s1.danny.vn/#/guides/configure): s1ctl needs two things: your console URL and an API token. 
 - [Quickstart](https://s1.danny.vn/#/guides/quickstart): Get...

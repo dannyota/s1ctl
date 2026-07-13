@@ -3,21 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-  <title>s1ctl — SentinelOne CLI and Go SDK</title>
-  <meta name="description" content="CLI and Go SDK for operating SentinelOne Singularity Platform as code. 370+ commands across REST, SDL, and GraphQL surfaces.">
+  <title>s1ctl — SentinelOne MCP Server, CLI, and Go SDK</title>
+  <meta name="description" content="Open-source MCP server, CLI, and Go SDK for SentinelOne Singularity Platform. Give AI agents access to 370+ SentinelOne commands, or operate your console as code from the terminal.">
   <link rel="canonical" href="https://s1.danny.vn">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="s1ctl">
-  <meta property="og:title" content="s1ctl — SentinelOne CLI and Go SDK">
-  <meta property="og:description" content="CLI and Go SDK for operating SentinelOne Singularity Platform as code. 370+ commands across REST, SDL, and GraphQL surfaces.">
+  <meta property="og:title" content="s1ctl — SentinelOne MCP Server, CLI, and Go SDK">
+  <meta property="og:description" content="Open-source MCP server, CLI, and Go SDK for SentinelOne. Give AI agents access to 370+ SentinelOne commands via Model Context Protocol.">
   <meta property="og:url" content="https://s1.danny.vn">
   <meta property="og:image" content="https://s1.danny.vn/assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="s1ctl — SentinelOne CLI and Go SDK">
-  <meta name="twitter:description" content="CLI and Go SDK for operating SentinelOne Singularity Platform as code. 370+ commands across REST, SDL, and GraphQL surfaces.">
+  <meta name="twitter:title" content="s1ctl — SentinelOne MCP Server, CLI, and Go SDK">
+  <meta name="twitter:description" content="Open-source MCP server, CLI, and Go SDK for SentinelOne. Give AI agents access to 370+ SentinelOne commands via Model Context Protocol.">
   <meta name="twitter:image" content="https://s1.danny.vn/assets/og.png">
 
   <!-- Structured data -->
@@ -26,8 +26,10 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "s1ctl",
-    "description": "CLI and Go SDK for operating SentinelOne Singularity Platform as code",
+    "alternateName": "SentinelOne MCP Server",
+    "description": "Open-source MCP server, CLI, and Go SDK for SentinelOne Singularity Platform",
     "applicationCategory": "DeveloperApplication",
+    "keywords": "SentinelOne, MCP, Model Context Protocol, CLI, Go SDK, XDR, EDR, security automation",
     "operatingSystem": "Linux, macOS, Windows",
     "programmingLanguage": "Go",
     "softwareRequirements": "Go 1.26+",
@@ -518,9 +520,11 @@
       hook.doneEach(function () {
         var h1 = document.querySelector('.markdown-section h1');
         var base = 's1ctl';
-        document.title = h1
-          ? h1.textContent.trim() + ' — ' + base
-          : base + ' — SentinelOne CLI and Go SDK';
+        var full = base + ' — SentinelOne MCP Server, CLI, and Go SDK';
+        var page = h1 ? h1.textContent.trim() : '';
+        document.title = (page && page !== base)
+          ? page + ' — ' + base
+          : full;
       });
     }
     window.$docsify.plugins = (window.$docsify.plugins || []).concat(initMermaid, initTocState, initHomeActive, updateTitle);
