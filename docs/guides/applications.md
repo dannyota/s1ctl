@@ -41,7 +41,7 @@ Rules support the full config-as-code loop: pull, review in `git diff`, push.
 ### List and inspect
 
 ```bash
-s1ctl applications rules list --site-id 000000
+s1ctl applications rules list --scope-type site --scope-id 000000
 s1ctl applications rules get 000000
 ```
 
@@ -104,8 +104,8 @@ s1ctl applications labels list
 ### Audit application control posture
 
 ```bash
-s1ctl applications settings get --site-id 000000 --json > app-settings.json
-s1ctl applications rules list --site-id 000000 --json > app-rules.json
+s1ctl applications settings get --json > app-settings.json
+s1ctl applications rules list --scope-type site --scope-id 000000 --json > app-rules.json
 ```
 
 ### Sync rules across sites
