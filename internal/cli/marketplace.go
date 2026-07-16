@@ -189,10 +189,16 @@ func newMarketplaceListCmd() *cobra.Command {
 				}
 			}
 
-			headers := []string{"CatalogID", "Name", "HasAlert", "LastInstalledAt"}
-			rows := make([][]string, len(items))
-			for i, item := range items {
-				rows[i] = []string{item.ApplicationCatalogID, item.Name, boolIcon(item.HasAlert), orDash(item.LastInstalledAt)}
+			headers := []string{"ID", "InstanceName", "CatalogID", "Status", "Installed"}
+			var rows [][]string
+			for _, item := range items {
+				if len(item.Scopes) == 0 {
+					rows = append(rows, []string{"", "", item.ApplicationCatalogID, "", orDash(item.LastInstalledAt)})
+					continue
+				}
+				for _, sc := range item.Scopes {
+					rows = append(rows, []string{sc.ID, sc.ApplicationInstanceName, item.ApplicationCatalogID, sc.Status, orDash(item.LastInstalledAt)})
+				}
 			}
 			return printOutput(cmd.OutOrStdout(), headers, rows, items, len(items), total, "installed app", all)
 		},
@@ -312,7 +318,7 @@ func newMarketplaceInstallCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope to group ID")
 	cmd.Flags().BoolVar(&tenant, "tenant", false, "scope to tenant")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the change (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // --- update ---
@@ -361,7 +367,7 @@ func newMarketplaceUpdateCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "scope to account ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope to group ID")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the change (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // --- delete ---
@@ -378,7 +384,7 @@ func newMarketplaceDeleteCmd() *cobra.Command {
 			if id == "" {
 				return fmt.Errorf("--id is required")
 			}
-			filter := &mgmt.MarketplaceScopeFilter{
+			filter := &mgmt.MarketplaceDeleteFilter{
 				ID:         []string{id},
 				SiteIDs:    siteIDs,
 				AccountIDs: accountIDs,
@@ -404,7 +410,7 @@ func newMarketplaceDeleteCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope to group ID")
 	cmd.Flags().BoolVar(&tenant, "tenant", false, "scope to tenant")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the change (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // --- enable ---
@@ -439,7 +445,7 @@ func newMarketplaceEnableCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "scope to account ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope to group ID")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the change (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // --- disable ---
@@ -474,7 +480,7 @@ func newMarketplaceDisableCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "scope to account ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope to group ID")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply the change (default: dry-run)")
-	return cmd
+	return markJSON(cmd)
 }
 
 // --- helpers ---

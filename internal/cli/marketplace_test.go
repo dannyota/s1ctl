@@ -97,6 +97,16 @@ func TestMarketplaceUpdateRequiresID(t *testing.T) {
 	}
 }
 
+func TestMarketplaceUpdateDryRunJSON(t *testing.T) {
+	out, err := runCLI(t, "marketplace", "update", "--id", "app-1", "--json")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "dryRun") {
+		t.Fatalf("expected dryRun in JSON output, got %q", out)
+	}
+}
+
 func TestMarketplaceUpdateDryRun(t *testing.T) {
 	out, err := runCLI(t, "marketplace", "update", "--id", "app-1", "--name", "New Name")
 	if err != nil {

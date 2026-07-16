@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -105,7 +106,15 @@ func TestMarketplaceAppList(t *testing.T) {
 					"name":                 "My Slack",
 					"hasAlert":             false,
 					"lastInstalledAt":      "2025-06-01T00:00:00Z",
-					"scopes":               []string{"site"},
+					"scopes": []map[string]any{
+						{
+							"id":                      "scope-1",
+							"applicationInstanceName": "My Slack Instance",
+							"status":                  "ACTIVE",
+							"scopeLevel":              "site",
+							"siteId":                  "site-1",
+						},
+					},
 				},
 			},
 			"pagination": map[string]any{"totalItems": 1, "nextCursor": ""},
@@ -126,6 +135,15 @@ func TestMarketplaceAppList(t *testing.T) {
 	}
 	if items[0].ApplicationCatalogID != "cat-1" {
 		t.Fatalf("unexpected catalogId: %s", items[0].ApplicationCatalogID)
+	}
+	if len(items[0].Scopes) != 1 {
+		t.Fatalf("expected 1 scope, got %d", len(items[0].Scopes))
+	}
+	if items[0].Scopes[0].ID != "scope-1" {
+		t.Fatalf("unexpected scope ID: %s", items[0].Scopes[0].ID)
+	}
+	if items[0].Scopes[0].Status != "ACTIVE" {
+		t.Fatalf("unexpected scope status: %s", items[0].Scopes[0].Status)
 	}
 	if items[0].Raw == nil {
 		t.Fatal("expected Raw to be populated")
@@ -257,6 +275,43 @@ func TestMarketplaceInstall(t *testing.T) {
 	}
 }
 
+func TestMarketplaceInstallNilConfigurations(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if !strings.Contains(string(body), `"configurations":[]`) {
+			t.Fatalf("expected configurations:[] in body, got %s", string(body))
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]any{"data": []any{}})
+	})
+	c := testClient(t, handler)
+	input := &MarketplaceInstallInput{}
+	input.Data.Name = "Test App"
+	// Configurations left nil — should marshal as [].
+	input.Filter.ApplicationCatalogID = "cat-1"
+	if err := c.MarketplaceInstall(context.Background(), input); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestMarketplaceUpdateNilConfigurations(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if !strings.Contains(string(body), `"configurations":[]`) {
+			t.Fatalf("expected configurations:[] in body, got %s", string(body))
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]any{"data": []any{}})
+	})
+	c := testClient(t, handler)
+	input := &MarketplaceUpdateInput{}
+	input.Filter.IDs = []string{"app-1"}
+	// Configurations left nil — should marshal as [].
+	if err := c.MarketplaceUpdate(context.Background(), input); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestMarketplaceInstallNilInput(t *testing.T) {
 	c := testClient(t, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	if err := c.MarketplaceInstall(context.Background(), nil); err == nil {
@@ -280,6 +335,7 @@ func TestMarketplaceUpdate(t *testing.T) {
 	input.Data.NameMap = map[string]string{"app-1": "Updated Slack"}
 	input.Data.Configurations = []MarketplaceConfig{{ID: "webhook_url", Value: "https://new.example.com"}}
 	input.Filter.IDs = []string{"app-1"}
+	input.Filter.SiteIDs = []string{"site-1"}
 	if err := c.MarketplaceUpdate(context.Background(), input); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -306,11 +362,15 @@ func TestMarketplaceDelete(t *testing.T) {
 		if !ok || len(ids) != 1 {
 			t.Fatalf("expected filter.id with 1 entry, got %v", filter["id"])
 		}
+		// Verify the delete filter does NOT send the old "ids" key.
+		if _, has := filter["ids"]; has {
+			t.Fatal("delete filter must not send 'ids' key")
+		}
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]any{"data": []any{}})
 	})
 	c := testClient(t, handler)
-	filter := &MarketplaceScopeFilter{ID: []string{"app-1"}}
+	filter := &MarketplaceDeleteFilter{ID: []string{"app-1"}}
 	if err := c.MarketplaceDelete(context.Background(), filter); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -320,6 +380,13 @@ func TestMarketplaceDeleteNilFilter(t *testing.T) {
 	c := testClient(t, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	if err := c.MarketplaceDelete(context.Background(), nil); err == nil {
 		t.Fatal("expected error for nil filter")
+	}
+}
+
+func TestMarketplaceDeleteEmptyFilter(t *testing.T) {
+	c := testClient(t, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	if err := c.MarketplaceDelete(context.Background(), &MarketplaceDeleteFilter{}); err == nil {
+		t.Fatal("expected error for empty filter")
 	}
 }
 

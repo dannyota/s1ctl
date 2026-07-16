@@ -36,14 +36,33 @@ func (m *MarketplaceCatalogItem) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarketplaceAppScope is a per-installation scope entry for a marketplace app.
+type MarketplaceAppScope struct {
+	ID                      string          `json:"id"`
+	ApplicationInstanceName string          `json:"applicationInstanceName"`
+	Status                  string          `json:"status"`
+	ScopeLevel              string          `json:"scopeLevel"`
+	SiteID                  string          `json:"siteId"`
+	Raw                     json.RawMessage `json:"-"`
+}
+
+func (m *MarketplaceAppScope) UnmarshalJSON(b []byte) error {
+	type alias MarketplaceAppScope
+	if err := json.Unmarshal(b, (*alias)(m)); err != nil {
+		return err
+	}
+	m.Raw = append(m.Raw[:0:0], b...)
+	return nil
+}
+
 // MarketplaceApp is an installed application in the Singularity Marketplace.
 type MarketplaceApp struct {
-	ApplicationCatalogID string          `json:"applicationCatalogId"`
-	Name                 string          `json:"name"`
-	HasAlert             bool            `json:"hasAlert"`
-	LastInstalledAt      string          `json:"lastInstalledAt"`
-	Scopes               json.RawMessage `json:"scopes"`
-	Raw                  json.RawMessage `json:"-"`
+	ApplicationCatalogID string                `json:"applicationCatalogId"`
+	Name                 string                `json:"name"`
+	HasAlert             bool                  `json:"hasAlert"`
+	LastInstalledAt      string                `json:"lastInstalledAt"`
+	Scopes               []MarketplaceAppScope `json:"scopes"`
+	Raw                  json.RawMessage       `json:"-"`
 }
 
 func (m *MarketplaceApp) UnmarshalJSON(b []byte) error {
@@ -137,10 +156,23 @@ type MarketplaceConfig struct {
 type MarketplaceScopeFilter struct {
 	ApplicationCatalogID string   `json:"applicationCatalogId,omitempty"`
 	IDs                  []string `json:"ids,omitempty"`
-	ID                   []string `json:"id,omitempty"`
 	ApplicationID        string   `json:"applicationId,omitempty"`
 	AccountIDs           []string `json:"accountIds,omitempty"`
 	SiteIDs              []string `json:"siteIds,omitempty"`
+	GroupIDs             []string `json:"groupIds,omitempty"`
+	Tenant               *bool    `json:"tenant,omitempty"`
+}
+
+// MarketplaceDeleteFilter scopes a marketplace delete to specific resources.
+// The delete endpoint uses different JSON keys than the shared scope filter.
+type MarketplaceDeleteFilter struct {
+	ID                   []string `json:"id,omitempty"`
+	ApplicationCatalogID []string `json:"application_catalog_id,omitempty"`
+	NameContains         string   `json:"name__contains,omitempty"`
+	CreatorContains      string   `json:"creator__contains,omitempty"`
+	Query                string   `json:"query,omitempty"`
+	SiteIDs              []string `json:"siteIds,omitempty"`
+	AccountIDs           []string `json:"accountIds,omitempty"`
 	GroupIDs             []string `json:"groupIds,omitempty"`
 	Tenant               *bool    `json:"tenant,omitempty"`
 }
@@ -227,6 +259,9 @@ func (c *Client) MarketplaceInstall(ctx context.Context, input *MarketplaceInsta
 	if input == nil {
 		return fmt.Errorf("mgmt: install input is required")
 	}
+	if input.Data.Configurations == nil {
+		input.Data.Configurations = []MarketplaceConfig{}
+	}
 	return c.post(ctx, marketplaceBase+"/applications", input, nil)
 }
 
@@ -235,16 +270,24 @@ func (c *Client) MarketplaceUpdate(ctx context.Context, input *MarketplaceUpdate
 	if input == nil {
 		return fmt.Errorf("mgmt: update input is required")
 	}
+	if input.Data.Configurations == nil {
+		input.Data.Configurations = []MarketplaceConfig{}
+	}
 	return c.put(ctx, marketplaceBase+"/applications", input, nil)
 }
 
 // MarketplaceDelete deletes an installed marketplace application.
-func (c *Client) MarketplaceDelete(ctx context.Context, filter *MarketplaceScopeFilter) error {
+func (c *Client) MarketplaceDelete(ctx context.Context, filter *MarketplaceDeleteFilter) error {
 	if filter == nil {
 		return fmt.Errorf("mgmt: delete filter is required")
 	}
+	if len(filter.ID) == 0 && len(filter.ApplicationCatalogID) == 0 &&
+		len(filter.SiteIDs) == 0 && len(filter.AccountIDs) == 0 &&
+		len(filter.GroupIDs) == 0 && filter.Query == "" {
+		return fmt.Errorf("mgmt: delete filter must specify at least one selector")
+	}
 	body := struct {
-		Filter *MarketplaceScopeFilter `json:"filter"`
+		Filter *MarketplaceDeleteFilter `json:"filter"`
 	}{Filter: filter}
 	return c.jsonRequest(ctx, "DELETE", marketplaceBase+"/applications", body, nil)
 }
