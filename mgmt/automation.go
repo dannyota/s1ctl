@@ -366,7 +366,8 @@ func (e *WorkflowExecutionRun) UnmarshalJSON(b []byte) error {
 
 // --- Pagination ---
 
-// AutomationPagination is the cursor-based pagination for Hyperautomation.
+// AutomationPagination is the pagination metadata for Hyperautomation.
+// The API returns nextCursor but paging is driven by skip+limit.
 type AutomationPagination struct {
 	NextCursor string `json:"nextCursor"`
 	TotalItems int    `json:"totalItems"`
