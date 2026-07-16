@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -16,6 +17,7 @@ func newDatalakeParsersCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newDatalakeParsersListCmd())
 	cmd.AddCommand(newDatalakeParsersGetCmd())
+	cmd.AddCommand(newDatalakeParsersCreateCmd())
 	cmd.AddCommand(newDatalakeParsersDeleteCmd())
 	return cmd
 }
@@ -92,6 +94,61 @@ func newDatalakeParsersGetCmd() *cobra.Command {
 			return printJSON(cmd.OutOrStdout(), p)
 		},
 	}
+	return markJSON(cmd)
+}
+
+func newDatalakeParsersCreateCmd() *cobra.Command {
+	var (
+		name     string
+		udoID    string
+		fromFile string
+		yes      bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "create --from-file <path> --name <name>",
+		Short: "Create or update a parser from a file",
+		Long: `Create or update a Data Lake parser (configuration file) from a local file.
+
+The parser content is read from --from-file. If the parser already exists
+(matched by --udo-id), it is updated; otherwise a new parser is created.`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if fromFile == "" {
+				return fmt.Errorf("--from-file is required")
+			}
+			if name == "" {
+				return fmt.Errorf("--name is required")
+			}
+			content, err := os.ReadFile(fromFile)
+			if err != nil {
+				return fmt.Errorf("read parser file: %w", err)
+			}
+			contentStr := string(content)
+			input := &sdl.ParserCreateInput{
+				Name:    &name,
+				Content: &contentStr,
+			}
+			if udoID != "" {
+				input.UdoID = &udoID
+			}
+			return guard(cmd.OutOrStdout(), "parsers create", fmt.Sprintf("create parser %q from %s", name, fromFile), name, yes, func() error {
+				consoleURL, token, cErr := resolveConfig()
+				if cErr != nil {
+					return cErr
+				}
+				c := sdl.NewClient(consoleURL, token)
+				result, cErr := c.ParserCreate(cmd.Context(), input)
+				if cErr != nil {
+					return cErr
+				}
+				return printJSON(cmd.OutOrStdout(), result)
+			})
+		},
+	}
+	cmd.Flags().StringVar(&name, "name", "", "parser name (required)")
+	cmd.Flags().StringVar(&udoID, "udo-id", "", "UDO ID (update existing parser)")
+	cmd.Flags().StringVar(&fromFile, "from-file", "", "path to parser content file (required)")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the mutation (default: dry-run)")
 	return markJSON(cmd)
 }
 

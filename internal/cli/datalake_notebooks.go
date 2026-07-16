@@ -16,6 +16,8 @@ func newDatalakeNotebooksCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newDatalakeNotebooksListCmd())
 	cmd.AddCommand(newDatalakeNotebooksGetCmd())
+	cmd.AddCommand(newDatalakeNotebooksCreateCmd())
+	cmd.AddCommand(newDatalakeNotebooksUpdateCmd())
 	cmd.AddCommand(newDatalakeNotebooksDeleteCmd())
 	return cmd
 }
@@ -93,6 +95,79 @@ func newDatalakeNotebooksGetCmd() *cobra.Command {
 			return printJSON(cmd.OutOrStdout(), n)
 		},
 	}
+	return markJSON(cmd)
+}
+
+func newDatalakeNotebooksCreateCmd() *cobra.Command {
+	var (
+		name        string
+		description string
+		yes         bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "create --name <name>",
+		Short: "Create a notebook",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if name == "" {
+				return fmt.Errorf("--name is required")
+			}
+			return guard(cmd.OutOrStdout(), "notebooks create", fmt.Sprintf("create notebook %q", name), name, yes, func() error {
+				consoleURL, token, err := resolveConfig()
+				if err != nil {
+					return err
+				}
+				c := sdl.NewClient(consoleURL, token)
+				result, err := c.NotebookCreate(cmd.Context(), name, description)
+				if err != nil {
+					return err
+				}
+				return printJSON(cmd.OutOrStdout(), result)
+			})
+		},
+	}
+	cmd.Flags().StringVar(&name, "name", "", "notebook name (required)")
+	cmd.Flags().StringVar(&description, "description", "", "notebook description")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the mutation (default: dry-run)")
+	return markJSON(cmd)
+}
+
+func newDatalakeNotebooksUpdateCmd() *cobra.Command {
+	var (
+		name        string
+		description string
+		yes         bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "update <id>",
+		Short: "Update a notebook's name or description",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			id := args[0]
+			input := &sdl.NotebookUpdateInput{}
+			if cmd.Flags().Changed("name") {
+				input.Name = &name
+			}
+			if cmd.Flags().Changed("description") {
+				input.Description = &description
+			}
+			if input.Name == nil && input.Description == nil {
+				return fmt.Errorf("at least one of --name or --description is required")
+			}
+			return guard(cmd.OutOrStdout(), "notebooks update", fmt.Sprintf("update notebook %q", id), id, yes, func() error {
+				consoleURL, token, err := resolveConfig()
+				if err != nil {
+					return err
+				}
+				c := sdl.NewClient(consoleURL, token)
+				return c.NotebookUpdate(cmd.Context(), id, input)
+			})
+		},
+	}
+	cmd.Flags().StringVar(&name, "name", "", "new notebook name")
+	cmd.Flags().StringVar(&description, "description", "", "new notebook description")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply the mutation (default: dry-run)")
 	return markJSON(cmd)
 }
 
