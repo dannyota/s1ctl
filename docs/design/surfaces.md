@@ -34,7 +34,7 @@ the mapping from SentinelOne's official API taxonomy to s1ctl's command tree.
 
 | CLI group | API tags | Protocol | Plane |
 |-----------|----------|----------|-------|
-| `applications` | Application, Application Management, Application Risk | REST | Operational |
+| `applications` | Application, Application Management, Application Risk, Application Control - Rules, Application Control - Settings and Labels, Application Management Settings | REST | Operational + Control |
 | `devicecontrol` | Device Control | REST | Control |
 | `firewall` | Firewall Control | REST | Control |
 | `network` | Network Quarantine Control | REST | Control |

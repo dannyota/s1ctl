@@ -109,6 +109,7 @@ next push and would re-create the object. Delete stale files before pushing.
 
 | Surface | Identity | File shape | Caps |
 |---------|----------|-----------|------|
+| appcontrol-rules | rule name | behavior, OS, conditions, exceptions | |
 | rules | rule name | STAR rule definition | |
 | firewall | rule name | firewall rule definition | |
 | network | rule name | network quarantine rule definition | |
