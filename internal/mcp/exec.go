@@ -64,8 +64,10 @@ func execSubprocess(args, extraEnv []string) (string, error) {
 	}
 
 	out := stdout.Bytes()
+	stderrTrimmed := strings.TrimSpace(stderr.String())
+
 	if len(out) > maxOutputBytes {
-		return spillOutput(out)
+		return spillOutputWithWarnings(out, stderrTrimmed)
 	}
 	if len(bytes.TrimSpace(out)) == 0 {
 		// A successful command may write only diagnostics (e.g. sync
@@ -73,7 +75,23 @@ func execSubprocess(args, extraEnv []string) (string, error) {
 		// always-JSON MCP channel stays parseable.
 		return stderrFallback(stderr.String()), nil
 	}
+	if stderrTrimmed != "" {
+		return mergeWarnings(string(out), stderrTrimmed), nil
+	}
 	return string(out), nil
+}
+
+// mergeWarnings wraps stdout and stderr into a JSON envelope when both are
+// non-empty on a successful subprocess exit.
+func mergeWarnings(stdout, stderr string) string {
+	b, _ := json.Marshal(struct {
+		Output   string `json:"output"`
+		Warnings string `json:"warnings"`
+	}{
+		Output:   stdout,
+		Warnings: stderr,
+	})
+	return string(b)
 }
 
 // stderrFallback returns a JSON envelope when stderr is non-empty, or an
@@ -122,6 +140,23 @@ func runePrefix(s []byte, n int) string {
 		cut--
 	}
 	return string(s[:cut])
+}
+
+// spillOutputWithWarnings delegates to spillOutput and attaches stderr
+// warnings when non-empty.
+func spillOutputWithWarnings(out []byte, stderrTrimmed string) (string, error) {
+	result, err := spillOutput(out)
+	if err != nil || stderrTrimmed == "" {
+		return result, err
+	}
+	// Inject warnings into the spill envelope.
+	var env map[string]any
+	if jsonErr := json.Unmarshal([]byte(result), &env); jsonErr == nil {
+		env["warnings"] = stderrTrimmed
+		b, _ := json.Marshal(env)
+		return string(b), nil
+	}
+	return result, nil
 }
 
 // spillOutput writes oversized output to a spill file and returns a JSON

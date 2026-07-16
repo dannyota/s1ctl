@@ -43,22 +43,40 @@ Shows both private and shared saved queries.`,
 				return err
 			}
 
-			if len(queries) == 0 && outputFormat == "" {
+			if len(queries) == 0 && outputFormat == "table" {
 				fmt.Fprintln(cmd.OutOrStdout(), "No saved queries found.")
 				return nil
 			}
 
+			// Build full (untruncated) rows for CSV; truncated rows for table.
 			headers := []string{"Name", "Type", "Index", "Query"}
-			rows := make([][]string, len(queries))
+			fullRows := make([][]string, len(queries))
+			tableRows := make([][]string, len(queries))
 			for i, q := range queries {
-				rows[i] = []string{
+				fullRows[i] = []string{
+					q.Name,
+					q.Type,
+					strconv.Itoa(q.Index),
+					q.URL,
+				}
+				tableRows[i] = []string{
 					q.Name,
 					q.Type,
 					strconv.Itoa(q.Index),
 					truncate(q.URL, 60),
 				}
 			}
-			return printOutput(cmd.OutOrStdout(), headers, rows, queries, len(queries), len(queries), "saved query", true)
+
+			switch outputFormat {
+			case "json":
+				return printJSON(cmd.OutOrStdout(), queries)
+			case "csv":
+				return printCSV(cmd.OutOrStdout(), headers, fullRows)
+			default:
+				printTable(headers, tableRows)
+				printFooter(cmd.OutOrStdout(), len(queries), len(queries), "saved query", true)
+				return nil
+			}
 		},
 	}
 	return markJSON(cmd)

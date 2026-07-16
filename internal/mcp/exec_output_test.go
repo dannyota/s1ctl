@@ -143,6 +143,32 @@ func TestSpillPreviewRuneSafe(t *testing.T) {
 	}
 }
 
+func TestMergeWarnings(t *testing.T) {
+	got := mergeWarnings(`{"data":[]}`, "warning: duplicate stem")
+	var env struct {
+		Output   string `json:"output"`
+		Warnings string `json:"warnings"`
+	}
+	if err := json.Unmarshal([]byte(got), &env); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, got)
+	}
+	if env.Output != `{"data":[]}` {
+		t.Errorf("output = %q, want original stdout", env.Output)
+	}
+	if env.Warnings != "warning: duplicate stem" {
+		t.Errorf("warnings = %q, want stderr", env.Warnings)
+	}
+}
+
+func TestMergeWarningsStdoutOnlyUnchanged(t *testing.T) {
+	// When mergeWarnings is not called (no stderr), stdout is returned raw.
+	// This test verifies the helper itself always wraps both.
+	got := mergeWarnings(`plain output`, "warn")
+	if !strings.Contains(got, `"output"`) {
+		t.Errorf("expected JSON envelope, got %s", got)
+	}
+}
+
 func TestRunePrefixShortInput(t *testing.T) {
 	got := runePrefix([]byte("short"), 2048)
 	if got != "short" {

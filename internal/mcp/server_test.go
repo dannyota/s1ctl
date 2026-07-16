@@ -458,6 +458,35 @@ func TestReadOnlyInstructions(t *testing.T) {
 	}
 }
 
+func TestReadOnlyHelpOmitsMutations(t *testing.T) {
+	root := testCobraTree()
+	srv := NewDynamicServer("test-ro", "1.0.0", root, nil, WithReadOnly(true))
+
+	// Help for the agents group should not show isolate (a mutation).
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"help","arguments":{"group":"agents"}}}`)
+	result, _ := resp["result"].(map[string]any)
+	content, _ := result["content"].([]any)
+	text, _ := content[0].(map[string]any)["text"].(string)
+	if strings.Contains(text, "[mutation]") {
+		t.Errorf("read-only help should not contain [mutation], got:\n%s", text)
+	}
+	if strings.Contains(text, "isolate") {
+		t.Errorf("read-only help should not list mutation command 'isolate', got:\n%s", text)
+	}
+	if !strings.Contains(text, "list") {
+		t.Errorf("read-only help should still list read commands, got:\n%s", text)
+	}
+
+	// Top-level help should show 0 mutations.
+	resp = roundTrip(t, srv, `{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"help","arguments":{}}}`)
+	result, _ = resp["result"].(map[string]any)
+	content, _ = result["content"].([]any)
+	text, _ = content[0].(map[string]any)["text"].(string)
+	if strings.Contains(text, "/1m") {
+		t.Errorf("read-only top-level help should not report mutations, got:\n%s", text)
+	}
+}
+
 func TestReadOnlyRunToolDescription(t *testing.T) {
 	root := testCobraTree()
 	srv := NewDynamicServer("test-ro", "1.0.0", root, nil, WithReadOnly(true))

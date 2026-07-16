@@ -10,7 +10,7 @@ func TestAssetsListHelp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	for _, flag := range []string{"--type", "--filter", "--limit", "--sort-by", "--site-id"} {
+	for _, flag := range []string{"--type", "--filter", "--limit", "--sort-by", "--site-id", "--all"} {
 		if !strings.Contains(out, flag) {
 			t.Errorf("expected %s in help output", flag)
 		}

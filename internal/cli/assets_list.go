@@ -24,6 +24,7 @@ func newAssetsListCmd() *cobra.Command {
 		siteIDs    []string
 		accountIDs []string
 		groupIDs   []string
+		all        bool
 	)
 
 	cmd := &cobra.Command{
@@ -53,22 +54,55 @@ Use --filter key=value to pass type-specific API query parameters.`,
 				return err
 			}
 			params.Extra = extra
+			if params.Limit == 0 {
+				params.Limit = defaultPageSize
+			}
 
-			items, pag, err := c.XDRAssetList(cmd.Context(), mgmt.AssetType(assetType), params)
-			if err != nil {
-				return err
+			var items []json.RawMessage
+			var total int
+
+			if all {
+				items, total, err = fetchAllREST("asset", func(cur string) ([]json.RawMessage, *mgmt.Pagination, error) {
+					params.Cursor = cur
+					return c.XDRAssetList(cmd.Context(), mgmt.AssetType(assetType), params)
+				})
+				if err != nil {
+					return err
+				}
+			} else {
+				page, pag, fetchErr := c.XDRAssetList(cmd.Context(), mgmt.AssetType(assetType), params)
+				if fetchErr != nil {
+					return fetchErr
+				}
+				items = page
+				if pag != nil {
+					total = pag.TotalItems
+				}
 			}
 
 			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), items)
+				env := struct {
+					Data       []json.RawMessage `json:"data"`
+					Returned   int               `json:"returned"`
+					Total      int               `json:"total"`
+					NextCursor string            `json:"nextCursor,omitempty"`
+				}{
+					Data:       items,
+					Returned:   len(items),
+					Total:      total,
+					NextCursor: params.Cursor,
+				}
+				if all {
+					env.NextCursor = ""
+				}
+				return printJSON(cmd.OutOrStdout(), env)
 			}
 
 			headers, rows := assetRows(items, assetType)
-			total := len(items)
-			if pag != nil && pag.TotalItems > 0 {
-				total = pag.TotalItems
+			if total == 0 {
+				total = len(items)
 			}
-			return printOutput(cmd.OutOrStdout(), headers, rows, items, len(items), total, "asset", false)
+			return printOutput(cmd.OutOrStdout(), headers, rows, items, len(items), total, "asset", all)
 		},
 	}
 	cmd.Flags().StringVar(&assetType, "type", "", "asset type slug (e.g. device, server, surface/cloud)")
@@ -81,6 +115,7 @@ Use --filter key=value to pass type-specific API query parameters.`,
 	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
 	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
 	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "filter by group ID")
+	cmd.Flags().BoolVar(&all, "all", false, "fetch all pages")
 	return markJSON(cmd)
 }
 

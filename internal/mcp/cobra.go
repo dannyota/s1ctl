@@ -465,6 +465,9 @@ func (s *Server) helpGroups() string {
 			continue
 		}
 		reads, muts := countLeaves(c)
+		if s.readOnly {
+			muts = 0
+		}
 		status := ""
 		if focused[c.Name()] {
 			status = " *"
@@ -479,6 +482,9 @@ func (s *Server) helpGroup(cmd *cobra.Command, group string) string {
 	fmt.Fprintf(&b, "## %s — %s\n\n", group, cmd.Short)
 
 	writeCmd := func(c *cobra.Command, indent string) {
+		if s.readOnly && hasMutationFlag(c) {
+			return
+		}
 		line := indent + c.Name()
 		if hasMutationFlag(c) {
 			line += " [mutation]"
