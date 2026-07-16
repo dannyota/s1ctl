@@ -288,6 +288,33 @@ func TestConfigOverrideBulkDelete(t *testing.T) {
 	}
 }
 
+func TestConfigOverrideBulkDeleteTenantFalse(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Filter map[string]any `json:"filter"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		tenant, ok := body.Filter["tenant"]
+		if !ok {
+			t.Fatal("expected tenant field to be present in filter")
+		}
+		if tenant != false {
+			t.Fatalf("expected tenant=false, got %v", tenant)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"affected": 0},
+		})
+	})
+	c := testClient(t, handler)
+	f := false
+	_, err := c.ConfigOverrideBulkDelete(context.Background(), ConfigOverrideDeleteFilter{
+		Tenant: &f,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestConfigOverrideListError(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusForbidden)

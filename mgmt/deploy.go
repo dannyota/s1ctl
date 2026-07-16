@@ -195,6 +195,9 @@ func (c *Client) DeployCredDetailAdd(ctx context.Context, input DeployCredDetail
 	if err := c.post(ctx, "/ranger/cred-groups/details", req, &resp); err != nil {
 		return err
 	}
+	if !resp.Data.Success {
+		return fmt.Errorf("mgmt: deploy cred detail add returned success=false")
+	}
 	return nil
 }
 

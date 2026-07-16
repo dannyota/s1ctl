@@ -149,7 +149,7 @@ type ConfigOverrideDeleteFilter struct {
 	SiteIDs    []string `json:"siteIds,omitempty"`
 	AccountIDs []string `json:"accountIds,omitempty"`
 	GroupIDs   []string `json:"groupIds,omitempty"`
-	Tenant     bool     `json:"tenant,omitempty"`
+	Tenant     *bool    `json:"tenant,omitempty"`
 }
 
 // ConfigOverrideList returns a paginated list of config overrides.

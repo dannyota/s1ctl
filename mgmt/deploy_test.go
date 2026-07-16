@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -287,6 +288,27 @@ func TestDeployCredDetailDelete(t *testing.T) {
 	err := c.DeployCredDetailDelete(context.Background(), "2000000000000000001")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestDeployCredDetailAddFailure(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"success": false},
+		})
+	})
+	c := testClient(t, handler)
+	err := c.DeployCredDetailAdd(context.Background(), DeployCredDetailAddInput{
+		CredGroupID: "1000000000000000001",
+		Details: []DeployCredDetailInput{
+			{Title: "x", CredType: "y", EncryptedKey: "k", EncryptedCred: "c"},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error when success=false")
+	}
+	if !strings.Contains(err.Error(), "success=false") {
+		t.Fatalf("expected success=false in error, got %q", err.Error())
 	}
 }
 
