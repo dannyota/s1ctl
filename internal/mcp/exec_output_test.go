@@ -30,6 +30,34 @@ func TestCapOutputTruncatesOnRuneBoundary(t *testing.T) {
 	}
 }
 
+// TestStderrFallbackIsJSON verifies that when a subprocess exits 0 with empty
+// stdout and non-empty stderr, the result is a JSON envelope with output and
+// warnings keys rather than raw prose.
+func TestStderrFallbackIsJSON(t *testing.T) {
+	got := stderrFallback("  warning: something happened  ")
+	var env struct {
+		Output   string `json:"output"`
+		Warnings string `json:"warnings"`
+	}
+	if err := json.Unmarshal([]byte(got), &env); err != nil {
+		t.Fatalf("stderrFallback result is not JSON: %v\n%s", err, got)
+	}
+	if env.Output != "" {
+		t.Errorf("output = %q, want empty", env.Output)
+	}
+	if env.Warnings != "warning: something happened" {
+		t.Errorf("warnings = %q, want trimmed stderr", env.Warnings)
+	}
+}
+
+// TestStderrFallbackEmpty verifies that blank stderr returns empty string.
+func TestStderrFallbackEmpty(t *testing.T) {
+	got := stderrFallback("   ")
+	if got != "" {
+		t.Errorf("stderrFallback(%q) = %q, want empty", "   ", got)
+	}
+}
+
 func TestSpillOutputRoundTripAndSweep(t *testing.T) {
 	t.Setenv("TMPDIR", t.TempDir())
 

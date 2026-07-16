@@ -37,6 +37,14 @@ func newVisibilityQueryCmd() *cobra.Command {
 Initiates a query, polls until complete, then fetches and displays results.
 The query uses SentinelOne's Deep Visibility query language.
 
+With --json, output is a stable envelope:
+
+  {"data":[...],"returned":N,"total":M}
+
+data is always an array (empty [] when no events). returned is the number
+of events in data; total is the server-side count. When returned < total,
+a notice is printed on stderr.
+
 Examples:
   s1ctl visibility query --query "EventType = \"Process Creation\""
   s1ctl visibility query --query "ProcessName contains \"cmd.exe\"" --from 7d
@@ -215,15 +223,25 @@ func fetchDVEvents(c *mgmt.Client, cmd *cobra.Command, queryID string, opts visi
 
 func printDVEvents(cmd *cobra.Command, events []mgmt.DVEvent, total int) error {
 	if outputFormat == "json" {
-		// Stable shape: always a bare array; truncation is signalled on
-		// stderr so it never changes what stdout consumers parse.
+		// Stable envelope: {"data":[...],"returned":N,"total":M}.
+		// data is always an array (empty [] when no events), returned/total
+		// always present. Truncation notice goes to stderr.
 		if total > len(events) {
 			fmt.Fprintf(cmd.ErrOrStderr(), "Showing %d of %d events. Use --max-results to fetch more.\n", len(events), total)
 		}
 		if events == nil {
 			events = []mgmt.DVEvent{}
 		}
-		return printJSON(cmd.OutOrStdout(), events)
+		envelope := struct {
+			Data     []mgmt.DVEvent `json:"data"`
+			Returned int            `json:"returned"`
+			Total    int            `json:"total"`
+		}{
+			Data:     events,
+			Returned: len(events),
+			Total:    total,
+		}
+		return printJSON(cmd.OutOrStdout(), envelope)
 	}
 
 	if len(events) == 0 {

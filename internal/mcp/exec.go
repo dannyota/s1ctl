@@ -65,10 +65,28 @@ func execSubprocess(args []string) (string, error) {
 	}
 	if len(bytes.TrimSpace(out)) == 0 {
 		// A successful command may write only diagnostics (e.g. sync
-		// warnings) to stderr; surface them instead of an empty result.
-		return strings.TrimSpace(stderr.String()), nil
+		// warnings) to stderr; surface them as a JSON envelope so the
+		// always-JSON MCP channel stays parseable.
+		return stderrFallback(stderr.String()), nil
 	}
 	return string(out), nil
+}
+
+// stderrFallback returns a JSON envelope when stderr is non-empty, or an
+// empty string when it is blank. This keeps the MCP channel always-JSON.
+func stderrFallback(stderr string) string {
+	trimmed := strings.TrimSpace(stderr)
+	if trimmed == "" {
+		return ""
+	}
+	b, _ := json.Marshal(struct {
+		Output   string `json:"output"`
+		Warnings string `json:"warnings"`
+	}{
+		Output:   "",
+		Warnings: trimmed,
+	})
+	return string(b)
 }
 
 // capOutput bounds s to maxOutputBytes so oversized failure output cannot
