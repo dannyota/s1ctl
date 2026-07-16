@@ -262,8 +262,8 @@ s1ctl vulns cves --min-cvss 9.0 --all --json
 ### Export all findings for compliance
 
 ```bash
-s1ctl vulns export --all --out vulnerabilities.csv
-s1ctl misconfigs export --all --out misconfigurations.csv
+s1ctl vulns export --out vulnerabilities.csv
+s1ctl misconfigs export --out misconfigurations.csv
 ```
 
 ## See also
