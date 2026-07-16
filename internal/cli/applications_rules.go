@@ -223,11 +223,15 @@ func newAppControlRulesUpdateCmd() *cobra.Command {
 		Use:   "update <rule-id>",
 		Short: "Update an application control rule",
 		Long: `Update an application control rule by ID.
-Dry-run by default — pass --yes to apply.`,
+
+Only fields whose flags are explicitly passed are changed; all other fields
+are preserved from the live rule. Dry-run by default — pass --yes to apply.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if name == "" && behavior == "" {
-				return fmt.Errorf("at least --name or --behavior is required")
+			changed := cmd.Flags().Changed
+			if !changed("name") && !changed("behavior") && !changed("description") &&
+				!changed("os-type") && !changed("propagation") {
+				return fmt.Errorf("at least one of --name, --behavior, --description, --os-type, or --propagation is required")
 			}
 
 			return guard(cmd.OutOrStdout(), "applications rules update",
@@ -237,17 +241,35 @@ Dry-run by default — pass --yes to apply.`,
 					if err != nil {
 						return err
 					}
-					input := mgmt.AppControlRuleInput{
-						RuleName:    name,
-						Description: &description,
-						Propagation: &propagation,
+
+					// Fetch the existing rule to use as the base, then merge
+					// only the explicitly changed flags on top.
+					existing, err := c.AppControlRulesGet(cmd.Context(), args[0])
+					if err != nil {
+						return fmt.Errorf("fetch existing rule: %w", err)
 					}
-					if behavior != "" {
+					f := appControlRuleToFile(*existing)
+					input := f.toInput("", nil)
+
+					if changed("name") {
+						input.RuleName = name
+					}
+					if changed("description") {
+						input.Description = &description
+					}
+					if changed("behavior") {
 						input.Behavior = mgmt.AppControlBehavior(strings.ToUpper(behavior))
 					}
-					for _, o := range osTypes {
-						input.OSType = append(input.OSType, mgmt.AppControlOSType(strings.ToUpper(o)))
+					if changed("os-type") {
+						input.OSType = nil
+						for _, o := range osTypes {
+							input.OSType = append(input.OSType, mgmt.AppControlOSType(strings.ToUpper(o)))
+						}
 					}
+					if changed("propagation") {
+						input.Propagation = &propagation
+					}
+
 					resp, err := c.AppControlRulesUpdate(cmd.Context(), args[0], input)
 					if err != nil {
 						return err

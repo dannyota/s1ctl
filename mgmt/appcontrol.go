@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 )
 
 // AppControlBehavior is the enforcement behavior of an application control rule.
@@ -245,12 +246,31 @@ func (r *AppControlCommonResponse) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// err returns a typed error when the NAC response indicates failure. It
+// includes the statusMessage and any validation errors in the message.
+func (r *AppControlCommonResponse) err(op string) error {
+	if r.Success {
+		return nil
+	}
+	parts := []string{fmt.Sprintf("mgmt: %s returned success=false", op)}
+	if r.StatusMessage != "" {
+		parts = append(parts, r.StatusMessage)
+	}
+	for _, ve := range r.ValidationErrors {
+		parts = append(parts, ve.Message)
+	}
+	return fmt.Errorf("%s", strings.Join(parts, ": "))
+}
+
 // AppControlRulesCreate creates an application control rule.
 func (c *Client) AppControlRulesCreate(ctx context.Context, input AppControlRuleInput) (*AppControlCommonResponse, error) {
 	path := nacBase + "/rules"
 	var resp AppControlCommonResponse
 	if err := c.post(ctx, path, input, &resp); err != nil {
 		return nil, err
+	}
+	if err := resp.err("application control rule create"); err != nil {
+		return &resp, err
 	}
 	return &resp, nil
 }
@@ -261,6 +281,9 @@ func (c *Client) AppControlRulesUpdate(ctx context.Context, id string, input App
 	var resp AppControlCommonResponse
 	if err := c.put(ctx, path, input, &resp); err != nil {
 		return nil, err
+	}
+	if err := resp.err("application control rule update"); err != nil {
+		return &resp, err
 	}
 	return &resp, nil
 }
@@ -276,9 +299,18 @@ func (c *Client) AppControlRulesDelete(ctx context.Context, ids []string, scope 
 	if len(q) > 0 {
 		u += "?" + q.Encode()
 	}
+	// Pass untyped nil when scope is absent so the body is empty rather than
+	// the JSON literal "null".
+	var body any
+	if scope != nil {
+		body = scope
+	}
 	var resp AppControlCommonResponse
-	if err := c.jsonRequest(ctx, "DELETE", u, scope, &resp); err != nil {
+	if err := c.jsonRequest(ctx, "DELETE", u, body, &resp); err != nil {
 		return nil, err
+	}
+	if err := resp.err("application control rule delete"); err != nil {
+		return &resp, err
 	}
 	return &resp, nil
 }
@@ -352,6 +384,9 @@ func (c *Client) AppControlSettingsUpdate(ctx context.Context, input AppControlS
 	var resp AppControlCommonResponse
 	if err := c.put(ctx, path, input, &resp); err != nil {
 		return nil, err
+	}
+	if err := resp.err("application control settings update"); err != nil {
+		return &resp, err
 	}
 	return &resp, nil
 }

@@ -256,8 +256,8 @@ Pull and push application control rules through the reconcile engine:
 ```bash
 s1ctl applications rules pull --scope-id 000000
 # edit files in appcontrol-rules/
-s1ctl applications rules push --scope-id 000000          # dry-run
-s1ctl applications rules push --scope-id 000000 --yes    # apply
+s1ctl applications rules push --scope-type site --scope-id 000000          # dry-run
+s1ctl applications rules push --scope-type site --scope-id 000000 --yes    # apply
 ```
 
 Rules are matched by name. See the [Applications](applications.md) guide for

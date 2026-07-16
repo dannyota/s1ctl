@@ -151,9 +151,11 @@ is omitted so the files contain only the declarative definition.`,
 Rules are matched by name: existing rules are updated, new rules are created,
 and unchanged rules are skipped. Dry-run by default — pass --yes to apply.`,
 		RegisterPullFlags: func(cmd *cobra.Command, scope *scopeFlags) {
+			cmd.Flags().String("scope-type", "site", "scope type (account, site, group)")
 			cmd.Flags().StringSliceVar(&scope.SiteIDs, "scope-id", nil, "scope IDs to filter by")
 		},
 		RegisterPushFlags: func(cmd *cobra.Command, scope *scopeFlags) {
+			cmd.Flags().String("scope-type", "", "scope type (account, site, group) [required with --scope-id]")
 			cmd.Flags().StringSliceVar(&scope.SiteIDs, "scope-id", nil, "scope IDs for new rules")
 		},
 		Build: func(cmd *cobra.Command, scope scopeFlags) (reconcile.Surface, error) {
@@ -169,10 +171,14 @@ and unchanged rules are skipped. Dry-run by default — pass --yes to apply.`,
 				return client, nil
 			}
 
-			// Resolve the scope type flag from the parent.
 			scopeType := ""
-			if f := cmd.Flag("scope-type"); f != nil {
+			if f := cmd.Flags().Lookup("scope-type"); f != nil {
 				scopeType = f.Value.String()
+			}
+
+			// On push, require --scope-type when --scope-id is given.
+			if scope.push && len(scope.SiteIDs) > 0 && scopeType == "" {
+				return reconcile.Surface{}, fmt.Errorf("--scope-type is required when --scope-id is set on push")
 			}
 
 			return reconcile.Surface{
@@ -188,7 +194,7 @@ and unchanged rules are skipped. Dry-run by default — pass --yes to apply.`,
 						IncludeParents: false,
 						PageSize:       100,
 					}
-					if !scope.push && len(scope.SiteIDs) > 0 {
+					if len(scope.SiteIDs) > 0 {
 						params.ScopeType = mgmt.AppControlScopeLevel(strings.ToUpper(scopeType))
 						if params.ScopeType == "" {
 							params.ScopeType = mgmt.AppControlScopeSite

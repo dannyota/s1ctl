@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -476,5 +478,118 @@ func TestAppControlEnumValues(t *testing.T) {
 				t.Fatalf("expected %q, got %q", tt.want, tt.got)
 			}
 		})
+	}
+}
+
+func TestAppControlRulesCreateFailure(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"success":       false,
+			"statusCode":    400,
+			"statusMessage": "Bad request",
+			"validationErrors": []map[string]any{
+				{"code": "RULE_NAME_EXISTS", "message": "Rule name already exists", "value": "Block malware"},
+			},
+		})
+	})
+	c := testClient(t, handler)
+	_, err := c.AppControlRulesCreate(context.Background(), AppControlRuleInput{
+		RuleName: "Block malware",
+		Behavior: AppControlBehaviorBlock,
+	})
+	if err == nil {
+		t.Fatal("expected error when success=false")
+	}
+	if !strings.Contains(err.Error(), "success=false") {
+		t.Fatalf("expected success=false in error, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "Bad request") {
+		t.Fatalf("expected statusMessage in error, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "Rule name already exists") {
+		t.Fatalf("expected validation error in message, got %q", err.Error())
+	}
+}
+
+func TestAppControlRulesUpdateFailure(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"success":       false,
+			"statusCode":    400,
+			"statusMessage": "Validation failed",
+		})
+	})
+	c := testClient(t, handler)
+	_, err := c.AppControlRulesUpdate(context.Background(), "12345", AppControlRuleInput{
+		RuleName: "Bad rule",
+	})
+	if err == nil {
+		t.Fatal("expected error when success=false")
+	}
+	if !strings.Contains(err.Error(), "success=false") {
+		t.Fatalf("expected success=false in error, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "Validation failed") {
+		t.Fatalf("expected statusMessage in error, got %q", err.Error())
+	}
+}
+
+func TestAppControlRulesDeleteFailure(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"success":       false,
+			"statusCode":    404,
+			"statusMessage": "Rule not found",
+		})
+	})
+	c := testClient(t, handler)
+	_, err := c.AppControlRulesDelete(context.Background(), []string{"bad-id"}, nil)
+	if err == nil {
+		t.Fatal("expected error when success=false")
+	}
+	if !strings.Contains(err.Error(), "success=false") {
+		t.Fatalf("expected success=false in error, got %q", err.Error())
+	}
+}
+
+func TestAppControlRulesDeleteNilScopeEmptyBody(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		bodyStr := strings.TrimSpace(string(body))
+		if bodyStr != "" {
+			t.Fatalf("expected empty body for nil scope, got %q", bodyStr)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"success":    true,
+			"statusCode": 200,
+		})
+	})
+	c := testClient(t, handler)
+	resp, err := c.AppControlRulesDelete(context.Background(), []string{"12345"}, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !resp.Success {
+		t.Fatal("expected success=true")
+	}
+}
+
+func TestAppControlSettingsUpdateFailure(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"success":       false,
+			"statusCode":    400,
+			"statusMessage": "Invalid fallback behavior",
+		})
+	})
+	c := testClient(t, handler)
+	_, err := c.AppControlSettingsUpdate(context.Background(), AppControlSettingsInput{
+		FallbackBehavior: "INVALID",
+	})
+	if err == nil {
+		t.Fatal("expected error when success=false")
+	}
+	if !strings.Contains(err.Error(), "success=false") {
+		t.Fatalf("expected success=false in error, got %q", err.Error())
 	}
 }

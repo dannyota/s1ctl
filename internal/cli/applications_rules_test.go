@@ -55,9 +55,9 @@ func TestAppControlRulesUpdateDryRun(t *testing.T) {
 func TestAppControlRulesUpdateRequiresField(t *testing.T) {
 	_, err := runCLI(t, "applications", "rules", "update", "12345")
 	if err == nil {
-		t.Fatal("expected validation error without --name or --behavior")
+		t.Fatal("expected validation error without any field flag")
 	}
-	if !strings.Contains(err.Error(), "at least --name or --behavior is required") {
+	if !strings.Contains(err.Error(), "at least one of") {
 		t.Fatalf("unexpected error: %q", err.Error())
 	}
 }
@@ -168,6 +168,38 @@ func TestAppMgmtSettingsUpdateInvalidBool(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "invalid --extensive-scan value") {
 		t.Fatalf("unexpected error: %q", err.Error())
+	}
+}
+
+func TestAppControlRulesPushScopeIdWithoutScopeType(t *testing.T) {
+	dir := t.TempDir()
+	_, err := runCLI(t, "applications", "rules", "push",
+		"--dir", dir, "--scope-id", "000000", "--scope-type", "")
+	if err == nil {
+		t.Fatal("expected error when --scope-id given without --scope-type on push")
+	}
+	if !strings.Contains(err.Error(), "--scope-type is required") {
+		t.Fatalf("unexpected error: %q", err.Error())
+	}
+}
+
+func TestAppControlRulesPullHasScopeTypeFlag(t *testing.T) {
+	out, err := runCLI(t, "applications", "rules", "pull", "--help")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "--scope-type") {
+		t.Fatalf("expected --scope-type in pull help, got %q", out)
+	}
+}
+
+func TestAppControlRulesPushHasScopeTypeFlag(t *testing.T) {
+	out, err := runCLI(t, "applications", "rules", "push", "--help")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "--scope-type") {
+		t.Fatalf("expected --scope-type in push help, got %q", out)
 	}
 }
 
