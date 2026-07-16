@@ -56,6 +56,11 @@
     <changefreq>weekly</changefreq>
   </url>
   <url>
+    <loc>https://s1.danny.vn/#/guides/blocklist</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
     <loc>https://s1.danny.vn/#/guides/datalake</loc>
     <lastmod>2026-07-16</lastmod>
     <changefreq>weekly</changefreq>
@@ -71,7 +76,27 @@
     <changefreq>weekly</changefreq>
   </url>
   <url>
+    <loc>https://s1.danny.vn/#/guides/firewall</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
     <loc>https://s1.danny.vn/#/guides/identity</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://s1.danny.vn/#/guides/policies</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://s1.danny.vn/#/guides/remoteops</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://s1.danny.vn/#/guides/rules</loc>
     <lastmod>2026-07-16</lastmod>
     <changefreq>weekly</changefreq>
   </url>
@@ -87,6 +112,11 @@
   </url>
   <url>
     <loc>https://s1.danny.vn/#/guides/settings</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://s1.danny.vn/#/guides/xspm</loc>
     <lastmod>2026-07-16</lastmod>
     <changefreq>weekly</changefreq>
   </url>

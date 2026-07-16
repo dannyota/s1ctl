@@ -2027,6 +2027,207 @@ for _, edge := range conn.Edges {
 
 ---
 
+# Blocklist
+
+Manage the SentinelOne blocklist (restrictions): add, update, validate,
+export, and sync blocked hashes as code.
+
+The blocklist holds SHA1/SHA256 hashes that agents block from executing.
+Items are scoped globally (tenant) or to accounts, sites, or groups.
+
+> Prerequisites: `s1ctl` installed and configured (`S1_CONSOLE_URL`, `S1_TOKEN`).
+
+## List blocklist items
+
+```bash
+s1ctl blocklist list
+s1ctl blocklist list --site-id 000000
+s1ctl blocklist list --os-type windows --query "mimikatz"
+s1ctl blocklist list --all --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--account-id` | Filter by account ID (repeatable) |
+| `--group-id` | Filter by group ID (repeatable) |
+| `--os-type` | Filter by OS: `windows`, `linux`, `macos`, `windows_legacy` (repeatable) |
+| `--query` | Free text search |
+| `--value` | Filter by hash value |
+| `--sort-by` | Sort field (e.g. `createdAt`, `osType`) |
+| `--sort-order` | Sort direction (`asc`, `desc`) |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--cursor` | Pagination cursor |
+
+## Create a blocklist entry
+
+Add a hash to the blocklist. Dry-run by default.
+
+```bash
+s1ctl blocklist create \
+  --value da39a3ee5e6b4b0d3255bfef95601890afd80709 \
+  --os-type windows \
+  --description "Known malware sample"         # dry-run
+
+s1ctl blocklist create \
+  --value da39a3ee5e6b4b0d3255bfef95601890afd80709 \
+  --sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 \
+  --os-type linux \
+  --site-id 000000 \
+  --yes                                        # apply
+```
+
+| Flag | Description |
+|------|-------------|
+| `--value` | SHA1 hash to block (required) |
+| `--sha256` | SHA256 hash to block |
+| `--os-type` | Target OS (required): `windows`, `linux`, `macos`, `windows_legacy` |
+| `--description` | Item description |
+| `--source` | Item source |
+| `--type` | Restriction type (default `black_hash`) |
+| `--site-id` | Target site IDs (repeatable) |
+| `--account-id` | Target account IDs (repeatable) |
+| `--group-id` | Target group IDs (repeatable) |
+| `--yes` | Apply (default: dry-run) |
+
+## Update a blocklist entry
+
+Full replacement of an existing item. Dry-run by default.
+
+```bash
+s1ctl blocklist update 000000 \
+  --value da39a3ee5e6b4b0d3255bfef95601890afd80709 \
+  --os-type windows \
+  --description "Updated description" --yes
+```
+
+## Delete a blocklist entry
+
+```bash
+s1ctl blocklist delete 000000          # dry-run
+s1ctl blocklist delete 000000 --yes    # apply
+```
+
+## Validate a hash
+
+Check whether a hash is on SentinelOne's "Not Allowed" or "Not Recommended"
+list before adding it. Read-only.
+
+```bash
+s1ctl blocklist validate --value da39a3ee5e6b4b0d3255bfef95601890afd80709
+s1ctl blocklist validate --sha256 e3b0c44298fc1c149afbf4c8996fb924... --os-type windows
+s1ctl blocklist validate --value da39a3ee5e6b... --site-id 000000
+```
+
+| Flag | Description |
+|------|-------------|
+| `--value` | SHA1 hash to validate |
+| `--sha256` | SHA256 hash to validate |
+| `--os-type` | Target OS |
+| `--site-id` | Scope site IDs (repeatable) |
+| `--account-id` | Scope account IDs (repeatable) |
+| `--group-id` | Scope group IDs (repeatable) |
+
+## Export as CSV
+
+```bash
+s1ctl blocklist export --site-id 000000 --out blocklist.csv
+s1ctl blocklist export --tenant --out global.csv
+s1ctl blocklist export --os-type windows
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--account-id` | Filter by account ID (repeatable) |
+| `--group-id` | Filter by group ID (repeatable) |
+| `--os-type` | Filter by OS type (repeatable) |
+| `--tenant` | Export the global (tenant) blocklist |
+| `--out` | Output file (default: stdout) |
+
+## Config-as-code
+
+Pull blocklist items to local YAML files, review in git, and push back. See
+[Config-as-code](config-as-code.md) for the general pattern.
+
+### Pull
+
+```bash
+s1ctl blocklist pull --site-id 000000
+s1ctl blocklist pull --out snapshots/blocklist
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--out` | Output directory (default `blocklist`) |
+
+### Push
+
+Items are matched by type + OS + value: existing items are updated, new items
+are created, unchanged items are skipped. Dry-run by default.
+
+```bash
+s1ctl blocklist push --site-id 000000          # dry-run
+s1ctl blocklist push --site-id 000000 --yes    # apply
+s1ctl blocklist push --dir my-blocklist --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--dir` | Input directory (default `blocklist`) |
+| `--site-id` | Scope for new items (default: global/tenant) |
+| `--yes` | Apply changes (default: dry-run) |
+
+### Pull, diff, push workflow
+
+```bash
+# 1. Pull
+s1ctl blocklist pull --site-id 000000
+
+# 2. Review / edit
+git diff blocklist/
+
+# 3. Commit
+git add blocklist/ && git commit -m "blocklist: add hash for site 000000"
+
+# 4. Push
+s1ctl blocklist push --site-id 000000 --yes
+```
+
+## Workflows
+
+### Validate then add
+
+```bash
+s1ctl blocklist validate --value da39a3ee5e6b... --os-type windows
+s1ctl blocklist create --value da39a3ee5e6b... --os-type windows --yes
+```
+
+### Copy blocklist between sites
+
+```bash
+s1ctl blocklist pull --site-id 111111
+s1ctl blocklist push --site-id 222222          # dry-run
+s1ctl blocklist push --site-id 222222 --yes    # apply
+```
+
+### Count entries by OS
+
+```bash
+s1ctl blocklist list --all --json \
+  | jq 'group_by(.osType) | map({os: .[0].osType, count: length})'
+```
+
+## See also
+
+- [Config-as-code](config-as-code.md) -- the pull/review/push loop
+- [Exclusions](exclusions.md) -- allowlist entries (the inverse of blocklist)
+- [`blocklist` command reference](../commands/blocklist.md)
+
+---
+
 # Data lake
 
 Query the Singularity Data Lake (SDL) with `s1ctl datalake powerquery`.
@@ -2618,6 +2819,281 @@ s1ctl cloud-onboarding list --json | grep '"accountId"'
 
 ---
 
+# Firewall and network quarantine
+
+Manage firewall control rules and network quarantine rules: CRUD, reorder,
+copy between scopes, import/export, and sync as code with pull/push.
+
+> Prerequisites: `s1ctl` installed and configured (`S1_CONSOLE_URL`, `S1_TOKEN`).
+
+## Firewall control
+
+### List firewall rules
+
+```bash
+s1ctl firewall list
+s1ctl firewall list --site-id 000000
+s1ctl firewall list --query "RDP" --all --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--query` | Free text search |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--cursor` | Pagination cursor |
+
+### Get a firewall rule
+
+```bash
+s1ctl firewall get 000000
+s1ctl firewall get 000000 --json
+```
+
+### Enable and disable
+
+Dry-run by default. Pass `--yes` to apply. Accepts multiple IDs.
+
+```bash
+s1ctl firewall enable 000000 --yes
+s1ctl firewall disable 000000 000001 --yes
+```
+
+### Delete
+
+```bash
+s1ctl firewall delete 000000 --yes
+```
+
+### Reorder
+
+Change rule evaluation order. Each argument is an `id:order` pair.
+
+```bash
+s1ctl firewall reorder 000000:1 000001:2 000002:3 --site-id 000000 --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Scope: site IDs (repeatable) |
+| `--account-id` | Scope: account IDs (repeatable) |
+| `--group-id` | Scope: group IDs (repeatable) |
+| `--yes` | Apply changes (default: dry-run) |
+
+### Copy between scopes
+
+```bash
+s1ctl firewall copy \
+  --source-site-id 111111 \
+  --target-site-id 222222 --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--source-site-id` | Source site IDs (repeatable) |
+| `--source-account-id` | Source account IDs (repeatable) |
+| `--target-site-id` | Target site ID |
+| `--target-account-id` | Target account ID |
+| `--target-group-id` | Target group ID |
+| `--yes` | Apply changes (default: dry-run) |
+
+### List available protocols
+
+```bash
+s1ctl firewall protocols
+s1ctl firewall protocols --query "TCP"
+```
+
+### Export and import
+
+Export rules to a JSON file, then import into another scope.
+
+```bash
+# Export
+s1ctl firewall export --site-id 000000
+s1ctl firewall export --site-id 000000 --out my-rules.json
+
+# Import
+s1ctl firewall import my-rules.json --site-id 222222          # dry-run
+s1ctl firewall import my-rules.json --site-id 222222 --yes    # apply
+```
+
+### Config-as-code
+
+Pull rules to YAML, review in git, push back. See
+[Config-as-code](config-as-code.md) for the general pattern.
+
+```bash
+# Pull
+s1ctl firewall pull --site-id 000000
+s1ctl firewall pull --site-id 000000 --out snapshots/firewall
+
+# Push
+s1ctl firewall push --site-id 000000          # dry-run
+s1ctl firewall push --site-id 000000 --yes    # apply
+s1ctl firewall push --dir my-rules --yes
+```
+
+| Flag (pull) | Description |
+|-------------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--out` | Output directory (default `firewall`) |
+
+| Flag (push) | Description |
+|-------------|-------------|
+| `--dir` | Input directory (default `firewall`) |
+| `--site-id` | Target site IDs (repeatable) |
+| `--yes` | Apply changes (default: dry-run) |
+
+---
+
+## Network quarantine
+
+The `network` command group manages network quarantine rules. These control
+which network traffic is allowed when an agent is quarantined (isolated from
+the network). The interface mirrors `firewall` with additional features for
+location awareness, rule tagging, and scope movement.
+
+### List network quarantine rules
+
+```bash
+s1ctl network list
+s1ctl network list --site-id 000000 --all --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--query` | Free text search |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--cursor` | Pagination cursor |
+
+### Get a rule
+
+```bash
+s1ctl network get 000000
+```
+
+### Enable, disable, and delete
+
+```bash
+s1ctl network enable 000000 --yes
+s1ctl network disable 000000 000001 --yes
+s1ctl network delete 000000 --yes
+```
+
+### Reorder
+
+```bash
+s1ctl network reorder 000000:1 000001:2 --site-id 000000 --yes
+```
+
+### Copy and move
+
+Copy duplicates rules to a new scope. Move reassigns existing rules.
+
+```bash
+# Copy
+s1ctl network copy --source-site-id 111111 --target-site-id 222222 --yes
+
+# Move
+s1ctl network move 000000 000001 --target-site-id 222222 --yes
+```
+
+### Set location
+
+Assign a location matcher to rules.
+
+```bash
+s1ctl network set-location 000000 --type all --yes
+s1ctl network set-location 000000 --type specific --location-id 000001 --yes
+s1ctl network set-location 000000 --type fallback --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--type` | Location type: `all`, `specific`, or `fallback` (default `all`) |
+| `--location-id` | Location IDs for `--type specific` (repeatable) |
+| `--yes` | Apply changes (default: dry-run) |
+
+### Tags
+
+```bash
+s1ctl network tags add 000000 --tag-id 000001 --yes
+s1ctl network tags remove 000000 --tag-id 000001 --yes
+```
+
+### Configuration
+
+Get or set the network quarantine control configuration for a scope.
+
+```bash
+s1ctl network configuration get --site-id 000000
+s1ctl network configuration set --site-id 000000 --enabled --yes
+s1ctl network configuration set --site-id 000000 \
+  --location-aware --report-blocked --yes
+```
+
+| Flag (set) | Description |
+|------------|-------------|
+| `--site-id` | Scope: site IDs (repeatable) |
+| `--account-id` | Scope: account IDs (repeatable) |
+| `--group-id` | Scope: group IDs (repeatable) |
+| `--enabled` | Enable network quarantine for the scope |
+| `--location-aware` | Enable location awareness |
+| `--report-blocked` | Report blocked events |
+| `--selected-tag` | Selected tag IDs (repeatable) |
+| `--yes` | Apply changes (default: dry-run) |
+
+### Protocols
+
+```bash
+s1ctl network protocols
+s1ctl network protocols --query "DNS"
+```
+
+### Export and import
+
+```bash
+s1ctl network export --site-id 000000
+s1ctl network export --site-id 000000 --out nq-rules.json
+
+s1ctl network import nq-rules.json --site-id 222222 --yes
+```
+
+### Config-as-code
+
+```bash
+# Pull
+s1ctl network pull --site-id 000000
+s1ctl network pull --site-id 000000 --out snapshots/nq
+
+# Push
+s1ctl network push --site-id 000000          # dry-run
+s1ctl network push --site-id 000000 --yes    # apply
+```
+
+| Flag (pull) | Description |
+|-------------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--out` | Output directory (default `network-quarantine`) |
+
+| Flag (push) | Description |
+|-------------|-------------|
+| `--dir` | Input directory (default `network-quarantine`) |
+| `--site-id` | Target site IDs (repeatable) |
+| `--yes` | Apply changes (default: dry-run) |
+
+## See also
+
+- [Config-as-code](config-as-code.md) -- the pull/review/push loop
+- [`firewall` command reference](../commands/firewall.md)
+- [`network` command reference](../commands/network.md)
+
+---
+
 # Identity
 
 Manage Identity AD Service configuration, connectors, and ISPM (Identity
@@ -2764,6 +3240,652 @@ s1ctl identity ack-exposures --detection "Kerberoasting" --domain "corp.example.
 
 - [Ranger AD](../commands/ranger-ad.md) — posture reads and assessment triggers
 - [Settings](settings.md) — AD settings via the platform settings surface
+
+---
+
+# Policies
+
+Manage endpoint protection policies: list, compare across sites, detect drift,
+and sync as code with pull/push.
+
+> Prerequisites: `s1ctl` installed and configured (`S1_CONSOLE_URL`, `S1_TOKEN`).
+
+## List policies
+
+Fetch and compare policies across all sites (or a filtered subset). Each site
+has one policy; this command presents them side by side.
+
+```bash
+s1ctl policies list
+s1ctl policies list --site-id 000000
+s1ctl policies list --account-id 000000 --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--account-id` | Filter by account ID (repeatable) |
+
+## Get a policy
+
+Retrieve the policy for a specific scope: site, account, or group.
+
+```bash
+s1ctl policies get --site-id 000000
+s1ctl policies get --account-id 000000
+s1ctl policies get --group-id 000000
+s1ctl policies get --site-id 000000 --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Site ID |
+| `--account-id` | Account ID |
+| `--group-id` | Group ID |
+
+## Diff policies
+
+Compare policies across sites and highlight fields that differ. Useful for
+spotting inconsistencies -- for example, one site in detect mode while others
+are in protect mode.
+
+```bash
+s1ctl policies diff
+s1ctl policies diff --site-id 000000 --site-id 000001
+s1ctl policies diff --account-id 000000 --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--account-id` | Filter by account ID (repeatable) |
+
+## Revert a policy
+
+Reset a policy to the values inherited from its parent scope. Site policies
+revert to the account policy, group policies revert to the site policy, and
+account policies revert to global defaults.
+
+Dry-run by default.
+
+```bash
+s1ctl policies revert --scope site --id 000000          # dry-run
+s1ctl policies revert --scope site --id 000000 --yes    # apply
+s1ctl policies revert --scope group --id 000000 --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--scope` | Policy scope: `site`, `account`, or `group` (default `site`) |
+| `--id` | Target scope ID (site, account, or group ID) |
+| `--yes` | Apply the revert (default: dry-run) |
+
+## Config-as-code
+
+Pull policies to local YAML files, review in git, and push back. See
+[Config-as-code](config-as-code.md) for the general pattern.
+
+### Pull
+
+```bash
+s1ctl policies pull
+s1ctl policies pull --site-id 000000
+s1ctl policies pull --scope account --account-id 000000
+s1ctl policies pull --scope group --site-id 000000
+s1ctl policies pull --out snapshots/policies
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--account-id` | Filter by account ID (repeatable) |
+| `--scope` | Policy scope: `site`, `account`, or `group` (default `site`) |
+| `--out` | Output directory (default `policies`) |
+
+### Push
+
+Each YAML file must contain a scope field and matching scope ID. The command
+fetches the current policy, diffs against the desired state, and applies
+changes. Dry-run by default.
+
+```bash
+s1ctl policies push                    # dry-run
+s1ctl policies push --yes              # apply
+s1ctl policies push --dir my-policies --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--dir` | Input directory (default `policies`) |
+| `--yes` | Apply changes (default: dry-run) |
+
+### Pull, diff, push workflow
+
+```bash
+# 1. Pull current policies
+s1ctl policies pull --site-id 000000
+
+# 2. Review
+git diff policies/
+
+# 3. Edit policy YAML if needed (e.g. change mitigationMode)
+
+# 4. Commit
+git add policies/ && git commit -m "policies: enable protect mode on site 000000"
+
+# 5. Push
+s1ctl policies push --yes
+```
+
+## Workflows
+
+### Detect policy drift across sites
+
+```bash
+s1ctl policies diff --account-id 000000
+```
+
+Fields that differ between sites are highlighted. Use `--json` to pipe to
+automation.
+
+### Enforce a standard policy
+
+Pull the baseline site's policy and push it to others:
+
+```bash
+s1ctl policies pull --site-id 111111 --out baseline
+cp -r baseline/* policies/
+# Edit scope IDs in each file to target other sites
+s1ctl policies push --yes
+```
+
+### Audit policy history
+
+Commit each pull to git. The git log becomes an audit trail of policy changes
+over time.
+
+```bash
+s1ctl policies pull --site-id 000000
+git add policies/ && git commit -m "policies: weekly snapshot"
+```
+
+## See also
+
+- [Config-as-code](config-as-code.md) -- the pull/review/push loop
+- [Sites and groups](sites-groups.md) -- site and group management
+- [`policies` command reference](../commands/policies.md)
+
+---
+
+# Remote operations
+
+Manage remote scripts: list, inspect, execute on agents, review results, and
+handle pending approvals and guardrails.
+
+> Prerequisites: `s1ctl` installed and configured (`S1_CONSOLE_URL`, `S1_TOKEN`).
+> Remote ops requires the appropriate license and RBAC permissions.
+
+## List scripts
+
+```bash
+s1ctl remoteops list
+s1ctl remoteops list --site-id 000000
+s1ctl remoteops list --query "Collect Logs" --all --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--query` | Free text search |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--cursor` | Pagination cursor |
+
+## Get script details
+
+```bash
+s1ctl remoteops get 000000
+s1ctl remoteops get 000000 --json
+```
+
+## View script content
+
+Print the script body to stdout or save to a file.
+
+```bash
+s1ctl remoteops content 000000
+s1ctl remoteops content 000000 --out script.ps1
+```
+
+| Flag | Description |
+|------|-------------|
+| `--out` | Write content to file (default: stdout) |
+
+## Run a script
+
+Execute a remote script from the Script Library on targeted agents. Requires
+at least one targeting flag. Dry-run by default.
+
+```bash
+# Target specific agents
+s1ctl remoteops run 000000 --agent-id 000001 --yes
+
+# Target a site
+s1ctl remoteops run 000000 --site-id 000000 --yes
+
+# Target a group
+s1ctl remoteops run 000000 --group-id 000000 --yes
+
+# With parameters and custom timeout
+s1ctl remoteops run 000000 \
+  --agent-id 000001 \
+  --input-params "-Path C:\Logs" \
+  --timeout 3600 \
+  --output-dest SentinelCloud \
+  --yes
+```
+
+| Flag | Description |
+|------|-------------|
+| `--agent-id` | Target agent IDs (repeatable) |
+| `--site-id` | Target site IDs (repeatable) |
+| `--group-id` | Target group IDs (repeatable) |
+| `--input-params` | Script input parameters |
+| `--timeout` | Runtime timeout in seconds (60--172800) |
+| `--output-dest` | Output destination: `SentinelCloud`, `Local`, `None`, `SingularityXDR` (default `SentinelCloud`) |
+| `--description` | Task description |
+| `--yes` | Apply (default: dry-run) |
+
+## View execution results
+
+```bash
+s1ctl remoteops results 000000
+s1ctl remoteops results 000000 --status completed
+s1ctl remoteops results 000000 --all --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--status` | Filter by status: `created`, `pending`, `in_progress`, `completed`, `failed`, `canceled`, `expired` (repeatable) |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--cursor` | Pagination cursor |
+
+## Update script metadata
+
+Update a script's properties (name, type, OS types, timeout) from a JSON file.
+Dry-run by default.
+
+```bash
+s1ctl remoteops update 000000 --from-file script-meta.json --yes
+```
+
+Example `script-meta.json`:
+
+```json
+{
+  "scriptName": "Collect Logs",
+  "scriptType": "dataCollection",
+  "osTypes": ["linux", "macos"],
+  "inputRequired": false,
+  "inputExample": "-",
+  "inputInstructions": "-",
+  "scriptRuntimeTimeoutSeconds": 3600
+}
+```
+
+| Flag | Description |
+|------|-------------|
+| `--from-file` | JSON file with the update data (required) |
+| `--yes` | Apply (default: dry-run) |
+
+## Upload limits
+
+Check package upload size limits.
+
+```bash
+s1ctl remoteops upload-limits
+```
+
+## Pending approvals
+
+When guardrails are configured, script executions on large numbers of
+endpoints require approval before running.
+
+### List pending executions
+
+```bash
+s1ctl remoteops pending list
+s1ctl remoteops pending list --site-id 000000 --all --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--account-id` | Filter by account ID (repeatable) |
+| `--group-id` | Filter by group ID (repeatable) |
+| `--sort-by` | Sort field: `id`, `createdAt`, `state` |
+| `--sort-order` | Sort direction (`asc`, `desc`) |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--cursor` | Pagination cursor |
+
+### Approve or decline
+
+Dry-run by default.
+
+```bash
+s1ctl remoteops pending approve 000000 --yes
+s1ctl remoteops pending decline 000000 --yes
+```
+
+## Guardrails
+
+Guardrails require approval before scripts run on large numbers of endpoints.
+Each guardrail is configured per scope (account, site, or group).
+
+### Get guardrail configuration
+
+```bash
+s1ctl remoteops guardrails get --scope-id 000000 --scope-level site
+```
+
+| Flag | Description |
+|------|-------------|
+| `--scope-id` | Scope ID (required) |
+| `--scope-level` | Scope level: `account`, `site`, or `group` (required) |
+
+### Set a guardrail
+
+Create or update a guardrail from a JSON file. Dry-run by default.
+
+```bash
+s1ctl remoteops guardrails set --from-file guardrail.json --yes
+```
+
+Example `guardrail.json`:
+
+```json
+{
+  "scopeId": "000000000000000000",
+  "scopeLevel": "site",
+  "endpointsQuantity": 100,
+  "scriptTypes": ["action"],
+  "enabled": true
+}
+```
+
+### Check a guardrail
+
+Read-only pre-check: would running a script on given agents trip a guardrail?
+
+```bash
+s1ctl remoteops guardrails check --from-file check.json
+```
+
+Example `check.json`:
+
+```json
+{
+  "scriptId": "000000000000000001",
+  "agentIds": ["000000000000000002"]
+}
+```
+
+### Delete a guardrail
+
+```bash
+s1ctl remoteops guardrails delete \
+  --scope-id 000000 --scope-level site --yes
+```
+
+## Workflows
+
+### Run a script and monitor results
+
+```bash
+# 1. Find the script
+s1ctl remoteops list --query "Collect Logs"
+
+# 2. Dry-run to preview
+s1ctl remoteops run 000000 --agent-id 000001
+
+# 3. Execute
+s1ctl remoteops run 000000 --agent-id 000001 --yes
+
+# 4. Check results (use the parent task ID from step 3)
+s1ctl remoteops results 000000
+```
+
+### Review and approve pending executions
+
+```bash
+s1ctl remoteops pending list --site-id 000000
+s1ctl remoteops pending approve 000000 --yes
+```
+
+### Save a script locally for review
+
+```bash
+s1ctl remoteops content 000000 --out review-script.ps1
+```
+
+## See also
+
+- [Agents](agents.md) -- agent management and targeting
+- [`remoteops` command reference](../commands/remoteops.md)
+
+---
+
+# Custom detection rules (STAR)
+
+Manage STAR custom detection rules: list, inspect, assess health, review
+detection trends, and manage rules as code with pull/push.
+
+> Prerequisites: `s1ctl` installed and configured (`S1_CONSOLE_URL`, `S1_TOKEN`).
+
+## List rules
+
+```bash
+s1ctl rules list
+s1ctl rules list --site-id 000000
+s1ctl rules list --status Active --severity High,Critical
+s1ctl rules list --query-type events --scope site
+s1ctl rules list --name "Lateral Movement" --all --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--status` | Filter by status: `Draft`, `Active`, `Disabled`, etc. (repeatable) |
+| `--severity` | Filter by severity: `Info`, `Low`, `Medium`, `High`, `Critical` (repeatable) |
+| `--query-type` | Filter by query type: `events`, `correlation`, `scheduled` (repeatable) |
+| `--scope` | Filter by scope: `global`, `account`, `site`, `group` (repeatable) |
+| `--name` | Substring match on rule name |
+| `--query` | Free text search on S1QL |
+| `--sort-by` | Sort field (e.g. `name`, `severity`, `createdAt`) |
+| `--sort-order` | Sort direction (`asc`, `desc`) |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--cursor` | Pagination cursor |
+
+## Get rule details
+
+```bash
+s1ctl rules get 000000
+s1ctl rules get 000000 --json
+```
+
+## Rule health
+
+Classify all rules by operational state: firing (active with alerts), silent
+(active with zero alerts), disabled, or erroring (reached alert limit).
+
+```bash
+s1ctl rules health
+s1ctl rules health --site-id 000000
+```
+
+## Detection trends
+
+Sort rules by generated alert count (descending) to identify alert fatigue
+candidates.
+
+```bash
+s1ctl rules trends
+s1ctl rules trends --site-id 000000 --top 10
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--top` | Show only top N rules (default: all) |
+
+## View detections for a rule
+
+List cloud detection alerts (STAR alerts) filtered by rule name.
+
+```bash
+s1ctl rules detections "Lateral Movement"
+s1ctl rules detections "Lateral Movement" --since 2025-01-01T00:00:00Z
+s1ctl rules detections "Lateral Movement" --severity High --status unresolved
+s1ctl rules detections "Lateral Movement" --group-by agent --all --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--severity` | Filter by severity (repeatable) |
+| `--status` | Filter by incident status (repeatable) |
+| `--since` | Show detections after this time (RFC 3339) |
+| `--group-by` | Group results (e.g. `agent`) |
+| `--sort-by` | Sort field (default: `id`) |
+| `--sort-order` | Sort direction (default: `desc`) |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--cursor` | Pagination cursor |
+
+## Enable and disable rules
+
+All mutations are dry-run by default. Pass `--yes` to apply.
+
+```bash
+s1ctl rules enable 000000                  # dry-run
+s1ctl rules enable 000000 --yes            # apply
+s1ctl rules disable 000000 000001 --yes    # disable multiple
+```
+
+## Validate rules locally
+
+Check rule YAML files for missing fields, invalid enums, and empty queries.
+No API calls are made.
+
+```bash
+s1ctl rules validate
+s1ctl rules validate --dir my-rules
+```
+
+## Diff local vs live
+
+Compare local rule YAML files against the live console to preview what would
+change before pushing.
+
+```bash
+s1ctl rules diff
+s1ctl rules diff --dir my-rules
+```
+
+## Config-as-code
+
+Pull rules to local YAML files, review in git, and push back. See
+[Config-as-code](config-as-code.md) for the general pattern.
+
+### Pull
+
+```bash
+s1ctl rules pull --site-id 000000
+s1ctl rules pull --site-id 000000 --out snapshots/rules
+```
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Filter by site ID (repeatable) |
+| `--out` | Output directory (default `rules`) |
+
+### Push
+
+Rules are matched by name: existing rules are updated, new rules are created,
+unchanged rules are skipped. Dry-run by default.
+
+```bash
+s1ctl rules push                    # dry-run
+s1ctl rules push --yes              # apply
+s1ctl rules push --dir my-rules     # custom directory
+```
+
+| Flag | Description |
+|------|-------------|
+| `--dir` | Input directory (default `rules`) |
+| `--yes` | Apply changes (default: dry-run) |
+
+### Pull, diff, push workflow
+
+```bash
+# 1. Pull current rules
+s1ctl rules pull --site-id 000000
+
+# 2. Review
+git diff rules/
+
+# 3. Validate locally
+s1ctl rules validate
+
+# 4. Preview changes against live
+s1ctl rules diff
+
+# 5. Commit snapshot
+git add rules/ && git commit -m "rules: snapshot site 000000"
+
+# 6. Push
+s1ctl rules push --yes
+```
+
+## Workflows
+
+### Find noisy rules causing alert fatigue
+
+```bash
+s1ctl rules trends --top 5 --site-id 000000
+```
+
+Inspect the top offender and its detections:
+
+```bash
+s1ctl rules detections "Noisy Rule Name" --all --json \
+  | jq 'group_by(.agentId) | map({agent: .[0].agentId, count: length})'
+```
+
+### Audit silent rules
+
+Find active rules that have never fired:
+
+```bash
+s1ctl rules health --site-id 000000 --json \
+  | jq '.[] | select(.state == "silent")'
+```
+
+### Copy rules between sites
+
+```bash
+s1ctl rules pull --site-id 111111
+s1ctl rules push --yes    # pushes to the configured scope
+```
+
+## See also
+
+- [Config-as-code](config-as-code.md) -- the pull/review/push loop
+- [Alerts](alerts.md) -- STAR rules generate cloud detection alerts
+- [`rules` command reference](../commands/rules.md)
 
 ---
 
@@ -3460,6 +4582,281 @@ s1ctl settings update syslog --from-file syslog.json        # dry-run
 s1ctl settings update syslog --from-file syslog.json --yes  # apply
 s1ctl settings test syslog --yes                             # verify
 ```
+
+---
+
+# xSPM: vulnerabilities and misconfigurations
+
+Manage xSPM findings: list, triage, investigate, export, and track
+vulnerabilities and misconfigurations.
+
+> Prerequisites: `s1ctl` installed and configured (`S1_CONSOLE_URL`, `S1_TOKEN`).
+> xSPM requires the Singularity Cloud Security or xSPM license.
+
+## Vulnerabilities
+
+### List vulnerabilities
+
+```bash
+s1ctl vulnerabilities list
+s1ctl vulns list --severity HIGH,CRITICAL
+s1ctl vulns list --status open --all --json
+```
+
+`vulns` is an alias for `vulnerabilities`.
+
+| Flag | Description |
+|------|-------------|
+| `--severity` | Filter by severity: `HIGH`, `CRITICAL`, etc. (repeatable) |
+| `--status` | Filter by status (repeatable) |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--after` | Pagination cursor |
+
+### Get vulnerability details
+
+```bash
+s1ctl vulns get 000000
+s1ctl vulns get 000000 --json
+```
+
+### Health summary
+
+Show a breakdown of vulnerability counts by severity and open/resolved status.
+Uses count queries -- no bulk data fetch needed.
+
+```bash
+s1ctl vulns health
+s1ctl vulns health --json
+```
+
+### Posture stats
+
+Summarize vulnerability posture: unique CVE count plus the top vulnerable
+applications, assets, and OS types.
+
+```bash
+s1ctl vulns stats
+s1ctl vulns stats --severity CRITICAL --limit 5
+s1ctl vulns stats --top applications
+s1ctl vulns stats --scope-level site --scope-id 000000
+```
+
+| Flag | Description |
+|------|-------------|
+| `--severity` | Filter by severity (repeatable) |
+| `--top` | Show only one list: `applications`, `assets`, or `os` |
+| `--limit` | Number of top entries per list (default 10) |
+| `--scope-level` | Scope level: `account`, `site`, `group` |
+| `--scope-id` | Scope ID |
+
+### List CVEs
+
+```bash
+s1ctl vulns cves
+s1ctl vulns cves --min-cvss 9.0 --all
+s1ctl vulns cves --all --json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--min-cvss` | Only show CVEs with NVD base score >= this value (client-side filter) |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--after` | Pagination cursor |
+
+### Get CVE details
+
+```bash
+s1ctl vulns cve CVE-2024-00000
+s1ctl vulns cve CVE-2024-00000 --json
+```
+
+### Investigation notes
+
+```bash
+# List notes
+s1ctl vulns notes 000000
+
+# Add a note
+s1ctl vulns add-note 000000 --text "Investigating patch availability" --yes
+
+# Update a note
+s1ctl vulns update-note 000001 --text "Patch available in next release" --yes
+
+# Delete a note
+s1ctl vulns delete-note 000001 --yes
+```
+
+### Assign to a user
+
+```bash
+s1ctl vulns assign 000000 --user-id 000001 --yes
+```
+
+### History
+
+```bash
+s1ctl vulns history 000000
+s1ctl vulns history 000000 --json
+```
+
+### Related assets
+
+```bash
+s1ctl vulns related-assets 000000
+s1ctl vulns related-assets 000000 --json
+```
+
+### Update status
+
+```bash
+s1ctl vulns status 000000 resolved --yes
+```
+
+### Update verdict
+
+```bash
+s1ctl vulns verdict 000000 TRUE_POSITIVE --yes
+s1ctl vulns verdict 000000 FALSE_POSITIVE --yes
+```
+
+### Export as CSV
+
+```bash
+s1ctl vulns export --out vulns.csv
+s1ctl vulns export --severity CRITICAL --out critical.csv
+s1ctl vulns export --scope-level site --scope-id 000000 --out site-vulns.csv
+```
+
+| Flag | Description |
+|------|-------------|
+| `--out` | Output file (default: stdout) |
+| `--severity` | Filter by severity (repeatable) |
+| `--status` | Filter by status (repeatable) |
+| `--scope-level` | Scope level: `account`, `site`, `group` |
+| `--scope-id` | Scope ID |
+
+---
+
+## Misconfigurations
+
+### List misconfigurations
+
+```bash
+s1ctl misconfigurations list
+s1ctl misconfigs list --severity HIGH,CRITICAL --all --json
+```
+
+`misconfigs` is an alias for `misconfigurations`.
+
+| Flag | Description |
+|------|-------------|
+| `--severity` | Filter by severity (repeatable) |
+| `--status` | Filter by status (repeatable) |
+| `--limit` | Max results per page (default 50) |
+| `--all` | Fetch all pages |
+| `--after` | Pagination cursor |
+
+### Get misconfiguration details
+
+```bash
+s1ctl misconfigs get 000000
+s1ctl misconfigs get 000000 --json
+```
+
+### Investigation notes
+
+```bash
+s1ctl misconfigs notes 000000
+s1ctl misconfigs add-note 000000 --text "Reviewing remediation steps" --yes
+s1ctl misconfigs update-note 000001 --text "Remediation applied" --yes
+s1ctl misconfigs delete-note 000001 --yes
+```
+
+### Assign to a user
+
+```bash
+s1ctl misconfigs assign 000000 --user-id 000001 --yes
+```
+
+### History
+
+```bash
+s1ctl misconfigs history 000000
+```
+
+### Related assets
+
+```bash
+s1ctl misconfigs related-assets 000000
+```
+
+### Update status
+
+```bash
+s1ctl misconfigs status 000000 resolved --yes
+```
+
+### Update verdict
+
+```bash
+s1ctl misconfigs verdict 000000 TRUE_POSITIVE --yes
+s1ctl misconfigs verdict 000000 FALSE_POSITIVE --yes
+```
+
+### Export as CSV
+
+```bash
+s1ctl misconfigs export --out misconfigs.csv
+s1ctl misconfigs export --severity CRITICAL --out critical.csv
+s1ctl misconfigs export --scope-level site --scope-id 000000
+```
+
+| Flag | Description |
+|------|-------------|
+| `--out` | Output file (default: stdout) |
+| `--severity` | Filter by severity (repeatable) |
+| `--status` | Filter by status (repeatable) |
+| `--scope-level` | Scope level: `account`, `site`, `group` |
+| `--scope-id` | Scope ID |
+
+---
+
+## Workflows
+
+### Triage critical vulnerabilities
+
+```bash
+s1ctl vulns list --severity CRITICAL --all --json \
+  | jq '.[].id' -r \
+  | while read id; do s1ctl vulns get "$id"; done
+```
+
+### Weekly posture report
+
+```bash
+s1ctl vulns health --json > vuln-health.json
+s1ctl vulns stats --json > vuln-stats.json
+```
+
+### Find high-CVSS CVEs
+
+```bash
+s1ctl vulns cves --min-cvss 9.0 --all --json
+```
+
+### Export all findings for compliance
+
+```bash
+s1ctl vulns export --all --out vulnerabilities.csv
+s1ctl misconfigs export --all --out misconfigurations.csv
+```
+
+## See also
+
+- [`vulnerabilities` command reference](../commands/vulnerabilities.md)
+- [`misconfigurations` command reference](../commands/misconfigurations.md)
 
 ---
 

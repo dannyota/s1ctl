@@ -18,13 +18,19 @@
 - [Sites and groups](https://s1.danny.vn/#/guides/sites-groups): Navigate the SentinelOne management hierarchy: accounts, sites, groups, and their policies. 
 - [Exclusions](https://s1.danny.vn/#/guides/exclusions): Manage SentinelOne exclusions (allowlist entries) as code: list, inspect, pull to local files, review in git, and push back. 
 - [Alerts](https://s1.danny.vn/#/guides/alerts): Query...
+- [Blocklist](https://s1.danny.vn/#/guides/blocklist): Manage the SentinelOne blocklist (restrictions): add, update, validate, export, and sync blocked hashes as code. 
 - [Data lake](https://s1.danny.vn/#/guides/datalake): Query the Singularity Data Lake (SDL) with s1ctl datalake powerquery. Supports two protocols: GraphQL (default) and REST. 
 - [Applications](https://s1.danny.vn/#/guides/applications): Manage...
 - [Cloud onboarding](https://s1.danny.vn/#/guides/cloud-onboarding): Manage...
+- [Firewall and network](https://s1.danny.vn/#/guides/firewall): Manage...
 - [Identity](https://s1.danny.vn/#/guides/identity): Manage...
+- [Policies](https://s1.danny.vn/#/guides/policies): Manage endpoint protection policies: list, compare across sites, detect drift, and sync as code with pull/push. 
+- [Remote operations](https://s1.danny.vn/#/guides/remoteops): Manage remote scripts: list, inspect, execute on agents, review results, and handle pending approvals and guardrails. 
+- [Rules (STAR)](https://s1.danny.vn/#/guides/rules): Manage STAR custom detection rules: list, inspect, assess health, review detection trends, and manage rules as code with pull/push. 
 - [Automation](https://s1.danny.vn/#/guides/automation): Manage SentinelOne Hyperautomation workflows: list, inspect, import, run, and control lifecycle (activate/deactivate). 
 - [Config-as-code](https://s1.danny.vn/#/guides/config-as-code): Manage SentinelOne configuration through local files and git. 
 - [Settings](https://s1.danny.vn/#/guides/settings): Read and update platform settings: notifications, SSO, SMTP, syslog, SMS, recipients, Active Directory, and AD scope mapping. 
+- [xSPM](https://s1.danny.vn/#/guides/xspm): Manage xSPM findings: list, triage, investigate, export, and track vulnerabilities and misconfigurations. 
 - [Examples](https://s1.danny.vn/#/guides/examples): Real-world workflows using s1ctl. 
 - [Go SDK](https://s1.danny.vn/#/guides/sdk): The SDK packages are independently importable Go libraries. Each covers one SentinelOne API protocol — use one, two, or all three. 
 
