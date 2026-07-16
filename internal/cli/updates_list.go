@@ -16,6 +16,7 @@ func newUpdatesCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newUpdatesListCmd())
 	cmd.AddCommand(newUpdatesGetCmd())
+	cmd.AddCommand(newUpdatesDeployCmd())
 	return cmd
 }
 

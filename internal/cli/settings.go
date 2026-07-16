@@ -24,6 +24,7 @@ func newSettingsCmd() *cobra.Command {
 	cmd.AddCommand(newSettingsSSOCertCmd())
 	cmd.AddCommand(newSettingsCancelPendingEmailsCmd())
 	cmd.AddCommand(newSettingsDeleteRecipientCmd())
+	cmd.AddCommand(newSettingsOverridesCmd())
 	return cmd
 }
 

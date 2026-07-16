@@ -89,7 +89,9 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | service-users | list, get, export | create, update, delete, bulk-delete, generate-token | -- | built |
 | roles | list, get, template | create, update, delete | -- | built |
 | settings | list, get (notifications/sso/smtp/syslog/sms/recipients/ad/ad-scope-mapping), sso-cert | update (same set), test (smtp/syslog/ad), delete-recipient, cancel-pending-emails | -- | built |
+| config-overrides | list, get | create, update, delete | -- | built |
 | updates | list, get | -- | -- | built |
+| deploy | list-groups, list-details | create-group, delete-group, add-detail, update-detail, delete-detail | -- | built |
 | upgrade-policies | list, get, packages | create, update, delete, activate, deactivate | -- | built |
 | tags | list, get | create, update, delete | pull/push | built |
 | filters | list | create, update, delete | -- | built |
