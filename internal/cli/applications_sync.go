@@ -32,14 +32,15 @@ type appControlRuleFile struct {
 }
 
 // appControlConditionsFile is the YAML representation of rule conditions.
+// Only writable fields are included; applicationVersion is read-only in the
+// API and excluded so pull/push round-trips cleanly.
 type appControlConditionsFile struct {
-	Publisher          string `yaml:"publisher,omitempty"`
-	Path               string `yaml:"path,omitempty"`
-	Signer             string `yaml:"signer,omitempty"`
-	SHA256             string `yaml:"sha256,omitempty"`
-	Process            string `yaml:"process,omitempty"`
-	ParentProcess      string `yaml:"parentProcess,omitempty"`
-	ApplicationVersion string `yaml:"applicationVersion,omitempty"`
+	Publisher     string `yaml:"publisher,omitempty"`
+	Path          string `yaml:"path,omitempty"`
+	Signer        string `yaml:"signer,omitempty"`
+	SHA256        string `yaml:"sha256,omitempty"`
+	Process       string `yaml:"process,omitempty"`
+	ParentProcess string `yaml:"parentProcess,omitempty"`
 }
 
 func appControlRuleToFile(r mgmt.AppControlRule) appControlRuleFile {
@@ -54,34 +55,33 @@ func appControlRuleToFile(r mgmt.AppControlRule) appControlRuleFile {
 	}
 	if r.Parameters != nil {
 		p := appControlConditionsFile{
-			Publisher:          r.Parameters.Publisher,
-			Path:               r.Parameters.Path,
-			Signer:             r.Parameters.Signer,
-			SHA256:             r.Parameters.SHA256,
-			Process:            r.Parameters.Process,
-			ParentProcess:      r.Parameters.ParentProcess,
-			ApplicationVersion: r.Parameters.ApplicationVersion,
+			Publisher:     r.Parameters.Publisher,
+			Path:          r.Parameters.Path,
+			Signer:        r.Parameters.Signer,
+			SHA256:        r.Parameters.SHA256,
+			Process:       r.Parameters.Process,
+			ParentProcess: r.Parameters.ParentProcess,
 		}
 		f.Parameters = &p
 	}
 	for _, e := range r.Exceptions {
 		f.Exceptions = append(f.Exceptions, appControlConditionsFile{
-			Publisher:          e.Publisher,
-			Path:               e.Path,
-			Signer:             e.Signer,
-			SHA256:             e.SHA256,
-			Process:            e.Process,
-			ParentProcess:      e.ParentProcess,
-			ApplicationVersion: e.ApplicationVersion,
+			Publisher:     e.Publisher,
+			Path:          e.Path,
+			Signer:        e.Signer,
+			SHA256:        e.SHA256,
+			Process:       e.Process,
+			ParentProcess: e.ParentProcess,
 		})
 	}
 	return f
 }
 
 func (f appControlRuleFile) toInput(scopeType string, scopeIDs []string) mgmt.AppControlRuleInput {
+	desc := f.Description
 	input := mgmt.AppControlRuleInput{
 		RuleName:    f.RuleName,
-		Description: f.Description,
+		Description: &desc,
 		Behavior:    mgmt.AppControlBehavior(f.Behavior),
 		Propagation: &f.Propagation,
 	}
@@ -89,18 +89,17 @@ func (f appControlRuleFile) toInput(scopeType string, scopeIDs []string) mgmt.Ap
 		input.OSType = append(input.OSType, mgmt.AppControlOSType(o))
 	}
 	if f.Parameters != nil {
-		input.Parameters = &mgmt.AppControlConditions{
-			Publisher:          f.Parameters.Publisher,
-			Path:               f.Parameters.Path,
-			Signer:             f.Parameters.Signer,
-			SHA256:             f.Parameters.SHA256,
-			Process:            f.Parameters.Process,
-			ParentProcess:      f.Parameters.ParentProcess,
-			ApplicationVersion: f.Parameters.ApplicationVersion,
+		input.Parameters = &mgmt.AppControlConditionsInput{
+			Publisher:     f.Parameters.Publisher,
+			Path:          f.Parameters.Path,
+			Signer:        f.Parameters.Signer,
+			SHA256:        f.Parameters.SHA256,
+			Process:       f.Parameters.Process,
+			ParentProcess: f.Parameters.ParentProcess,
 		}
 	}
 	for _, e := range f.Exceptions {
-		input.Exceptions = append(input.Exceptions, mgmt.AppControlConditions{
+		input.Exceptions = append(input.Exceptions, mgmt.AppControlConditionsInput{
 			Publisher:     e.Publisher,
 			Path:          e.Path,
 			Signer:        e.Signer,

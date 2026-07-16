@@ -61,15 +61,17 @@ func (s *AppControlScopeInfo) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// AppControlConditions describes rule match conditions.
+// AppControlConditions describes rule match conditions (read model). It
+// includes applicationVersion which the API returns but does not accept on
+// writes; see AppControlConditionsInput for the write model.
 type AppControlConditions struct {
-	Publisher          string `json:"publisher,omitempty"`
-	Path               string `json:"path,omitempty"`
-	Signer             string `json:"signer,omitempty"`
-	SHA256             string `json:"sha256,omitempty"`
-	Process            string `json:"process,omitempty"`
-	ParentProcess      string `json:"parentProcess,omitempty"`
-	ApplicationVersion string `json:"applicationVersion,omitempty"`
+	Publisher          string `json:"publisher"`
+	Path               string `json:"path"`
+	Signer             string `json:"signer"`
+	SHA256             string `json:"sha256"`
+	Process            string `json:"process"`
+	ParentProcess      string `json:"parentProcess"`
+	ApplicationVersion string `json:"applicationVersion"`
 
 	Raw json.RawMessage `json:"-"`
 }
@@ -81,6 +83,17 @@ func (c *AppControlConditions) UnmarshalJSON(b []byte) error {
 	}
 	c.Raw = append(c.Raw[:0:0], b...)
 	return nil
+}
+
+// AppControlConditionsInput is the write model for rule match conditions.
+// Per the spec, applicationVersion is not accepted on writes.
+type AppControlConditionsInput struct {
+	Publisher     string `json:"publisher,omitempty"`
+	Path          string `json:"path,omitempty"`
+	Signer        string `json:"signer,omitempty"`
+	SHA256        string `json:"sha256,omitempty"`
+	Process       string `json:"process,omitempty"`
+	ParentProcess string `json:"parentProcess,omitempty"`
 }
 
 // AppControlRule is a SentinelOne application control (NAC) rule.
@@ -112,15 +125,15 @@ func (r *AppControlRule) UnmarshalJSON(b []byte) error {
 // AppControlRuleInput is the request body for creating or updating an
 // application control rule.
 type AppControlRuleInput struct {
-	ID          string                 `json:"id,omitempty"`
-	RuleName    string                 `json:"ruleName"`
-	Description string                 `json:"description,omitempty"`
-	Scope       *AppControlScope       `json:"scope,omitempty"`
-	OSType      []AppControlOSType     `json:"osType,omitempty"`
-	Propagation *bool                  `json:"propagation,omitempty"`
-	Parameters  *AppControlConditions  `json:"parameters,omitempty"`
-	Exceptions  []AppControlConditions `json:"exceptions,omitempty"`
-	Behavior    AppControlBehavior     `json:"behavior,omitempty"`
+	ID          *string                     `json:"id,omitempty"`
+	RuleName    string                      `json:"ruleName"`
+	Description *string                     `json:"description,omitempty"`
+	Scope       *AppControlScope            `json:"scope,omitempty"`
+	OSType      []AppControlOSType          `json:"osType,omitempty"`
+	Propagation *bool                       `json:"propagation,omitempty"`
+	Parameters  *AppControlConditionsInput  `json:"parameters,omitempty"`
+	Exceptions  []AppControlConditionsInput `json:"exceptions,omitempty"`
+	Behavior    AppControlBehavior          `json:"behavior,omitempty"`
 }
 
 // AppControlQueryParams are parameters for querying application control rules.

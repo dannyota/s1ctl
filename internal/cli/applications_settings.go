@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -68,11 +69,17 @@ Dry-run by default — pass --yes to apply.`,
 
 			var enableAppControl, inheritAppControl *bool
 			if enableStr != "" {
-				b := enableStr == "true"
+				b, pErr := strconv.ParseBool(enableStr)
+				if pErr != nil {
+					return fmt.Errorf("invalid --enable value %q: expected true or false", enableStr)
+				}
 				enableAppControl = &b
 			}
 			if inheritStr != "" {
-				b := inheritStr == "true"
+				b, pErr := strconv.ParseBool(inheritStr)
+				if pErr != nil {
+					return fmt.Errorf("invalid --inherit value %q: expected true or false", inheritStr)
+				}
 				inheritAppControl = &b
 			}
 
@@ -113,6 +120,128 @@ Dry-run by default — pass --yes to apply.`,
 	cmd.Flags().StringVar(&inheritStr, "inherit", "", "inherit settings from parent (true/false)")
 	cmd.Flags().StringVar(&scopeType, "scope-type", "", "scope type: account, site, group")
 	cmd.Flags().StringSliceVar(&scopeIDs, "scope-id", nil, "scope IDs")
+	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
+	return markJSON(cmd)
+}
+
+func newAppMgmtSettingsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "mgmt-settings",
+		Short: "Manage application management settings (scan schedule, extensive scan)",
+	}
+	requireSubcommand(cmd)
+	cmd.AddCommand(newAppMgmtSettingsGetCmd())
+	cmd.AddCommand(newAppMgmtSettingsUpdateCmd())
+	return cmd
+}
+
+func newAppMgmtSettingsGetCmd() *cobra.Command {
+	var siteIDs, groupIDs, accountIDs []string
+
+	cmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get application management settings",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := mgmtClient()
+			if err != nil {
+				return err
+			}
+			params := &mgmt.AppMgmtSettingsListParams{
+				SiteIDs:    siteIDs,
+				GroupIDs:   groupIDs,
+				AccountIDs: accountIDs,
+			}
+			s, err := c.AppMgmtSettingsGet(cmd.Context(), params)
+			if err != nil {
+				return err
+			}
+			if outputFormat == "json" {
+				return printJSON(cmd.OutOrStdout(), s)
+			}
+			schedule := "--"
+			if s.ScanSchedule != nil {
+				schedule = fmt.Sprintf("every %d weeks on %s at %s (%s)",
+					s.ScanSchedule.ScanEvery, s.ScanSchedule.RepeatOn,
+					s.ScanSchedule.Time, s.ScanSchedule.Timezone)
+			}
+			printTable([]string{"FIELD", "VALUE"}, [][]string{
+				{"Extensive Scan", fmt.Sprintf("%t", s.ExtensiveScanEnabled)},
+				{"Default Policy", fmt.Sprintf("%t", s.IsDefaultPolicy)},
+				{"Scan Schedule", schedule},
+				{"Breaking Inheritance", fmt.Sprintf("%t", s.HasBreakingInheritance)},
+			})
+			return nil
+		},
+	}
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "filter by site ID")
+	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "filter by group ID")
+	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "filter by account ID")
+	return markJSON(cmd)
+}
+
+func newAppMgmtSettingsUpdateCmd() *cobra.Command {
+	var siteIDs, groupIDs, accountIDs []string
+	var extensiveScanStr, defaultPolicyStr string
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "update",
+		Short: "Update application management settings",
+		Long: `Update application management settings (scan schedule, extensive scan).
+Dry-run by default — pass --yes to apply.`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if extensiveScanStr == "" && defaultPolicyStr == "" {
+				return fmt.Errorf("at least one of --extensive-scan or --default-policy is required")
+			}
+
+			data := mgmt.AppMgmtSettingsUpdateData{}
+			if extensiveScanStr != "" {
+				b, pErr := strconv.ParseBool(extensiveScanStr)
+				if pErr != nil {
+					return fmt.Errorf("invalid --extensive-scan value %q: expected true or false", extensiveScanStr)
+				}
+				data.ExtensiveScanEnabled = &b
+			}
+			if defaultPolicyStr != "" {
+				b, pErr := strconv.ParseBool(defaultPolicyStr)
+				if pErr != nil {
+					return fmt.Errorf("invalid --default-policy value %q: expected true or false", defaultPolicyStr)
+				}
+				data.IsDefaultPolicy = &b
+			}
+
+			return guard(cmd.OutOrStdout(), "applications mgmt-settings update",
+				"update application management settings",
+				"mgmt-settings", yes, func() error {
+					c, err := mgmtClient()
+					if err != nil {
+						return err
+					}
+					scope := mgmt.AppMgmtSettingsScope{
+						SiteIDs:    siteIDs,
+						GroupIDs:   groupIDs,
+						AccountIDs: accountIDs,
+					}
+					if len(siteIDs) == 0 && len(groupIDs) == 0 && len(accountIDs) == 0 {
+						scope.Tenant = true
+					}
+					s, err := c.AppMgmtSettingsUpdate(cmd.Context(), scope, data)
+					if err != nil {
+						return err
+					}
+					if outputFormat == "json" {
+						return printJSON(cmd.OutOrStdout(), s)
+					}
+					fmt.Fprintln(cmd.OutOrStdout(), "Updated application management settings")
+					return nil
+				})
+		},
+	}
+	cmd.Flags().StringSliceVar(&siteIDs, "site-id", nil, "scope: site IDs")
+	cmd.Flags().StringSliceVar(&groupIDs, "group-id", nil, "scope: group IDs")
+	cmd.Flags().StringSliceVar(&accountIDs, "account-id", nil, "scope: account IDs")
+	cmd.Flags().StringVar(&extensiveScanStr, "extensive-scan", "", "enable extensive scan (true/false)")
+	cmd.Flags().StringVar(&defaultPolicyStr, "default-policy", "", "use default policy (true/false)")
 	cmd.Flags().BoolVar(&yes, "yes", false, "apply changes (default: dry-run)")
 	return markJSON(cmd)
 }

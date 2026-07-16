@@ -177,7 +177,7 @@ Dry-run by default — pass --yes to apply.`,
 					}
 					input := mgmt.AppControlRuleInput{
 						RuleName:    name,
-						Description: description,
+						Description: &description,
 						Behavior:    mgmt.AppControlBehavior(strings.ToUpper(behavior)),
 						Propagation: &propagation,
 					}
@@ -239,7 +239,7 @@ Dry-run by default — pass --yes to apply.`,
 					}
 					input := mgmt.AppControlRuleInput{
 						RuleName:    name,
-						Description: description,
+						Description: &description,
 						Propagation: &propagation,
 					}
 					if behavior != "" {

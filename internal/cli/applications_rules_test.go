@@ -128,6 +128,49 @@ func TestAppControlRulesPushMissingDir(t *testing.T) {
 	}
 }
 
+func TestAppControlSettingsUpdateInvalidBool(t *testing.T) {
+	_, err := runCLI(t, "applications", "settings", "update",
+		"--enable", "maybe")
+	if err == nil {
+		t.Fatal("expected error for invalid --enable value")
+	}
+	if !strings.Contains(err.Error(), "invalid --enable value") {
+		t.Fatalf("unexpected error: %q", err.Error())
+	}
+}
+
+func TestAppMgmtSettingsUpdateDryRun(t *testing.T) {
+	out, err := runCLI(t, "applications", "mgmt-settings", "update",
+		"--extensive-scan", "true")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "Would") {
+		t.Fatalf("expected dry-run message, got %q", out)
+	}
+}
+
+func TestAppMgmtSettingsUpdateRequiresField(t *testing.T) {
+	_, err := runCLI(t, "applications", "mgmt-settings", "update")
+	if err == nil {
+		t.Fatal("expected error without any setting flag")
+	}
+	if !strings.Contains(err.Error(), "at least one of") {
+		t.Fatalf("unexpected error: %q", err.Error())
+	}
+}
+
+func TestAppMgmtSettingsUpdateInvalidBool(t *testing.T) {
+	_, err := runCLI(t, "applications", "mgmt-settings", "update",
+		"--extensive-scan", "nope")
+	if err == nil {
+		t.Fatal("expected error for invalid --extensive-scan value")
+	}
+	if !strings.Contains(err.Error(), "invalid --extensive-scan value") {
+		t.Fatalf("unexpected error: %q", err.Error())
+	}
+}
+
 func TestAppControlSubcommandRegistration(t *testing.T) {
 	// Verify the command tree is wired correctly.
 	for _, args := range [][]string{
@@ -136,6 +179,9 @@ func TestAppControlSubcommandRegistration(t *testing.T) {
 		{"applications", "labels", "--help"},
 		{"applications", "rules", "pull", "--help"},
 		{"applications", "rules", "push", "--help"},
+		{"applications", "mgmt-settings", "--help"},
+		{"applications", "mgmt-settings", "get", "--help"},
+		{"applications", "mgmt-settings", "update", "--help"},
 	} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
 			out, err := runCLI(t, args...)

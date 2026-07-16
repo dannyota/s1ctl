@@ -19,6 +19,7 @@ func newApplicationsCmd() *cobra.Command {
 	cmd.AddCommand(newAppControlRulesCmd())
 	cmd.AddCommand(newAppControlSettingsCmd())
 	cmd.AddCommand(newAppControlLabelsCmd())
+	cmd.AddCommand(newAppMgmtSettingsCmd())
 	return cmd
 }
 
