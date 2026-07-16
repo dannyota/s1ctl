@@ -326,12 +326,18 @@ func (s *Server) buildFocusTool() Tool {
 			s.rebuildToolList()
 			s.mu.Unlock()
 
-			names := make([]string, len(tools))
-			for i, t := range tools {
+			// Report only the tools that survive read-only filtering so
+			// the agent never sees names absent from tools/list.
+			visible := tools
+			if s.readOnly {
+				visible = filterReadOnly(tools)
+			}
+			names := make([]string, len(visible))
+			for i, t := range visible {
 				names[i] = t.Name
 			}
 			return fmt.Sprintf("Loaded %d tools for %s: %s\nTools are available on the next turn.",
-				len(tools), group, strings.Join(names, ", ")), nil
+				len(visible), group, strings.Join(names, ", ")), nil
 		},
 	}
 }
