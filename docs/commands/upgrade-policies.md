@@ -172,7 +172,7 @@ specified partition; use multiple invocations for different OS types or scopes.
 |------|------|---------|-------------|
 | `--os-type` | string | - | OS type (linux, macos, windows) [required] |
 | `--out` | string | upgrade-policies | output directory |
-| `--scope-id` | stringSlice | - | scope ID (site/account/group ID) |
+| `--scope-id` | string | - | scope ID (site/account/group ID) |
 | `--scope-level` | string | - | scope level (account, group, site, tenant) [required] |
 
 ## upgrade-policies push
@@ -198,7 +198,7 @@ These must match the scope and OS in the local files.
 |------|------|---------|-------------|
 | `--dir` | string | upgrade-policies | directory containing upgrade policy YAML files |
 | `--os-type` | string | - | OS type (linux, macos, windows) [required] |
-| `--scope-id` | stringSlice | - | scope ID (site/account/group ID) |
+| `--scope-id` | string | - | scope ID (site/account/group ID) |
 | `--scope-level` | string | - | scope level (account, group, site, tenant) [required] |
 | `--yes` | bool | false | apply changes (default: dry-run) |
 

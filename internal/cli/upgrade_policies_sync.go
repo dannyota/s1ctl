@@ -132,12 +132,15 @@ These must match the scope and OS in the local files.`,
 		RegisterPullFlags: upgradePolicyScopeFlags,
 		RegisterPushFlags: upgradePolicyScopeFlags,
 		Build: func(cmd *cobra.Command, scope scopeFlags) (reconcile.Surface, error) {
-			var scopeLevel, osType string
+			var scopeLevel, osType, scopeID string
 			if f := cmd.Flags().Lookup("scope-level"); f != nil {
 				scopeLevel = f.Value.String()
 			}
 			if f := cmd.Flags().Lookup("os-type"); f != nil {
 				osType = f.Value.String()
+			}
+			if f := cmd.Flags().Lookup("scope-id"); f != nil {
+				scopeID = f.Value.String()
 			}
 			if scopeLevel == "" {
 				return reconcile.Surface{}, fmt.Errorf("--scope-level is required (account, group, site, tenant)")
@@ -174,8 +177,8 @@ These must match the scope and OS in the local files.`,
 						SortBy:     "priority",
 						SortOrder:  "asc",
 					}
-					if len(scope.SiteIDs) > 0 {
-						params.ScopeID = scope.SiteIDs[0]
+					if scopeID != "" {
+						params.ScopeID = scopeID
 					}
 					policies, _, lErr := fetchAllUpgradePoliciesCtx(ctx, c, params)
 					if lErr != nil {
@@ -220,11 +223,12 @@ These must match the scope and OS in the local files.`,
 }
 
 // upgradePolicyScopeFlags registers the --scope-level, --os-type, and --scope-id
-// flags shared by upgrade-policies pull and push.
+// flags shared by upgrade-policies pull and push. --scope-id is a single-value
+// flag because upgrade-policies sync operates on one scope at a time.
 func upgradePolicyScopeFlags(cmd *cobra.Command, scope *scopeFlags) {
 	cmd.Flags().String("scope-level", "", "scope level (account, group, site, tenant) [required]")
 	cmd.Flags().String("os-type", "", "OS type (linux, macos, windows) [required]")
-	cmd.Flags().StringSliceVar(&scope.SiteIDs, "scope-id", nil, "scope ID (site/account/group ID)")
+	cmd.Flags().String("scope-id", "", "scope ID (site/account/group ID)")
 }
 
 // fetchAllUpgradePoliciesCtx pages through upgrade policies using the context.
