@@ -393,7 +393,7 @@ func TestToolCallErrorIncludesMessage(t *testing.T) {
 	}
 }
 
-func TestToolCallErrorPrefersOutput(t *testing.T) {
+func TestToolCallErrorKeepsOutputAndCause(t *testing.T) {
 	tools := []Tool{
 		{
 			Name:        "partial",
@@ -414,6 +414,9 @@ func TestToolCallErrorPrefersOutput(t *testing.T) {
 	content, _ := result["content"].([]any)
 	text, _ := content[0].(map[string]any)["text"].(string)
 	if !strings.Contains(text, "could not parse query") {
-		t.Errorf("error text = %q, should prefer output over generic exit status", text)
+		t.Errorf("error text = %q, want partial output included", text)
+	}
+	if !strings.Contains(text, "exit status 1") {
+		t.Errorf("error text = %q, want the error cause included", text)
 	}
 }

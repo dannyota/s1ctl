@@ -1,16 +1,11 @@
 package mcp
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -535,74 +530,6 @@ func mcpEnumFromUsage(usage string) []string {
 		return nil
 	}
 	return vals
-}
-
-func (s *Server) execCommand(parts []string) (string, error) {
-	cliArgs := make([]string, 0, len(parts)+2)
-	cliArgs = append(cliArgs, parts...)
-	cliArgs = append(cliArgs, "--json", "--no-progress")
-	return execSubprocess(cliArgs)
-}
-
-const maxOutputBytes = 4 << 20 // 4 MiB
-
-func execSubprocess(args []string) (string, error) {
-	self, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("find executable: %w", err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, self, args...) //nolint:gosec // self is os.Executable, args from tool schema
-	cmd.Env = os.Environ()
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	execErr := cmd.Run()
-
-	out := stdout.String()
-	errOut := stderr.String()
-
-	if execErr != nil {
-		// Build a useful error message from all available output.
-		var parts []string
-		if errOut != "" {
-			parts = append(parts, strings.TrimSpace(errOut))
-		}
-		if out != "" {
-			parts = append(parts, strings.TrimSpace(out))
-		}
-		if len(parts) == 0 {
-			parts = append(parts, execErr.Error())
-		}
-		return "", fmt.Errorf("%s", strings.Join(parts, "\n"))
-	}
-
-	if len(out) > maxOutputBytes {
-		f, err := os.CreateTemp("", "s1ctl-mcp-*.json")
-		if err != nil {
-			return "", fmt.Errorf("output too large (%d bytes, limit %d) and failed to write temp file: %w", len(out), maxOutputBytes, err)
-		}
-		_, err = f.WriteString(out)
-		closeErr := f.Close()
-		if err != nil || closeErr != nil {
-			_ = os.Remove(f.Name())
-			if err == nil {
-				err = closeErr
-			}
-			return "", fmt.Errorf("output too large (%d bytes, limit %d) and failed to write temp file: %w", len(out), maxOutputBytes, err)
-		}
-		result, _ := json.Marshal(map[string]any{
-			"file":    f.Name(),
-			"bytes":   len(out),
-			"message": "Output exceeded 4 MiB limit. Results saved to file. Read the file to analyze, or use --max-results or narrower filters to reduce output.",
-		})
-		return string(result), nil
-	}
-	return out, nil
 }
 
 // splitCommand tokenises a command string with shell-style quoting.

@@ -110,6 +110,7 @@ func (s *Server) notifyToolsChanged() {
 }
 
 func (s *Server) Serve(ctx context.Context) error {
+	sweepSpillFiles(spillDir(), spillMaxAge)
 	return s.serve(ctx, os.Stdin, os.Stdout)
 }
 
@@ -240,7 +241,7 @@ func (s *Server) handleToolCall(msg *jsonrpcMessage) {
 	if err != nil {
 		errText := err.Error()
 		if output != "" {
-			errText = output
+			errText = output + "\n" + errText
 		}
 		s.writeResult(msg.ID, toolCallResult{
 			Content: []content{{Type: "text", Text: fmt.Sprintf("error: %s", errText)}},
