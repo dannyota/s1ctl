@@ -94,13 +94,16 @@ func newEnginePullCmd(spec surfaceSpec) *cobra.Command {
 				return err
 			}
 
-			stale, err := reconcile.WriteDir(scope.OutDir, live)
+			stale, dupWarnings, err := reconcile.WriteDir(scope.OutDir, live)
 			if err != nil {
 				return err
 			}
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Pulled %s to %s\n",
 				pluralize(len(live), spec.Noun), scope.OutDir)
+			for _, w := range dupWarnings {
+				fmt.Fprintf(cmd.ErrOrStderr(), "warning: %s\n", w)
+			}
 			for _, name := range stale {
 				fmt.Fprintf(cmd.ErrOrStderr(),
 					"warning: %s has no live %s (delete it or push will re-create the object)\n",

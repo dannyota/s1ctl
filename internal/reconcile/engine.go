@@ -105,8 +105,9 @@ func LoadDir(dir string, decode func(data []byte) (Object, error)) ([]Object, er
 // duplicate stems suffixed -1, -2… (same behavior as the legacy pulls). It
 // returns the names of pre-existing *.yaml/*.yml files in dir that did NOT
 // correspond to a written object (stale files) so pull can warn: a stale file
-// would plan as a create on the next push.
-func WriteDir(dir string, objects []Object) (stale []string, err error) {
+// would plan as a create on the next push. dupWarnings lists object names that
+// collided on the same sanitized stem (suffixed files share identity risk).
+func WriteDir(dir string, objects []Object) (stale, dupWarnings []string, err error) {
 	existing := make(map[string]bool)
 	if entries, rErr := os.ReadDir(dir); rErr == nil {
 		for _, e := range entries {
@@ -115,17 +116,20 @@ func WriteDir(dir string, objects []Object) (stale []string, err error) {
 			}
 		}
 	} else if !os.IsNotExist(rErr) {
-		return nil, rErr
+		return nil, nil, rErr
 	}
 
 	if mErr := os.MkdirAll(dir, 0o750); mErr != nil {
-		return nil, mErr
+		return nil, nil, mErr
 	}
 
+	// Track which object names map to each sanitized stem.
+	stemNames := make(map[string][]string)
 	used := make(map[string]int)
 	written := make(map[string]bool)
 	for _, o := range objects {
 		base := sanitizeName(o.Name)
+		stemNames[base] = append(stemNames[base], o.Name)
 		stem := base
 		if n := used[base]; n > 0 {
 			stem = fmt.Sprintf("%s-%d", base, n)
@@ -134,9 +138,24 @@ func WriteDir(dir string, objects []Object) (stale []string, err error) {
 
 		name := stem + ".yaml"
 		if wErr := os.WriteFile(filepath.Join(dir, name), o.Body, 0o644); wErr != nil {
-			return nil, wErr
+			return nil, nil, wErr
 		}
 		written[name] = true
+	}
+
+	// Warn about stems that map to multiple distinct object names.
+	var dupStems []string
+	for stem := range stemNames {
+		if len(stemNames[stem]) > 1 {
+			dupStems = append(dupStems, stem)
+		}
+	}
+	sort.Strings(dupStems)
+	for _, stem := range dupStems {
+		names := stemNames[stem]
+		dupWarnings = append(dupWarnings, fmt.Sprintf(
+			"%d objects sanitize to %q: %s (suffixed files share identity risk on push)",
+			len(names), stem, strings.Join(names, ", ")))
 	}
 
 	for name := range existing {
@@ -145,7 +164,7 @@ func WriteDir(dir string, objects []Object) (stale []string, err error) {
 		}
 	}
 	sort.Strings(stale)
-	return stale, nil
+	return stale, dupWarnings, nil
 }
 
 func isYAML(name string) bool {

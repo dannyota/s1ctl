@@ -43,10 +43,7 @@ Shows both private and shared saved queries.`,
 				return err
 			}
 
-			if outputFormat == "json" {
-				return printJSON(cmd.OutOrStdout(), queries)
-			}
-			if len(queries) == 0 {
+			if len(queries) == 0 && outputFormat == "" {
 				fmt.Fprintln(cmd.OutOrStdout(), "No saved queries found.")
 				return nil
 			}
@@ -61,9 +58,7 @@ Shows both private and shared saved queries.`,
 					truncate(q.URL, 60),
 				}
 			}
-			printTable(headers, rows)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%s\n", pluralize(len(queries), "saved query"))
-			return nil
+			return printOutput(cmd.OutOrStdout(), headers, rows, queries, len(queries), len(queries), "saved query", true)
 		},
 	}
 	return markJSON(cmd)

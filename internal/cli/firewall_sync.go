@@ -151,7 +151,11 @@ func firewallSpec() surfaceSpec {
 		PushShort:  "Push firewall rules from local YAML files",
 		PushLong: `Read firewall rule YAML files from a directory and sync them to SentinelOne.
 Rules are matched by name: existing rules are updated, new rules are created,
-and unchanged rules are skipped. Dry-run by default — pass --yes to apply changes.`,
+and unchanged rules are skipped. Dry-run by default — pass --yes to apply changes.
+
+Note: the plan is built against the list scoped by --site-id. Without --site-id
+the list is unscoped, which may match rules from other sites and produce an
+incorrect plan. Always pass --site-id when pushing to a specific site.`,
 		RegisterPullFlags: func(cmd *cobra.Command, scope *scopeFlags) {
 			cmd.Flags().StringSliceVar(&scope.SiteIDs, "site-id", nil, "filter by site ID")
 		},

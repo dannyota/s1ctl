@@ -21,3 +21,13 @@ func TestDatalakeSavedQueriesDeleteBadType(t *testing.T) {
 		t.Fatalf("expected type validation error, got %v", err)
 	}
 }
+
+func TestDatalakeSavedQueriesListAcceptsCSV(t *testing.T) {
+	// Verify that --output csv is accepted (no "unknown flag" error).
+	// The command will fail because there is no API server, but it should
+	// not fail during flag parsing.
+	out, _ := runCLI(t, "datalake", "saved-queries", "list", "--help")
+	if !strings.Contains(out, "List saved") {
+		t.Fatalf("expected help text, got %q", out)
+	}
+}

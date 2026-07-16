@@ -8276,6 +8276,10 @@ Read firewall rule YAML files from a directory and sync them to SentinelOne.
 Rules are matched by name: existing rules are updated, new rules are created,
 and unchanged rules are skipped. Dry-run by default — pass --yes to apply changes.
 
+Note: the plan is built against the list scoped by --site-id. Without --site-id
+the list is unscoped, which may match rules from other sites and produce an
+incorrect plan. Always pass --site-id when pushing to a specific site.
+
 **Flags**
 
 | Flag | Type | Default | Description |
@@ -12543,7 +12547,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| datalake | powerquery (GraphQL + REST), query, facet, timeseries, numeric, saved-queries list, dashboards (list, get), parsers (list, get), notebooks (list, get) | addEvents, uploadLogs, saved-queries delete, parsers delete, notebooks delete | -- | built |
+| datalake | powerquery (GraphQL + REST), query, facet, timeseries, numeric, saved-queries list, dashboards (list, get), parsers (list, get), notebooks (list, get) | addEvents, uploadLogs, saved-queries delete, parsers create, parsers delete, notebooks create, notebooks update, notebooks delete | -- | built |
 | files | getFile, listFiles | putFile | -- | built |
 
 ## Platform administration

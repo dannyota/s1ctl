@@ -167,7 +167,7 @@ func TestWriteLoadRoundTrip(t *testing.T) {
 		{Name: "foo", Body: []byte("name: foo\nx: 1\n")},
 		{Name: "bar", Body: []byte("name: bar\ny: 2\n")},
 	}
-	stale, err := WriteDir(dir, objs)
+	stale, _, err := WriteDir(dir, objs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,8 +205,10 @@ func TestWriteDirDuplicateStemSuffix(t *testing.T) {
 		{Name: "Same Name", Body: []byte("name: Same Name\n")},
 		{Name: "Same Name", Body: []byte("name: Same Name\n")},
 	}
-	if _, err := WriteDir(dir, objs); err != nil {
+	if _, dupWarnings, err := WriteDir(dir, objs); err != nil {
 		t.Fatal(err)
+	} else if len(dupWarnings) != 1 {
+		t.Errorf("want 1 duplicate-stem warning, got %d: %v", len(dupWarnings), dupWarnings)
 	}
 	for _, want := range []string{"same-name.yaml", "same-name-1.yaml", "same-name-2.yaml"} {
 		if _, err := os.Stat(filepath.Join(dir, want)); err != nil {
@@ -223,7 +225,7 @@ func TestWriteDirReportsStale(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "keeper.yml"), []byte("name: keeper\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	stale, err := WriteDir(dir, []Object{{Name: "foo", Body: []byte("name: foo\n")}})
+	stale, _, err := WriteDir(dir, []Object{{Name: "foo", Body: []byte("name: foo\n")}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,6 +233,27 @@ func TestWriteDirReportsStale(t *testing.T) {
 	want := []string{"extra.yaml", "keeper.yml"}
 	if !reflect.DeepEqual(stale, want) {
 		t.Errorf("stale = %v, want %v", stale, want)
+	}
+}
+
+func TestWriteDirDuplicateStemWarningDistinctNames(t *testing.T) {
+	dir := t.TempDir()
+	objs := []Object{
+		{Name: "My Rule!", Body: []byte("name: My Rule!\n")},
+		{Name: "My Rule?", Body: []byte("name: My Rule?\n")},
+	}
+	_, dupWarnings, err := WriteDir(dir, objs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dupWarnings) != 1 {
+		t.Fatalf("want 1 duplicate-stem warning, got %d: %v", len(dupWarnings), dupWarnings)
+	}
+	if !strings.Contains(dupWarnings[0], "my-rule") {
+		t.Errorf("warning should mention the stem, got %q", dupWarnings[0])
+	}
+	if !strings.Contains(dupWarnings[0], "My Rule!") || !strings.Contains(dupWarnings[0], "My Rule?") {
+		t.Errorf("warning should mention both names, got %q", dupWarnings[0])
 	}
 }
 
