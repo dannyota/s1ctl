@@ -15,19 +15,26 @@ import (
 
 // driftResult is one surface's plan summarized for the drift report. Name
 // slices are always non-nil so --json renders `[]` rather than `null`.
+// SkipReason is non-empty when a surface could not be checked (e.g. its Build
+// requires flags the drift command does not register); it appears in the
+// summary as SKIPPED so CI users see the gap.
 type driftResult struct {
-	Surface   string   `json:"surface"`
-	Creates   []string `json:"creates"`
-	Updates   []string `json:"updates"`
-	LiveOnly  []string `json:"liveOnly"`
-	Unchanged int      `json:"unchanged"`
+	Surface    string   `json:"surface"`
+	Creates    []string `json:"creates"`
+	Updates    []string `json:"updates"`
+	LiveOnly   []string `json:"liveOnly"`
+	Unchanged  int      `json:"unchanged"`
+	SkipReason string   `json:"skipReason,omitempty"`
 }
 
 // drifted reports whether this surface differs from live state: any create,
-// update, or live-only object is drift.
+// update, or live-only object is drift. Skipped surfaces are not drifted.
 func (r driftResult) drifted() bool {
-	return len(r.Creates) > 0 || len(r.Updates) > 0 || len(r.LiveOnly) > 0
+	return r.SkipReason == "" && (len(r.Creates) > 0 || len(r.Updates) > 0 || len(r.LiveOnly) > 0)
 }
+
+// skipped reports whether this surface was skipped (Build failed).
+func (r driftResult) skipped() bool { return r.SkipReason != "" }
 
 func newDriftCmd() *cobra.Command {
 	var surfaces []string
@@ -44,6 +51,11 @@ committed files, lists the live objects, and plans the reconcile: creates
 (committed, not live), updates (committed, differs from live), live-only
 (live, not committed) and unchanged. Surfaces without a local directory are
 skipped — drift checks only what is committed.
+
+Surfaces whose Build requires flags not available in drift (e.g.
+upgrade-policies, which needs --scope-level and --os-type) are reported as
+SKIPPED with a reason in the summary rather than aborting the run. Use
+upgrade-policies pull/push directly for those surfaces.
 
 The command is read-only: it lists, plans, and reports, and has no apply path.
 Exit code is 0 when every checked surface is clean and 1 when any surface has
@@ -93,6 +105,10 @@ func selectDriftSpecs(names []string) ([]surfaceSpec, error) {
 // summary. No API client is constructed until a surface with an existing local
 // directory is reached (the surface List closures create clients lazily), so an
 // all-directories-missing run stays fully offline.
+//
+// When a surface's Build fails (e.g. missing required flags that drift cannot
+// supply), the surface is marked SKIPPED with the error reason and the run
+// continues with the remaining surfaces.
 func runDrift(cmd *cobra.Command, specs []surfaceSpec, dirRoot string) error {
 	var results []driftResult
 	for _, spec := range specs {
@@ -102,7 +118,22 @@ func runDrift(cmd *cobra.Command, specs []surfaceSpec, dirRoot string) error {
 			continue // drift checks only committed config; skip missing dirs
 		}
 
-		result, err := driftSurface(cmd, spec, dir)
+		// Build first: if it fails (e.g. surface needs flags drift cannot
+		// supply), mark SKIPPED and continue — never abort the whole run.
+		surface, bErr := spec.Build(cmd, scopeFlags{push: true})
+		if bErr != nil {
+			fmt.Fprintf(cmd.ErrOrStderr(), "warning: %s: skipping drift check: %v\n", spec.Command, bErr)
+			results = append(results, driftResult{
+				Surface:    spec.Command,
+				Creates:    []string{},
+				Updates:    []string{},
+				LiveOnly:   []string{},
+				SkipReason: bErr.Error(),
+			})
+			continue
+		}
+
+		result, err := driftSurfaceWithSurface(cmd, spec, surface, dir)
 		if err != nil {
 			return err
 		}
@@ -117,16 +148,11 @@ func runDrift(cmd *cobra.Command, specs []surfaceSpec, dirRoot string) error {
 	return reportDrift(cmd, results)
 }
 
-// driftSurface builds the plan for one surface: load committed files, list live
-// objects, and classify. BuildPlan warnings go to stderr.
-func driftSurface(cmd *cobra.Command, spec surfaceSpec, dir string) (driftResult, error) {
-	// push scope lists tenant-wide (no per-directory filters) so the plan
-	// compares committed config against the full live set.
-	surface, err := spec.Build(cmd, scopeFlags{push: true})
-	if err != nil {
-		return driftResult{}, err
-	}
-
+// driftSurfaceWithSurface plans one surface against its committed directory:
+// load files, list live objects, and classify. BuildPlan warnings go to stderr.
+// The caller supplies the already-built Surface (Build is run earlier in
+// runDrift so its failure can be caught and reported as SKIPPED).
+func driftSurfaceWithSurface(cmd *cobra.Command, spec surfaceSpec, surface reconcile.Surface, dir string) (driftResult, error) {
 	local, err := reconcile.LoadDir(dir, surface.Decode)
 	if err != nil {
 		return driftResult{}, err
@@ -155,11 +181,16 @@ func driftSurface(cmd *cobra.Command, spec surfaceSpec, dir string) (driftResult
 }
 
 // reportDrift prints the per-surface summary and returns a drift error (exit 1)
-// when any checked surface differs from live state.
+// when any checked surface differs from live state. Skipped surfaces appear
+// with "SKIPPED" in the status columns so CI users see the gap.
 func reportDrift(cmd *cobra.Command, results []driftResult) error {
 	headers := []string{"SURFACE", "CREATE", "UPDATE", "LIVE-ONLY", "UNCHANGED"}
 	rows := make([][]string, 0, len(results))
 	for _, r := range results {
+		if r.skipped() {
+			rows = append(rows, []string{r.Surface, "SKIPPED", "-", "-", "-"})
+			continue
+		}
 		rows = append(rows, []string{
 			r.Surface,
 			strconv.Itoa(len(r.Creates)),

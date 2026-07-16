@@ -10371,6 +10371,12 @@ live-only objects); 1 means drift. Surfaces without a local directory are
 skipped — drift checks only what is committed. The command is read-only by
 construction: it lists, plans, and reports, and has no apply path.
 
+Surfaces whose Build requires flags the drift command cannot supply (e.g.
+upgrade-policies, which needs `--scope-level` and `--os-type` on every API
+call) are reported as **SKIPPED** with a reason in the summary rather than
+aborting the run. Use the surface's pull/push commands directly to check
+those surfaces.
+
 Typical CI use: check out the config repo, run `s1ctl drift`, fail the job on
 a non-zero exit.
 
