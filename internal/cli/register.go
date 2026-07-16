@@ -64,6 +64,7 @@ func registerCommands(root *cobra.Command) {
 
 	// Automation and integration
 	root.AddCommand(newAutomationCmd())
+	root.AddCommand(newMarketplaceCmd())
 
 	// Hunting & data lake
 	root.AddCommand(newVisibilityCmd())

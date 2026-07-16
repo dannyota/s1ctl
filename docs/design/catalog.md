@@ -107,7 +107,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | automation | list, get, versions, export, executions, execution-get, execution-output | create, run, activate, deactivate | -- | built |
-| marketplace | list, get | install | -- | designed |
+| marketplace | catalog, list, config, log | install, update, delete, enable, disable | -- | built |
 
 ## Asset inventory
 
