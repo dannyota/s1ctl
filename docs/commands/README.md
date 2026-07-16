@@ -9,7 +9,7 @@ Auto-generated from the command tree. Run `s1ctl docs generate` to update.
 | [agents](agents.md) | abort-scan, approve-uninstall, broadcast, count, decommission, disable, enable, fetch-files, fetch-firewall-rules, fetch-installed-apps, fetch-logs, firewall-logging, get, health, isolate, list, local-upgrade, local-upgrade-status, mark-up-to-date, move, move-to-site, outdated, passphrases, randomize-uuid, ranger, reconnect, reject-uninstall, reset-config, reset-passphrase, restart, scan, set-external-id, shutdown, uninstall, upgrade, versions | Manage endpoint agents |
 | [alerts](alerts.md) | add-note, count, counts, delete-note, export, get, history, list, notes, resolve, stats, status, timeline, update-note, verdict | Manage unified alerts (GraphQL UAM) |
 | [applications](applications.md) | cves, labels, list, mgmt-settings, risks, rules, settings | Manage application inventory and risk |
-| [assets](assets.md) | categories, overview | Manage XDR asset inventory |
+| [assets](assets.md) | action, categories, export, filter-options, list, notes, overview, sub-categories | Manage XDR asset inventory |
 | [audit](audit.md) | list | View mutation audit log |
 | [automation](automation.md) | activate, create, deactivate, execution-get, execution-output, executions, export, get, list, run, versions | Manage hyperautomation workflows and executions |
 | [blocklist](blocklist.md) | create, delete, export, list, pull, push, update, validate | Manage the blocklist (blocked file hashes) |
@@ -30,6 +30,7 @@ Auto-generated from the command tree. Run `s1ctl docs generate` to update.
 | [iocs](iocs.md) | config, create, delete, list | Manage threat intelligence IOCs |
 | [locations](locations.md) | create, delete, list, pull, push, update | Manage firewall locations |
 | [maintenance](maintenance.md) | export, get, get-flexible, set, set-flexible | Manage task maintenance-window configuration |
+| [marketplace](marketplace.md) | catalog, catalog-config, config, delete, disable, enable, install, list, log, update | Manage Singularity Marketplace applications |
 | [mcp](mcp.md) | install, serve | Run Model Context Protocol server |
 | [misconfigurations](misconfigurations.md) | add-note, assign, delete-note, export, get, history, list, notes, related-assets, status, update-note, verdict | Manage xSPM misconfigurations |
 | [network](network.md) | configuration, copy, delete, disable, enable, export, get, import, list, move, protocols, pull, push, reorder, set-location, tags | Manage network quarantine rules |
