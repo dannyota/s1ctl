@@ -63,6 +63,7 @@
 - [iocs](https://s1.danny.vn/#/commands/iocs): Manage threat intelligence IOCs 
 - [locations](https://s1.danny.vn/#/commands/locations): Manage firewall locations 
 - [maintenance](https://s1.danny.vn/#/commands/maintenance): Manage task maintenance-window configuration 
+- [marketplace](https://s1.danny.vn/#/commands/marketplace): Manage Singularity Marketplace applications 
 - [mcp](https://s1.danny.vn/#/commands/mcp): Run Model Context Protocol server 
 - [misconfigurations](https://s1.danny.vn/#/commands/misconfigurations): Manage xSPM misconfigurations 
 - [network](https://s1.danny.vn/#/commands/network): Manage network quarantine rules 

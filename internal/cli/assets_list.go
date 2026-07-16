@@ -60,6 +60,7 @@ Use --filter key=value to pass type-specific API query parameters.`,
 
 			var items []json.RawMessage
 			var total int
+			var nextCursor string
 
 			if all {
 				items, total, err = fetchAllREST("asset", func(cur string) ([]json.RawMessage, *mgmt.Pagination, error) {
@@ -77,6 +78,7 @@ Use --filter key=value to pass type-specific API query parameters.`,
 				items = page
 				if pag != nil {
 					total = pag.TotalItems
+					nextCursor = pag.NextCursor
 				}
 			}
 
@@ -90,10 +92,7 @@ Use --filter key=value to pass type-specific API query parameters.`,
 					Data:       items,
 					Returned:   len(items),
 					Total:      total,
-					NextCursor: params.Cursor,
-				}
-				if all {
-					env.NextCursor = ""
+					NextCursor: nextCursor,
 				}
 				return printJSON(cmd.OutOrStdout(), env)
 			}

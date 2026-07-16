@@ -55,6 +55,7 @@
   - [iocs](commands/iocs.md)
   - [locations](commands/locations.md)
   - [maintenance](commands/maintenance.md)
+  - [marketplace](commands/marketplace.md)
   - [mcp](commands/mcp.md)
   - [misconfigurations](commands/misconfigurations.md)
   - [network](commands/network.md)

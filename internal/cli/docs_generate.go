@@ -29,7 +29,8 @@ func newDocsGenerateCmd() *cobra.Command {
 		Use:   "generate",
 		Short: "Generate command reference docs",
 		Long: `Walk the command tree and generate a markdown file per command group
-in the docs/commands/ directory. Also updates docs/_sidebar.md.`,
+in the docs/commands/ directory. New groups must be added to
+docs/_sidebar.md manually.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			root := cmd.Root()
 			if err := os.MkdirAll(outDir, 0o750); err != nil {
