@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -224,5 +227,60 @@ func TestAppControlSubcommandRegistration(t *testing.T) {
 				t.Fatal("expected help output")
 			}
 		})
+	}
+}
+
+// TestAppControlRulesUpdateMergePreservesFields runs update against a mock
+// server and verifies the PUT body keeps every field the user did not change.
+func TestAppControlRulesUpdateMergePreservesFields(t *testing.T) {
+	var putBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			json.NewEncoder(w).Encode(map[string]any{
+				"id":          "12345",
+				"ruleName":    "Block unsigned apps",
+				"description": "keep me",
+				"behavior":    "MONITOR",
+				"osType":      []string{"WINDOWS"},
+				"propagation": true,
+				"parameters":  map[string]any{"path": "C:\\apps\\*"},
+			})
+		case http.MethodPut:
+			if err := json.NewDecoder(r.Body).Decode(&putBody); err != nil {
+				t.Fatalf("decode PUT body: %v", err)
+			}
+			json.NewEncoder(w).Encode(map[string]any{"success": true})
+		default:
+			t.Fatalf("unexpected method %s", r.Method)
+		}
+	}))
+	defer srv.Close()
+	t.Setenv("S1_CONSOLE_URL", srv.URL)
+	t.Setenv("S1_TOKEN", "test-token")
+
+	if _, err := runCLI(t, "applications", "rules", "update", "12345",
+		"--behavior", "block", "--yes"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if putBody == nil {
+		t.Fatal("PUT body never captured")
+	}
+	if got := putBody["behavior"]; got != "BLOCK" {
+		t.Errorf("behavior = %v, want BLOCK", got)
+	}
+	if got := putBody["ruleName"]; got != "Block unsigned apps" {
+		t.Errorf("ruleName = %v, want preserved original", got)
+	}
+	if got := putBody["description"]; got != "keep me" {
+		t.Errorf("description = %v, want preserved original", got)
+	}
+	if got := putBody["propagation"]; got != true {
+		t.Errorf("propagation = %v, want preserved true", got)
+	}
+	params, _ := putBody["parameters"].(map[string]any)
+	if params == nil || params["path"] != "C:\\apps\\*" {
+		t.Errorf("parameters = %v, want preserved path condition", putBody["parameters"])
 	}
 }
