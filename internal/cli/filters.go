@@ -27,6 +27,7 @@ with the filter name and its filterFields, rather than taking many flags.`,
 	cmd.AddCommand(newFiltersCreateCmd())
 	cmd.AddCommand(newFiltersUpdateCmd())
 	cmd.AddCommand(newFiltersDeleteCmd())
+	addFilterSyncCmds(cmd)
 	return cmd
 }
 

@@ -14,13 +14,16 @@ func TestSyncSurfaceSpecs(t *testing.T) {
 		"cloud-policies":     "cloud-policies",
 		"devicecontrol":      "devicecontrol",
 		"exclusions":         "exclusions",
+		"filters":            "filters",
 		"firewall":           "firewall",
 		"network":            "network-quarantine",
 		"locations":          "locations",
 		"groups":             "groups",
 		"rules":              "rules",
 		"sites":              "sites",
+		"tag-rules":          "tag-rules",
 		"tags":               "tags",
+		"upgrade-policies":   "upgrade-policies",
 	}
 	specs := syncSurfaceSpecs()
 	if len(specs) != len(want) {

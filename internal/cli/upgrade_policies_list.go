@@ -24,6 +24,7 @@ func newUpgradePoliciesCmd() *cobra.Command {
 	cmd.AddCommand(newUpgradePolicyToggleCmd("deactivate", (*mgmt.Client).UpgradePoliciesDeactivate))
 	cmd.AddCommand(newUpgradePoliciesDeleteCmd())
 	cmd.AddCommand(newUpgradePoliciesPackagesCmd())
+	addUpgradePolicySyncCmds(cmd)
 	return cmd
 }
 

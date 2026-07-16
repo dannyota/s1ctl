@@ -92,9 +92,9 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | config-overrides | list, get | create, update, delete | -- | built |
 | updates | list, get | -- | -- | built |
 | deploy | list-groups, list-details | create-group, delete-group, add-detail, update-detail, delete-detail | -- | built |
-| upgrade-policies | list, get, packages | create, update, delete, activate, deactivate | -- | built |
+| upgrade-policies | list, get, packages | create, update, delete, activate, deactivate | pull/push | built |
 | tags | list, get | create, update, delete | pull/push | built |
-| filters | list | create, update, delete | -- | built |
+| filters | list | create, update, delete | pull/push | built |
 | maintenance | get, get-flexible, export | set, set-flexible | -- | built |
 | activities | list, count, export, types | -- | -- | built |
 | audit | list (local mutation log) | -- | -- | built |
@@ -114,7 +114,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | assets (XDR) | overview, categories | -- | -- | built |
-| tag-rules | list, test | create, update, delete | -- | built |
+| tag-rules | list, test | create, update, delete | pull/push | built |
 | inventory | list, get (all types) | tags, actions | -- | designed |
 
 ## Identity

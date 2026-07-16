@@ -135,6 +135,9 @@ engine (see [Reconcile engine](reconcile.md)):
 | groups | site ID + group name | Create or update |
 | tags | tag key | Create or update |
 | locations | location name | Create or update |
+| filters | filter name | Create or update |
+| tag-rules | rule name | Create or update |
+| upgrade-policies | policy name | Create or update |
 | cloud-policies | policy ID | Update only (no create) |
 
 Protection policies (`policies pull/push/diff/revert`) have their own lane

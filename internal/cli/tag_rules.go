@@ -29,6 +29,7 @@ matches before saving it.`,
 	cmd.AddCommand(newTagRulesUpdateCmd())
 	cmd.AddCommand(newTagRulesDeleteCmd())
 	cmd.AddCommand(newTagRulesTestCmd())
+	addTagRuleSyncCmds(cmd)
 	return cmd
 }
 

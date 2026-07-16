@@ -62,13 +62,16 @@ func syncSurfaceSpecs() []surfaceSpec {
 		cloudPoliciesSpec(),
 		deviceControlSpec(),
 		exclusionsSpec(),
+		filtersSpec(),
 		firewallSpec(),
 		networkQuarantineSpec(),
 		locationsSpec(),
 		groupsSpec(),
 		rulesSpec(),
 		sitesSpec(),
+		tagRulesSpec(),
 		tagsSpec(),
+		upgradePoliciesSpec(),
 	}
 }
 

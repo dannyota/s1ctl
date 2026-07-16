@@ -9832,6 +9832,9 @@ engine (see [Reconcile engine](reconcile.md)):
 | groups | site ID + group name | Create or update |
 | tags | tag key | Create or update |
 | locations | location name | Create or update |
+| filters | filter name | Create or update |
+| tag-rules | rule name | Create or update |
+| upgrade-policies | policy name | Create or update |
 | cloud-policies | policy ID | Update only (no create) |
 
 Protection policies (`policies pull/push/diff/revert`) have their own lane
@@ -9936,9 +9939,9 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | config-overrides | list, get | create, update, delete | -- | built |
 | updates | list, get | -- | -- | built |
 | deploy | list-groups, list-details | create-group, delete-group, add-detail, update-detail, delete-detail | -- | built |
-| upgrade-policies | list, get, packages | create, update, delete, activate, deactivate | -- | built |
+| upgrade-policies | list, get, packages | create, update, delete, activate, deactivate | pull/push | built |
 | tags | list, get | create, update, delete | pull/push | built |
-| filters | list | create, update, delete | -- | built |
+| filters | list | create, update, delete | pull/push | built |
 | maintenance | get, get-flexible, export | set, set-flexible | -- | built |
 | activities | list, count, export, types | -- | -- | built |
 | audit | list (local mutation log) | -- | -- | built |
@@ -9958,7 +9961,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | assets (XDR) | overview, categories | -- | -- | built |
-| tag-rules | list, test | create, update, delete | -- | built |
+| tag-rules | list, test | create, update, delete | pull/push | built |
 | inventory | list, get (all types) | tags, actions | -- | designed |
 
 ## Identity
@@ -10326,6 +10329,9 @@ next push and would re-create the object. Delete stale files before pushing.
 | exclusions | type + OS + value | type, value, OS, mode | |
 | blocklist | type + OS + value | type, value, OS, hash, description | |
 | locations | location name | name, operator, detection conditions | |
+| filters | filter name | name, filterFields criteria | |
+| tag-rules | rule name | name, status, conditions, scopes, tags, excluded assets | |
+| upgrade-policies | policy name | name, OS, scope, active, package, retries, tags | |
 | cloud-policies | policy ID | id, name, status | NoCreate |
 
 cloud-policies is status-reconcile only: an `update` toggles the policy

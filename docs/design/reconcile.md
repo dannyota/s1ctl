@@ -120,6 +120,9 @@ next push and would re-create the object. Delete stale files before pushing.
 | exclusions | type + OS + value | type, value, OS, mode | |
 | blocklist | type + OS + value | type, value, OS, hash, description | |
 | locations | location name | name, operator, detection conditions | |
+| filters | filter name | name, filterFields criteria | |
+| tag-rules | rule name | name, status, conditions, scopes, tags, excluded assets | |
+| upgrade-policies | policy name | name, OS, scope, active, package, retries, tags | |
 | cloud-policies | policy ID | id, name, status | NoCreate |
 
 cloud-policies is status-reconcile only: an `update` toggles the policy
