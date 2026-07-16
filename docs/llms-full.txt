@@ -12724,7 +12724,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 |---------|------|-------|----------------|--------|
 | assets (XDR) | overview, categories | -- | -- | built |
 | tag-rules | list, test | create, update, delete | pull/push | built |
-| inventory | list, get (all types) | tags, actions | -- | designed |
+| inventory | list, export, filter-options (all types) | notes, action | -- | built |
 
 ## Identity
 

@@ -17,6 +17,12 @@ func newAssetsCmd() *cobra.Command {
 	requireSubcommand(cmd)
 	cmd.AddCommand(newAssetsOverviewCmd())
 	cmd.AddCommand(newAssetsCategoriesCmd())
+	cmd.AddCommand(newAssetsListCmd())
+	cmd.AddCommand(newAssetsExportCmd())
+	cmd.AddCommand(newAssetsFilterOptionsCmd())
+	cmd.AddCommand(newAssetsSubCategoriesCmd())
+	cmd.AddCommand(newAssetsNotesCmd())
+	cmd.AddCommand(newAssetsActionCmd())
 	return cmd
 }
 

@@ -195,3 +195,222 @@ func TestXDRAssetCategoriesError(t *testing.T) {
 		t.Fatalf("expected 500, got %d", ae.Status)
 	}
 }
+
+func TestXDRAssetList(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/xdr/assets" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data":       []map[string]any{{"id": "a1", "name": "asset1"}},
+			"pagination": map[string]any{"totalItems": 1},
+		})
+	})
+	c := testClient(t, handler)
+	items, pag, err := c.XDRAssetList(context.Background(), "", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+	if pag.TotalItems != 1 {
+		t.Fatalf("expected totalItems=1, got %d", pag.TotalItems)
+	}
+}
+
+func TestXDRAssetListByType(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/xdr/assets/device" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data":       []map[string]any{{"id": "d1"}},
+			"pagination": map[string]any{"totalItems": 1},
+		})
+	})
+	c := testClient(t, handler)
+	items, _, err := c.XDRAssetList(context.Background(), AssetTypeDevice, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+}
+
+func TestXDRAssetListSurfaceType(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/xdr/assets/surface/cloud" {
+			t.Fatalf("unexpected path: %s, expected /xdr/assets/surface/cloud", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data":       []map[string]any{{"id": "sc1"}},
+			"pagination": map[string]any{"totalItems": 1},
+		})
+	})
+	c := testClient(t, handler)
+	items, _, err := c.XDRAssetList(context.Background(), AssetTypeSurfaceCloud, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+}
+
+func TestXDRAssetListFilters(t *testing.T) {
+	var gotQuery string
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		json.NewEncoder(w).Encode(map[string]any{
+			"data":       []map[string]any{},
+			"pagination": map[string]any{"totalItems": 0},
+		})
+	})
+	c := testClient(t, handler)
+	extra := make(map[string][]string)
+	extra["osTypes"] = []string{"windows"}
+	extra["status"] = []string{"active"}
+	_, _, err := c.XDRAssetList(context.Background(), AssetTypeDevice, &XDRAssetListParams{
+		Limit:   10,
+		SiteIDs: []string{"100"},
+		Extra:   extra,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, want := range []string{"limit=10", "siteIds=100", "osTypes=windows", "status=active"} {
+		if !strings.Contains(gotQuery, want) {
+			t.Errorf("query %q missing %q", gotQuery, want)
+		}
+	}
+}
+
+func TestXDRAssetExport(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/xdr/assets/server/export" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.Write([]byte("id,name\ns1,server1\n"))
+	})
+	c := testClient(t, handler)
+	data, err := c.XDRAssetExport(context.Background(), AssetTypeServer, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(data) != "id,name\ns1,server1\n" {
+		t.Fatalf("unexpected export data: %s", data)
+	}
+}
+
+func TestXDRAssetAction(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("expected POST, got %s", r.Method)
+		}
+		if r.URL.Path != "/xdr/assets/device/action" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		if body["actionName"] != "mark_asset_criticality_high" {
+			t.Fatalf("unexpected actionName: %v", body["actionName"])
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"affected": 2},
+		})
+	})
+	c := testClient(t, handler)
+	affected, err := c.XDRAssetAction(context.Background(), AssetTypeDevice, &XDRAssetActionInput{
+		ActionName: "mark_asset_criticality_high",
+		IDIn:       []string{"d1", "d2"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if affected != 2 {
+		t.Fatalf("expected affected=2, got %d", affected)
+	}
+}
+
+func TestXDRAssetActionRequiresName(t *testing.T) {
+	c := testClient(t, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	_, err := c.XDRAssetAction(context.Background(), AssetTypeDevice, &XDRAssetActionInput{})
+	if err == nil {
+		t.Fatal("expected error for empty action name")
+	}
+}
+
+func TestXDRAssetNotes(t *testing.T) {
+	var lastMethod, lastPath string
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lastMethod = r.Method
+		lastPath = r.URL.Path
+		w.WriteHeader(http.StatusOK)
+	})
+	c := testClient(t, handler)
+
+	input := &XDRAssetNoteInput{ResourceID: "a1", Note: "test note"}
+	if err := c.XDRAssetNoteCreate(context.Background(), input); err != nil {
+		t.Fatalf("create: unexpected error: %v", err)
+	}
+	if lastMethod != http.MethodPost || lastPath != "/xdr/assets/notes" {
+		t.Fatalf("create: unexpected %s %s", lastMethod, lastPath)
+	}
+
+	delInput := &XDRAssetNoteInput{ID: "n1", ResourceID: "a1"}
+	if err := c.XDRAssetNoteDelete(context.Background(), delInput); err != nil {
+		t.Fatalf("delete: unexpected error: %v", err)
+	}
+	if lastMethod != http.MethodDelete || lastPath != "/xdr/assets/notes" {
+		t.Fatalf("delete: unexpected %s %s", lastMethod, lastPath)
+	}
+}
+
+func TestXDRAssetSubCategories(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Path != "/xdr/assets/sub-categories" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"device": []string{"laptop", "desktop"}},
+		})
+	})
+	c := testClient(t, handler)
+	data, err := c.XDRAssetSubCategories(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if data == nil {
+		t.Fatal("expected non-nil data")
+	}
+}
+
+func TestXDRAssetFilterAutocomplete(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/xdr/assets/device/filters/autocomplete" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": []map[string]any{{"field": "osType", "values": []string{"windows"}}},
+		})
+	})
+	c := testClient(t, handler)
+	items, err := c.XDRAssetFilterAutocomplete(context.Background(), AssetTypeDevice, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 filter, got %d", len(items))
+	}
+}
