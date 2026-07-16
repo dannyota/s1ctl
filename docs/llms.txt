@@ -19,6 +19,10 @@
 - [Exclusions](https://s1.danny.vn/#/guides/exclusions): Manage SentinelOne exclusions (allowlist entries) as code: list, inspect, pull to local files, review in git, and push back. 
 - [Alerts](https://s1.danny.vn/#/guides/alerts): Query...
 - [Data lake](https://s1.danny.vn/#/guides/datalake): Query the Singularity Data Lake (SDL) with s1ctl datalake powerquery. Supports two protocols: GraphQL (default) and REST. 
+- [Applications](https://s1.danny.vn/#/guides/applications): Manage...
+- [Cloud onboarding](https://s1.danny.vn/#/guides/cloud-onboarding): Manage...
+- [Identity](https://s1.danny.vn/#/guides/identity): Manage...
+- [Automation](https://s1.danny.vn/#/guides/automation): Manage SentinelOne Hyperautomation workflows: list, inspect, import, run, and control lifecycle (activate/deactivate). 
 - [Config-as-code](https://s1.danny.vn/#/guides/config-as-code): Manage SentinelOne configuration through local files and git. 
 - [Settings](https://s1.danny.vn/#/guides/settings): Read and update platform settings: notifications, SSO, SMTP, syslog, SMS, recipients, Active Directory, and AD scope mapping. 
 - [Examples](https://s1.danny.vn/#/guides/examples): Real-world workflows using s1ctl. 
@@ -34,7 +38,9 @@
 - [applications](https://s1.danny.vn/#/commands/applications): Manage application inventory and risk 
 - [assets](https://s1.danny.vn/#/commands/assets): Manage XDR asset inventory 
 - [audit](https://s1.danny.vn/#/commands/audit): View mutation audit log 
+- [automation](https://s1.danny.vn/#/commands/automation): Manage hyperautomation workflows and executions 
 - [blocklist](https://s1.danny.vn/#/commands/blocklist): Manage the blocklist (blocked file hashes) 
+- [cloud-onboarding](https://s1.danny.vn/#/commands/cloud-onboarding): Manage CNAPP cloud account onboarding 
 - [cloud-policies](https://s1.danny.vn/#/commands/cloud-policies): Manage cloud security policies (CNS rules) 
 - [cloud-rules](https://s1.danny.vn/#/commands/cloud-rules): Manage CNS custom cloud rules (Cloud Native Security) 
 - [config](https://s1.danny.vn/#/commands/config): Manage s1ctl configuration 
@@ -46,6 +52,7 @@
 - [filters](https://s1.danny.vn/#/commands/filters): Manage saved endpoint filters 
 - [firewall](https://s1.danny.vn/#/commands/firewall): Manage firewall control rules 
 - [groups](https://s1.danny.vn/#/commands/groups): Manage groups 
+- [identity](https://s1.danny.vn/#/commands/identity): Manage Identity AD Service configuration, connectors, and ISPM 
 - [iocs](https://s1.danny.vn/#/commands/iocs): Manage threat intelligence IOCs 
 - [locations](https://s1.danny.vn/#/commands/locations): Manage firewall locations 
 - [maintenance](https://s1.danny.vn/#/commands/maintenance): Manage task maintenance-window configuration 

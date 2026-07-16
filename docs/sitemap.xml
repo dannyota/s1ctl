@@ -61,6 +61,26 @@
     <changefreq>weekly</changefreq>
   </url>
   <url>
+    <loc>https://s1.danny.vn/#/guides/applications</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://s1.danny.vn/#/guides/cloud-onboarding</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://s1.danny.vn/#/guides/identity</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://s1.danny.vn/#/guides/automation</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
     <loc>https://s1.danny.vn/#/guides/config-as-code</loc>
     <lastmod>2026-07-16</lastmod>
     <changefreq>weekly</changefreq>
@@ -121,7 +141,17 @@
     <changefreq>monthly</changefreq>
   </url>
   <url>
+    <loc>https://s1.danny.vn/#/commands/automation</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
     <loc>https://s1.danny.vn/#/commands/blocklist</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://s1.danny.vn/#/commands/cloud-onboarding</loc>
     <lastmod>2026-07-16</lastmod>
     <changefreq>monthly</changefreq>
   </url>
@@ -177,6 +207,11 @@
   </url>
   <url>
     <loc>https://s1.danny.vn/#/commands/groups</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://s1.danny.vn/#/commands/identity</loc>
     <lastmod>2026-07-16</lastmod>
     <changefreq>monthly</changefreq>
   </url>

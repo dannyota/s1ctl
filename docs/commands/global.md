@@ -80,6 +80,11 @@ committed files, lists the live objects, and plans the reconcile: creates
 (live, not committed) and unchanged. Surfaces without a local directory are
 skipped — drift checks only what is committed.
 
+Surfaces whose Build requires flags not available in drift (e.g.
+upgrade-policies, which needs --scope-level and --os-type) are reported as
+SKIPPED with a reason in the summary rather than aborting the run. Use
+upgrade-policies pull/push directly for those surfaces.
+
 The command is read-only: it lists, plans, and reports, and has no apply path.
 Exit code is 0 when every checked surface is clean and 1 when any surface has
 drift, so a CI job can fail on a non-zero exit.

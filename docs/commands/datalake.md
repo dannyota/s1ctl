@@ -44,6 +44,14 @@ Ingest events or raw logs into the data lake
 s1ctl datalake ingest
 ```
 
+## datalake notebooks
+
+Manage Purple AI notebooks
+
+```text
+s1ctl datalake notebooks
+```
+
 ## datalake numeric
 
 Run a numeric aggregation query (SDL REST)
@@ -71,6 +79,14 @@ granularity and users with limited query permissions.
 | `--function` | string | - | aggregation function (e.g. rate, count, mean(field)) |
 | `--priority` | string | - | query priority (low, high) |
 | `--start` | string | - | start time, e.g. 1h or timestamp (required) |
+
+## datalake parsers
+
+Manage Data Lake parsers (configuration files)
+
+```text
+s1ctl datalake parsers
+```
 
 ## datalake powerquery
 

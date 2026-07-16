@@ -322,6 +322,33 @@ s1ctl datalake files put path/to/file.conf --delete --yes
 | `--out` | (get) Write content to a local file instead of stdout |
 | `--expected-version` | (put) Fail if the remote version differs |
 
+## Parsers
+
+Manage Data Lake parsers (configuration files that define how ingested logs
+are parsed into structured events).
+
+```bash
+s1ctl datalake parsers list
+s1ctl datalake parsers get 000000
+s1ctl datalake parsers get 000000 --json
+s1ctl datalake parsers delete 000000 --yes
+```
+
+`parsers delete` is **dry-run by default**; pass `--yes` to apply.
+
+## Notebooks
+
+Manage Purple AI notebooks (saved investigation notebooks in the data lake).
+
+```bash
+s1ctl datalake notebooks list
+s1ctl datalake notebooks get 000000
+s1ctl datalake notebooks get 000000 --json
+s1ctl datalake notebooks delete 000000 --yes
+```
+
+`notebooks delete` is **dry-run by default**; pass `--yes` to apply.
+
 ## Go SDK
 
 Query the data lake programmatically:

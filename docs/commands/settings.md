@@ -59,6 +59,19 @@ List settings categories
 s1ctl settings list
 ```
 
+## settings overrides
+
+Manage agent config overrides
+
+```text
+s1ctl settings overrides
+```
+
+Manage configuration overrides that change agent behavior.
+
+Config overrides are powerful: they override the agent's configuration at
+the selected scope (tenant, account, site, or group). Use with care.
+
 ## settings sso-cert
 
 Show or download the SSO service-provider signing certificate

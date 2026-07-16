@@ -140,6 +140,69 @@ s1ctl settings cancel-pending-emails --yes
 s1ctl settings cancel-pending-emails --site-id 000000 --yes
 ```
 
+## Config overrides
+
+Config overrides change agent behavior at a selected scope (tenant, account,
+site, or group). They are powerful — they override the agent's configuration
+at that scope.
+
+### List and inspect
+
+```bash
+s1ctl settings overrides list
+s1ctl settings overrides list --site-id 000000
+s1ctl settings overrides get 000000
+```
+
+### Create
+
+```bash
+s1ctl settings overrides create --from-file override.json --yes
+```
+
+### Update
+
+```bash
+s1ctl settings overrides update 000000 --from-file override.json --yes
+```
+
+### Delete
+
+```bash
+s1ctl settings overrides delete 000000 --yes
+```
+
+All mutations are **dry-run by default**; pass `--yes` to apply.
+
+## Sentinel Deploy
+
+Manage credential groups used by Sentinel Deploy (Ranger auto-deploy) to
+install agents on unprotected endpoints. Accessed via `updates deploy`.
+
+### List credential groups and details
+
+```bash
+s1ctl updates deploy list-groups
+s1ctl updates deploy list-details --group-id 000000
+```
+
+### Create and delete groups
+
+```bash
+s1ctl updates deploy create-group --from-file group.json --yes
+s1ctl updates deploy delete-group 000000 --yes
+```
+
+### Manage credential details
+
+```bash
+s1ctl updates deploy add-detail --group-id 000000 --from-file detail.json --yes
+s1ctl updates deploy update-detail 000000 --from-file detail.json --yes
+s1ctl updates deploy delete-detail 000000 --yes
+```
+
+All mutations are **dry-run by default**; pass `--yes` to apply.
+
 ## Workflows
 
 ### Audit SMTP configuration across sites

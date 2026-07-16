@@ -28,6 +28,14 @@ Requires both --app-name and --vendor unless querying by application IDs.
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--vendor` | string | - | filter by vendor |
 
+## applications labels
+
+Manage application control labels
+
+```text
+s1ctl applications labels
+```
+
 ## applications list
 
 List installed applications
@@ -49,6 +57,14 @@ s1ctl applications list [flags]
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--version` | string | - | filter by version (contains) |
 
+## applications mgmt-settings
+
+Manage application management settings (scan schedule, extensive scan)
+
+```text
+s1ctl applications mgmt-settings
+```
+
 ## applications risks
 
 List application risks (CVE vulnerabilities per endpoint)
@@ -68,3 +84,19 @@ s1ctl applications risks [flags]
 | `--severity` | stringSlice | - | filter by severity (CRITICAL, HIGH, MEDIUM, LOW) |
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--vendor` | string | - | filter by vendor (contains) |
+
+## applications rules
+
+Manage application control rules
+
+```text
+s1ctl applications rules
+```
+
+## applications settings
+
+Manage application control settings
+
+```text
+s1ctl applications settings
+```

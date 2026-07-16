@@ -51,6 +51,51 @@ s1ctl tag-rules list [flags]
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--status` | string | - | filter by status (enabled, disabled) |
 
+## tag-rules pull
+
+Pull dynamic tag rules to local YAML files
+
+```text
+s1ctl tag-rules pull [flags]
+```
+
+Fetch all dynamic tag rules and write them as YAML files.
+
+Each rule produces one file named by its sanitized name. Server-only metadata
+(ID, scope IDs, audit fields, timestamps) is omitted so the files contain only
+the declarative definition: name, status, conditions, scopes, tags, and excluded
+assets.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--out` | string | tag-rules | output directory |
+| `--site-id` | stringSlice | - | filter by site ID |
+
+## tag-rules push
+
+Push dynamic tag rules from local YAML files
+
+```text
+s1ctl tag-rules push [flags]
+```
+
+Read tag rule YAML files from a directory and sync them to SentinelOne.
+
+Rules are matched by name: existing rules are updated, new ones are created, and
+unchanged ones are skipped. Dry-run by default — pass --yes to apply changes.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--dir` | string | tag-rules | directory containing tag rule YAML files |
+| `--site-id` | stringSlice | - | filter by site ID |
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
 ## tag-rules test
 
 Report how many assets a candidate tag rule matches

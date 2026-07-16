@@ -54,6 +54,8 @@ the object. Delete stale files before pushing.
 | Network | `network pull` | `network push` | YAML dir (per rule) |
 | Locations | `locations pull` | `locations push` | YAML dir (per location) |
 | Cloud policies | `cloud-policies pull` | `cloud-policies push` | YAML dir (per policy) |
+| Upgrade policies | `upgrade-policies pull` | `upgrade-policies push` | YAML dir (per policy) |
+| Application control rules | `applications rules pull` | `applications rules push` | YAML dir (per rule) |
 
 Policies are the one exception: they are scope-singletons (account/site/group)
 with their own pull/push/diff/revert lane, not a per-object collection.
@@ -230,6 +232,35 @@ policy — matched by ID, it enables or disables policies to match, and never
 creates or deletes them. A local file whose ID has no live match fails per-item
 since policies cannot be created through this surface.
 
+## Upgrade policies
+
+Pull auto-upgrade policies to local YAML files, review changes in git, then
+push back:
+
+```bash
+s1ctl upgrade-policies pull --site-id 000000
+# edit files in upgrade-policies/
+s1ctl upgrade-policies push --site-id 000000          # dry-run
+s1ctl upgrade-policies push --site-id 000000 --yes    # apply
+```
+
+Policies are scope-partitioned: each site has its own set. Pull scopes to one
+site at a time.
+
+## Application control rules
+
+Pull and push application control rules through the reconcile engine:
+
+```bash
+s1ctl applications rules pull --site-id 000000
+# edit files in applications-rules/
+s1ctl applications rules push --site-id 000000          # dry-run
+s1ctl applications rules push --site-id 000000 --yes    # apply
+```
+
+Rules are matched by name. See the [Applications](applications.md) guide for
+the full command reference.
+
 ## Drift detection
 
 `s1ctl drift` reports the difference between committed files and live state for
@@ -260,6 +291,10 @@ Two caveats:
 - **Live-only counts as drift.** An object that exists in the console but has no
   committed file is drift, the same as a stale local file that would re-create a
   deleted object on push. Reconcile either the console or the files to clear it.
+- **Per-surface SKIPPED.** Some surfaces (e.g. upgrade-policies) are skipped by
+  drift when they require scope parameters that drift cannot infer from the
+  local directory alone. Drift reports these as `SKIPPED` rather than clean or
+  dirty. Pull the surface with explicit scope flags to enable drift checking.
 
 ## Settings
 

@@ -2,6 +2,20 @@
 
 Manage agent update packages
 
+## updates deploy
+
+Manage Sentinel Deploy credential groups
+
+```text
+s1ctl updates deploy
+```
+
+Manage credential groups used by Sentinel Deploy (Ranger auto-deploy)
+to install agents on unprotected endpoints.
+
+Credential groups contain encrypted credentials that agents use to
+authenticate when deploying to new endpoints.
+
 ## updates get
 
 Get an update package

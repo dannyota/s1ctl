@@ -22,8 +22,9 @@ Prerequisite: a resolved config and working auth — see
 | **Operational** | list/get &rarr; review &rarr; act | Live console | Agents, threats, alerts, vulns |
 
 Most of SentinelOne is operational. The config-as-code loop covers exclusions,
-rules, firewall, device control, sites, groups, tags, policies, and cloud
-policies — see [config-as-code.md](config-as-code.md).
+rules, firewall, device control, sites, groups, tags, policies, cloud
+policies, upgrade policies, filters, tag-rules, application control rules,
+and more — see [config-as-code.md](config-as-code.md).
 
 ## Pull (read-only)
 

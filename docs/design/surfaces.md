@@ -145,6 +145,7 @@ engine (see [Reconcile engine](reconcile.md)):
 | tag-rules | rule name | Create or update |
 | upgrade-policies | policy name | Create or update |
 | cloud-policies | policy ID | Update only (no create) |
+| applications rules | rule name | Create or update |
 
 Protection policies (`policies pull/push/diff/revert`) have their own lane
 outside the engine: they are scope-singletons, not per-object collections.

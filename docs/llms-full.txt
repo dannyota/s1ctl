@@ -419,8 +419,9 @@ Prerequisite: a resolved config and working auth — see
 | **Operational** | list/get &rarr; review &rarr; act | Live console | Agents, threats, alerts, vulns |
 
 Most of SentinelOne is operational. The config-as-code loop covers exclusions,
-rules, firewall, device control, sites, groups, tags, policies, and cloud
-policies — see [config-as-code.md](config-as-code.md).
+rules, firewall, device control, sites, groups, tags, policies, cloud
+policies, upgrade policies, filters, tag-rules, application control rules,
+and more — see [config-as-code.md](config-as-code.md).
 
 ## Pull (read-only)
 
@@ -2350,6 +2351,33 @@ s1ctl datalake files put path/to/file.conf --delete --yes
 | `--out` | (get) Write content to a local file instead of stdout |
 | `--expected-version` | (put) Fail if the remote version differs |
 
+## Parsers
+
+Manage Data Lake parsers (configuration files that define how ingested logs
+are parsed into structured events).
+
+```bash
+s1ctl datalake parsers list
+s1ctl datalake parsers get 000000
+s1ctl datalake parsers get 000000 --json
+s1ctl datalake parsers delete 000000 --yes
+```
+
+`parsers delete` is **dry-run by default**; pass `--yes` to apply.
+
+## Notebooks
+
+Manage Purple AI notebooks (saved investigation notebooks in the data lake).
+
+```bash
+s1ctl datalake notebooks list
+s1ctl datalake notebooks get 000000
+s1ctl datalake notebooks get 000000 --json
+s1ctl datalake notebooks delete 000000 --yes
+```
+
+`notebooks delete` is **dry-run by default**; pass `--yes` to apply.
+
 ## Go SDK
 
 Query the data lake programmatically:
@@ -2380,6 +2408,474 @@ resp, err := client.PowerQuery(ctx, &sdl.PowerQueryRequest{
     Priority:  "high",
 })
 ```
+
+---
+
+# Applications
+
+Manage application inventory, risk assessment, and application control rules.
+The `applications` command group (alias: `apps`) covers installed application
+listing, CVE and risk queries, and the application control subsystem (rules,
+settings, labels, and management settings).
+
+## Prerequisites
+
+- s1ctl [installed](install.md) and [configured](configure.md)
+- `S1_CONSOLE_URL` and `S1_TOKEN` set
+
+## Application inventory
+
+List installed applications across endpoints:
+
+```bash
+s1ctl applications list --site-id 000000
+s1ctl applications list --site-id 000000 --json
+```
+
+## CVEs and risks
+
+Query known CVEs across your application inventory:
+
+```bash
+s1ctl applications cves --site-id 000000
+```
+
+List application risks (CVE vulnerabilities per endpoint):
+
+```bash
+s1ctl applications risks --site-id 000000
+```
+
+## Application control rules
+
+Application control rules define allow/block policies for applications.
+Rules support the full config-as-code loop: pull, review in `git diff`, push.
+
+### List and inspect
+
+```bash
+s1ctl applications rules list --site-id 000000
+s1ctl applications rules get 000000
+```
+
+### Create and update
+
+```bash
+s1ctl applications rules create --from-file rule.json --site-id 000000 --yes
+s1ctl applications rules update 000000 --from-file rule.json --yes
+```
+
+### Delete
+
+```bash
+s1ctl applications rules delete 000000 --yes
+```
+
+### Pull and push (config-as-code)
+
+Pull application control rules to local YAML files, review changes in git,
+then push back:
+
+```bash
+s1ctl applications rules pull --site-id 000000
+# review and edit files in applications-rules/
+s1ctl applications rules push --site-id 000000          # dry-run
+s1ctl applications rules push --site-id 000000 --yes    # apply
+```
+
+Rules are matched by name. New rules create, changed rules update. See
+[Config-as-code](config-as-code.md) for the full reconcile model.
+
+## Application control settings
+
+Read and update the application control settings (enable/disable, mode):
+
+```bash
+s1ctl applications settings get --site-id 000000
+s1ctl applications settings update --from-file settings.json --site-id 000000 --yes
+```
+
+## Management settings
+
+Manage application management settings (scan schedule, extensive scan):
+
+```bash
+s1ctl applications mgmt-settings get --site-id 000000
+s1ctl applications mgmt-settings update --from-file mgmt.json --site-id 000000 --yes
+```
+
+## Labels
+
+List application control labels:
+
+```bash
+s1ctl applications labels list --site-id 000000
+```
+
+## Workflows
+
+### Audit application control posture
+
+```bash
+s1ctl applications settings get --site-id 000000 --json > app-settings.json
+s1ctl applications rules list --site-id 000000 --json > app-rules.json
+```
+
+### Sync rules across sites
+
+Pull from one site and push to another:
+
+```bash
+s1ctl applications rules pull --site-id 111111
+s1ctl applications rules push --site-id 222222          # dry-run
+s1ctl applications rules push --site-id 222222 --yes    # apply
+```
+
+## See also
+
+- [Config-as-code](config-as-code.md) — reconcile model and drift detection
+- [Settings](settings.md) — platform settings management
+
+---
+
+# Cloud onboarding
+
+Manage CNAPP cloud account onboarding: list onboarded entities, inspect their
+details, onboard new cloud accounts, and offboard (delete) existing ones.
+
+Cloud onboarding uses the GraphQL API. The `cloud-onboarding` command group
+covers AWS, GCP, Azure, OCI, and Alibaba accounts and organizations.
+
+## Prerequisites
+
+- s1ctl [installed](install.md) and [configured](configure.md)
+- `S1_CONSOLE_URL` and `S1_TOKEN` set
+- CNAPP module enabled on your console
+
+## List onboarded entities
+
+```bash
+s1ctl cloud-onboarding list
+s1ctl cloud-onboarding list --json
+```
+
+The listing shows each entity's cloud provider, account ID, status, and
+onboarding type.
+
+## Get entity details
+
+```bash
+s1ctl cloud-onboarding get 000000
+s1ctl cloud-onboarding get 000000 --json
+```
+
+Returns the full entity record including configuration, features, and
+connected status.
+
+## Onboard a new cloud entity
+
+Create a JSON file with the onboarding payload — provider, account ID,
+role ARN (AWS), project ID (GCP), or equivalent fields for other providers:
+
+```bash
+s1ctl cloud-onboarding onboard --from-file entity.json          # dry-run
+s1ctl cloud-onboarding onboard --from-file entity.json --yes    # apply
+```
+
+The onboard command is **dry-run by default**; pass `--yes` to apply.
+
+## Delete (offboard) an entity
+
+```bash
+s1ctl cloud-onboarding delete 000000          # dry-run
+s1ctl cloud-onboarding delete 000000 --yes    # apply
+```
+
+Deleting is **dry-run by default**; pass `--yes` to apply.
+
+## Workflows
+
+### Audit onboarded accounts
+
+List all onboarded entities and export to JSON for review:
+
+```bash
+s1ctl cloud-onboarding list --json > onboarded.json
+```
+
+### Onboard and verify
+
+```bash
+s1ctl cloud-onboarding onboard --from-file aws-account.json --yes
+s1ctl cloud-onboarding list --json | grep '"accountId"'
+```
+
+## See also
+
+- [Cloud policies](../commands/cloud-policies.md) — manage cloud security
+  policies
+- [Misconfigurations](../commands/misconfigurations.md) — xSPM findings
+
+---
+
+# Identity
+
+Manage Identity AD Service configuration, connectors, and ISPM (Identity
+Security Posture Management). The `identity` command group covers AD
+configuration management, connector operations, onboarding status, and
+ISPM exposure management. The existing `ranger-ad` group covers posture
+reads (status, exposures, affected-objects) and assessment triggers.
+
+## Prerequisites
+
+- s1ctl [installed](install.md) and [configured](configure.md)
+- `S1_CONSOLE_URL` and `S1_TOKEN` set
+- Identity module enabled on your console
+
+## AD configuration
+
+Manage Active Directory configurations for identity posture scanning.
+
+### List configurations
+
+```bash
+s1ctl identity config get
+s1ctl identity config get --json
+```
+
+Credentials are redacted in the output.
+
+### Add a configuration
+
+```bash
+s1ctl identity config add --from-file ad-config.json --yes
+```
+
+The add command is **dry-run by default**; pass `--yes` to apply.
+
+### Delete a configuration
+
+```bash
+s1ctl identity config delete 000000 --yes
+```
+
+## Connectors
+
+Manage AD connectors (Cloudlink agents) that bridge between the console and
+your Active Directory environment.
+
+```bash
+s1ctl identity connector list
+s1ctl identity connector get
+s1ctl identity connector agents
+```
+
+Replace the connector with a different agent:
+
+```bash
+s1ctl identity connector replace --agent-id 000000 --yes
+```
+
+## Onboarding status
+
+Check the AD service onboarding status:
+
+```bash
+s1ctl identity onboard
+```
+
+## Reference data
+
+List available AD features and timezones for configuration:
+
+```bash
+s1ctl identity features
+s1ctl identity timezones
+```
+
+List discovered AD domains:
+
+```bash
+s1ctl identity domains
+```
+
+## ISPM exposure management
+
+Skip or acknowledge ISPM exposures to manage your identity posture backlog.
+These commands work with exposure IDs from `ranger-ad exposures`.
+
+### Skip exposures
+
+Mark exposures as skipped (accepted risk):
+
+```bash
+s1ctl identity skip-exposures --ids 000000,000001 --yes
+```
+
+### Acknowledge exposures
+
+Mark exposures as acknowledged:
+
+```bash
+s1ctl identity ack-exposures --ids 000000,000001 --yes
+```
+
+Both skip and acknowledge are **dry-run by default**; pass `--yes` to apply.
+
+## Workflows
+
+### Set up identity posture scanning
+
+1. Check onboarding status: `s1ctl identity onboard`
+2. Add AD configuration: `s1ctl identity config add --from-file ad.json --yes`
+3. Verify connectors: `s1ctl identity connector list`
+4. Run an assessment: `s1ctl ranger-ad assess --site-id 000000 --yes`
+5. Review exposures: `s1ctl ranger-ad exposures --site-id 000000`
+
+### Triage ISPM exposures
+
+```bash
+# List exposures
+s1ctl ranger-ad exposures --site-id 000000
+
+# Skip known-safe exposures
+s1ctl identity skip-exposures --ids 000000 --yes
+
+# Acknowledge reviewed exposures
+s1ctl identity ack-exposures --ids 000000 --yes
+```
+
+## See also
+
+- [Ranger AD](../commands/ranger-ad.md) — posture reads and assessment triggers
+- [Settings](settings.md) — AD settings via the platform settings surface
+
+---
+
+# Automation
+
+Manage SentinelOne Hyperautomation workflows: list, inspect, import, run, and
+control lifecycle (activate/deactivate).
+
+Hyperautomation workflows automate response actions, enrichment, and
+notification across the SentinelOne platform. Each workflow has versioned
+definitions that can be exported, imported, and promoted between environments.
+
+## Prerequisites
+
+- s1ctl [installed](install.md) and [configured](configure.md)
+- `S1_CONSOLE_URL` and `S1_TOKEN` set
+- Hyperautomation module enabled on your console
+
+## List workflows
+
+```bash
+s1ctl automation list
+s1ctl automation list --json
+```
+
+## Get a workflow version
+
+```bash
+s1ctl automation get 000000
+s1ctl automation get 000000 --json
+```
+
+Returns the workflow in export format (suitable for re-import).
+
+## Versions
+
+List all versions of a workflow:
+
+```bash
+s1ctl automation versions 000000
+```
+
+## Export and import
+
+Export a workflow version as JSON for backup or promotion to another
+environment:
+
+```bash
+s1ctl automation export 000000 > workflow.json
+```
+
+Import (create) a workflow from an exported JSON file:
+
+```bash
+s1ctl automation create --from-file workflow.json          # dry-run
+s1ctl automation create --from-file workflow.json --yes    # apply
+```
+
+The create command is **dry-run by default**; pass `--yes` to apply.
+
+## Lifecycle
+
+Activate or deactivate a workflow version:
+
+```bash
+s1ctl automation activate 000000 --yes
+s1ctl automation deactivate 000000 --yes
+```
+
+Both are **dry-run by default**; pass `--yes` to apply.
+
+## Run a workflow
+
+Trigger a manual workflow execution:
+
+```bash
+s1ctl automation run 000000 --yes
+```
+
+The run command is **dry-run by default**; pass `--yes` to apply.
+
+## Executions
+
+List workflow executions and inspect results:
+
+```bash
+s1ctl automation executions 000000
+s1ctl automation execution-get 000000
+s1ctl automation execution-output 000000
+```
+
+`executions` lists all runs for a workflow. `execution-get` returns details
+for a specific execution. `execution-output` shows the output payload.
+
+## Workflows (patterns)
+
+### Promote a workflow between environments
+
+Export from one console, import to another:
+
+```bash
+# On source console
+s1ctl automation export 000000 > workflow.json
+
+# On target console (different S1_CONSOLE_URL / S1_TOKEN)
+s1ctl automation create --from-file workflow.json --yes
+```
+
+### Audit workflow health
+
+List all workflows and check which are active:
+
+```bash
+s1ctl automation list --json > workflows.json
+```
+
+### Monitor execution results
+
+```bash
+s1ctl automation executions 000000 --json
+s1ctl automation execution-output 000000 --json
+```
+
+## See also
+
+- [The loop](the-loop.md) — core pull/review/push mental model
+- [Examples](examples.md) — common workflows
 
 ---
 
@@ -2439,6 +2935,8 @@ the object. Delete stale files before pushing.
 | Network | `network pull` | `network push` | YAML dir (per rule) |
 | Locations | `locations pull` | `locations push` | YAML dir (per location) |
 | Cloud policies | `cloud-policies pull` | `cloud-policies push` | YAML dir (per policy) |
+| Upgrade policies | `upgrade-policies pull` | `upgrade-policies push` | YAML dir (per policy) |
+| Application control rules | `applications rules pull` | `applications rules push` | YAML dir (per rule) |
 
 Policies are the one exception: they are scope-singletons (account/site/group)
 with their own pull/push/diff/revert lane, not a per-object collection.
@@ -2615,6 +3113,35 @@ policy — matched by ID, it enables or disables policies to match, and never
 creates or deletes them. A local file whose ID has no live match fails per-item
 since policies cannot be created through this surface.
 
+## Upgrade policies
+
+Pull auto-upgrade policies to local YAML files, review changes in git, then
+push back:
+
+```bash
+s1ctl upgrade-policies pull --site-id 000000
+# edit files in upgrade-policies/
+s1ctl upgrade-policies push --site-id 000000          # dry-run
+s1ctl upgrade-policies push --site-id 000000 --yes    # apply
+```
+
+Policies are scope-partitioned: each site has its own set. Pull scopes to one
+site at a time.
+
+## Application control rules
+
+Pull and push application control rules through the reconcile engine:
+
+```bash
+s1ctl applications rules pull --site-id 000000
+# edit files in applications-rules/
+s1ctl applications rules push --site-id 000000          # dry-run
+s1ctl applications rules push --site-id 000000 --yes    # apply
+```
+
+Rules are matched by name. See the [Applications](applications.md) guide for
+the full command reference.
+
 ## Drift detection
 
 `s1ctl drift` reports the difference between committed files and live state for
@@ -2645,6 +3172,10 @@ Two caveats:
 - **Live-only counts as drift.** An object that exists in the console but has no
   committed file is drift, the same as a stale local file that would re-create a
   deleted object on push. Reconcile either the console or the files to clear it.
+- **Per-surface SKIPPED.** Some surfaces (e.g. upgrade-policies) are skipped by
+  drift when they require scope parameters that drift cannot infer from the
+  local directory alone. Drift reports these as `SKIPPED` rather than clean or
+  dirty. Pull the surface with explicit scope flags to enable drift checking.
 
 ## Settings
 
@@ -2823,6 +3354,69 @@ Cancel queued email notifications that have not yet been sent:
 s1ctl settings cancel-pending-emails --yes
 s1ctl settings cancel-pending-emails --site-id 000000 --yes
 ```
+
+## Config overrides
+
+Config overrides change agent behavior at a selected scope (tenant, account,
+site, or group). They are powerful — they override the agent's configuration
+at that scope.
+
+### List and inspect
+
+```bash
+s1ctl settings overrides list
+s1ctl settings overrides list --site-id 000000
+s1ctl settings overrides get 000000
+```
+
+### Create
+
+```bash
+s1ctl settings overrides create --from-file override.json --yes
+```
+
+### Update
+
+```bash
+s1ctl settings overrides update 000000 --from-file override.json --yes
+```
+
+### Delete
+
+```bash
+s1ctl settings overrides delete 000000 --yes
+```
+
+All mutations are **dry-run by default**; pass `--yes` to apply.
+
+## Sentinel Deploy
+
+Manage credential groups used by Sentinel Deploy (Ranger auto-deploy) to
+install agents on unprotected endpoints. Accessed via `updates deploy`.
+
+### List credential groups and details
+
+```bash
+s1ctl updates deploy list-groups
+s1ctl updates deploy list-details --group-id 000000
+```
+
+### Create and delete groups
+
+```bash
+s1ctl updates deploy create-group --from-file group.json --yes
+s1ctl updates deploy delete-group 000000 --yes
+```
+
+### Manage credential details
+
+```bash
+s1ctl updates deploy add-detail --group-id 000000 --from-file detail.json --yes
+s1ctl updates deploy update-detail 000000 --from-file detail.json --yes
+s1ctl updates deploy delete-detail 000000 --yes
+```
+
+All mutations are **dry-run by default**; pass `--yes` to apply.
 
 ## Workflows
 
@@ -3379,22 +3973,25 @@ Auto-generated from the command tree. Run `s1ctl docs generate` to update.
 | [activities](activities.md) | count, export, list, types | View activity log |
 | [agents](agents.md) | abort-scan, approve-uninstall, broadcast, count, decommission, disable, enable, fetch-files, fetch-firewall-rules, fetch-installed-apps, fetch-logs, firewall-logging, get, health, isolate, list, local-upgrade, local-upgrade-status, mark-up-to-date, move, move-to-site, outdated, passphrases, randomize-uuid, ranger, reconnect, reject-uninstall, reset-config, reset-passphrase, restart, scan, set-external-id, shutdown, uninstall, upgrade, versions | Manage endpoint agents |
 | [alerts](alerts.md) | add-note, count, counts, delete-note, export, get, history, list, notes, resolve, stats, status, timeline, update-note, verdict | Manage unified alerts (GraphQL UAM) |
-| [applications](applications.md) | cves, list, risks | Manage application inventory and risk |
+| [applications](applications.md) | cves, labels, list, mgmt-settings, risks, rules, settings | Manage application inventory and risk |
 | [assets](assets.md) | categories, overview | Manage XDR asset inventory |
 | [audit](audit.md) | list | View mutation audit log |
+| [automation](automation.md) | activate, create, deactivate, execution-get, execution-output, executions, export, get, list, run, versions | Manage hyperautomation workflows and executions |
 | [blocklist](blocklist.md) | create, delete, export, list, pull, push, update, validate | Manage the blocklist (blocked file hashes) |
+| [cloud-onboarding](cloud-onboarding.md) | delete, get, list, onboard | Manage CNAPP cloud account onboarding |
 | [cloud-policies](cloud-policies.md) | delete, disable, enable, get, list, pull, push | Manage cloud security policies (CNS rules) |
 | [cloud-rules](cloud-rules.md) | create, delete, disable, enable, evaluate, get, list, types, update | Manage CNS custom cloud rules (Cloud Native Security) |
 | [config](config.md) | init, show | Manage s1ctl configuration |
-| [datalake](datalake.md) | dashboards, facet, files, ingest, numeric, powerquery, query, saved-queries, timeseries | Query Singularity Data Lake (SDL) |
+| [datalake](datalake.md) | dashboards, facet, files, ingest, notebooks, numeric, parsers, powerquery, query, saved-queries, timeseries | Query Singularity Data Lake (SDL) |
 | [detection-library](detection-library.md) | data-sources, disable, enable, list, surfaces | Manage platform detection rules (detection library) |
 | [devicecontrol](devicecontrol.md) | copy, delete, disable, enable, events, get, list, pull, push, reorder | Manage device control rules |
 | [dlp](dlp.md) | classifications, rules, settings | Manage Data Loss Prevention (DLP) rules and classifications |
 | [exclusions](exclusions.md) | create, delete, get, list, pull, push, update | Manage exclusions and blocklist |
-| [filters](filters.md) | create, delete, list, update | Manage saved endpoint filters |
+| [filters](filters.md) | create, delete, list, pull, push, update | Manage saved endpoint filters |
 | [firewall](firewall.md) | copy, delete, disable, enable, export, get, import, list, protocols, pull, push, reorder | Manage firewall control rules |
 | [global](global.md) | commands, completion, doctor, drift, help, version | Top-level commands |
 | [groups](groups.md) | count, create, delete, get, list, pull, push, update | Manage groups |
+| [identity](identity.md) | ack-exposures, config, connector, domains, features, onboard, skip-exposures, timezones | Manage Identity AD Service configuration, connectors, and ISPM |
 | [iocs](iocs.md) | config, create, delete, list | Manage threat intelligence IOCs |
 | [locations](locations.md) | create, delete, list, pull, push, update | Manage firewall locations |
 | [maintenance](maintenance.md) | export, get, get-flexible, set, set-flexible | Manage task maintenance-window configuration |
@@ -3408,16 +4005,16 @@ Auto-generated from the command tree. Run `s1ctl docs generate` to update.
 | [roles](roles.md) | create, delete, get, list, template, update | Manage RBAC roles |
 | [rules](rules.md) | detections, diff, disable, enable, get, health, list, pull, push, trends, validate | Manage custom detection rules (STAR) |
 | [service-users](service-users.md) | bulk-delete, create, delete, export, generate-token, get, list, update | Manage service users (API-token identities) |
-| [settings](settings.md) | cancel-pending-emails, delete-recipient, get, list, sso-cert, test, update | Manage platform settings |
+| [settings](settings.md) | cancel-pending-emails, delete-recipient, get, list, overrides, sso-cert, test, update | Manage platform settings |
 | [sites](sites.md) | count, create, delete, duplicate, expire, get, licenses, list, pull, push, reactivate, regenerate-key, token, update | Manage sites |
 | [status](status.md) | capabilities, enums, surfaces | Show environment health summary |
 | [system](system.md) | info | Show console system information |
-| [tag-rules](tag-rules.md) | create, delete, list, test, update | Manage dynamic asset tag rules |
+| [tag-rules](tag-rules.md) | create, delete, list, pull, push, test, update | Manage dynamic asset tag rules |
 | [tags](tags.md) | create, delete, get, list, pull, push, update | Manage tags |
 | [threats](threats.md) | add-note, add-to-exclusions, blacklist, count, exclusion-options, export, fetch-file, get, list, mitigate, mitigate-alerts, notes, quarantined-files, resolve, set-ticket, status, timeline, verdict | Manage threats |
 | [unified-exclusions](unified-exclusions.md) | create, export, list | Manage unified exclusions |
-| [updates](updates.md) | get, list | Manage agent update packages |
-| [upgrade-policies](upgrade-policies.md) | activate, create, deactivate, delete, get, list, packages, update | Manage agent auto-upgrade policies |
+| [updates](updates.md) | deploy, get, list | Manage agent update packages |
+| [upgrade-policies](upgrade-policies.md) | activate, create, deactivate, delete, get, list, packages, pull, push, update | Manage agent auto-upgrade policies |
 | [users](users.md) | 2fa, delete, generate-token, get, list, revoke-token, token-details, update | Manage users |
 | [visibility](visibility.md) | query | Run Deep Visibility queries |
 | [vulnerabilities](vulnerabilities.md) | add-note, assign, cve, cves, delete-note, export, get, health, history, list, notes, related-assets, stats, status, update-note, verdict | Manage xSPM vulnerabilities |
@@ -4445,6 +5042,14 @@ Requires both --app-name and --vendor unless querying by application IDs.
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--vendor` | string | - | filter by vendor |
 
+## applications labels
+
+Manage application control labels
+
+```text
+s1ctl applications labels
+```
+
 ## applications list
 
 List installed applications
@@ -4466,6 +5071,14 @@ s1ctl applications list [flags]
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--version` | string | - | filter by version (contains) |
 
+## applications mgmt-settings
+
+Manage application management settings (scan schedule, extensive scan)
+
+```text
+s1ctl applications mgmt-settings
+```
+
 ## applications risks
 
 List application risks (CVE vulnerabilities per endpoint)
@@ -4485,6 +5098,22 @@ s1ctl applications risks [flags]
 | `--severity` | stringSlice | - | filter by severity (CRITICAL, HIGH, MEDIUM, LOW) |
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--vendor` | string | - | filter by vendor (contains) |
+
+## applications rules
+
+Manage application control rules
+
+```text
+s1ctl applications rules
+```
+
+## applications settings
+
+Manage application control settings
+
+```text
+s1ctl applications settings
+```
 
 ---
 
@@ -4543,6 +5172,172 @@ s1ctl audit list [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--last` | int | 25 | number of recent entries to show |
+
+---
+
+# automation
+
+Manage hyperautomation workflows and executions
+
+## automation activate
+
+Activate a workflow version
+
+```text
+s1ctl automation activate <workflow-id> <version-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## automation create
+
+Create (import) a workflow from a file
+
+```text
+s1ctl automation create --from-file <workflow.json> [flags]
+```
+
+Import a workflow definition that was previously exported.
+The file should be JSON or YAML matching the export format.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--from-file` | string | - | workflow definition file, JSON or YAML (required) |
+| `--site-id` | stringSlice | - | scope to site ID |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## automation deactivate
+
+Deactivate the active version of a workflow
+
+```text
+s1ctl automation deactivate <workflow-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## automation execution-get
+
+Get a workflow execution by ID
+
+```text
+s1ctl automation execution-get <execution-id>
+```
+
+## automation execution-output
+
+Get the output of a workflow execution
+
+```text
+s1ctl automation execution-output <execution-id>
+```
+
+## automation executions
+
+List workflow executions
+
+```text
+s1ctl automation executions [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--all` | bool | false | fetch all pages |
+| `--group-id` | stringSlice | - | filter by group ID |
+| `--limit` | int | 0 | max results per page (default 50) |
+| `--site-id` | stringSlice | - | filter by site ID |
+| `--sort-by` | string | - | sort field |
+| `--sort-order` | string | - | sort order (asc, desc) |
+| `--state` | stringSlice | - | filter by state (Running, Completed, Error, etc.) |
+| `--trigger-type` | stringSlice | - | filter by trigger type |
+| `--workflow-id` | string | - | filter by workflow ID |
+
+## automation export
+
+Export a workflow version as JSON (suitable for import)
+
+```text
+s1ctl automation export <workflow-id> <version-id>
+```
+
+## automation get
+
+Get a workflow version (export format)
+
+```text
+s1ctl automation get <workflow-id> <version-id>
+```
+
+## automation list
+
+List automation workflows
+
+```text
+s1ctl automation list [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--all` | bool | false | fetch all pages |
+| `--group-id` | stringSlice | - | filter by group ID |
+| `--limit` | int | 0 | max results per page (default 50) |
+| `--name` | string | - | filter by name (contains) |
+| `--site-id` | stringSlice | - | filter by site ID |
+| `--sort-by` | string | - | sort field |
+| `--sort-order` | string | - | sort order (asc, desc) |
+| `--state` | stringSlice | - | filter by state (active, inactive, deactivated, draft) |
+| `--tag` | stringSlice | - | filter by tag |
+| `--trigger-type` | stringSlice | - | filter by trigger type |
+
+## automation run
+
+Trigger a manual workflow execution
+
+```text
+s1ctl automation run <workflow-id> <version-id> [flags]
+```
+
+Trigger a manual or scheduled workflow execution. This executes
+tenant-side automation and may perform actions such as isolating agents,
+sending emails, or calling external APIs.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## automation versions
+
+List versions of a workflow
+
+```text
+s1ctl automation versions <workflow-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--group-id` | stringSlice | - | filter by group ID |
+| `--site-id` | stringSlice | - | filter by site ID |
 
 ---
 
@@ -4724,6 +5519,74 @@ list before adding it to the blocklist. This is a read-only check.
 | `--sha256` | string | - | SHA256 hash to validate |
 | `--site-id` | stringSlice | - | scope site IDs |
 | `--value` | string | - | SHA1 hash to validate |
+
+---
+
+# cloud-onboarding
+
+Manage CNAPP cloud account onboarding
+
+## cloud-onboarding delete
+
+Delete (offboard) cloud entities
+
+```text
+s1ctl cloud-onboarding delete <account-id> [account-id...] [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply (default: dry-run) |
+
+## cloud-onboarding get
+
+Get onboarded cloud entity details
+
+```text
+s1ctl cloud-onboarding get <account-id>
+```
+
+## cloud-onboarding list
+
+List onboarded cloud entities
+
+```text
+s1ctl cloud-onboarding list [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--after` | string | - | pagination cursor |
+| `--all` | bool | false | fetch all pages |
+| `--limit` | int | 0 | max results per page (default 50) |
+| `--provider` | stringSlice | - | filter by cloud provider (AWS, GCP, AZURE, OCI, ALIBABA) |
+| `--status` | stringSlice | - | filter by operational status |
+
+## cloud-onboarding onboard
+
+Onboard a cloud entity from a JSON file
+
+```text
+s1ctl cloud-onboarding onboard --from-file <request.json> [flags]
+```
+
+Onboard a new cloud entity (AWS account, GCP project, Azure
+subscription, etc.) using a CnappCloudOnboardingRequest JSON file. The file
+must contain the full onboarding payload including cloudProvider, products,
+and credentials.
+
+Dry-run by default; pass --yes to apply.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--from-file` | string | - | path to onboarding request JSON file (required) |
+| `--yes` | bool | false | apply (default: dry-run) |
 
 ---
 
@@ -5075,6 +5938,14 @@ Ingest events or raw logs into the data lake
 s1ctl datalake ingest
 ```
 
+## datalake notebooks
+
+Manage Purple AI notebooks
+
+```text
+s1ctl datalake notebooks
+```
+
 ## datalake numeric
 
 Run a numeric aggregation query (SDL REST)
@@ -5102,6 +5973,14 @@ granularity and users with limited query permissions.
 | `--function` | string | - | aggregation function (e.g. rate, count, mean(field)) |
 | `--priority` | string | - | query priority (low, high) |
 | `--start` | string | - | start time, e.g. 1h or timestamp (required) |
+
+## datalake parsers
+
+Manage Data Lake parsers (configuration files)
+
+```text
+s1ctl datalake parsers
+```
 
 ## datalake powerquery
 
@@ -5727,6 +6606,51 @@ s1ctl filters list [flags]
 | `--query` | string | - | free text search on filter name |
 | `--site-id` | stringSlice | - | filter by site ID |
 
+## filters pull
+
+Pull saved filters to local YAML files
+
+```text
+s1ctl filters pull [flags]
+```
+
+Fetch all saved filters and write them as YAML files.
+
+Each filter produces one file named by its sanitized name. Server-only metadata
+(ID, scope, timestamps) is omitted so the files contain only the declarative
+definition: the filter name and its filterFields criteria set.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--out` | string | filters | output directory |
+| `--site-id` | stringSlice | - | filter by site ID |
+
+## filters push
+
+Push saved filters from local YAML files
+
+```text
+s1ctl filters push [flags]
+```
+
+Read filter YAML files from a directory and sync them to SentinelOne.
+
+Filters are matched by name: existing filters are updated, new ones are created,
+and unchanged ones are skipped. Dry-run by default — pass --yes to apply changes.
+New filters are created at the scope given by --site-id (default: global/tenant).
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | scope for new filters |
+| `--dir` | string | filters | directory containing filter YAML files |
+| `--site-id` | stringSlice | - | scope for new filters (default: global/tenant) |
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
 ## filters update
 
 Update a saved filter from a JSON file
@@ -6101,6 +7025,134 @@ s1ctl groups update <group-id> [flags]
 | `--description` | string | - | new description |
 | `--name` | string | - | new group name |
 | `--yes` | bool | false | apply the action (default: dry-run) |
+
+---
+
+# identity
+
+Manage Identity AD Service configuration, connectors, and ISPM
+
+## identity ack-exposures
+
+Acknowledge or unacknowledge ISPM exposures
+
+```text
+s1ctl identity ack-exposures [flags]
+```
+
+Set the acknowledged status on exposures. Requires --detection and --domain.
+Dry-run by default — pass --yes to apply. Use --unack to reverse.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--detection` | stringSlice | - | detection name(s) (required) |
+| `--domain` | stringSlice | - | domain name(s) (required) |
+| `--site-id` | stringSlice | - | filter by site ID |
+| `--unack` | bool | false | reverse acknowledgement |
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
+## identity config
+
+Manage AD configurations
+
+```text
+s1ctl identity config
+```
+
+## identity connector
+
+Manage AD connectors (Cloudlink agents)
+
+```text
+s1ctl identity connector
+```
+
+## identity domains
+
+List AD domains
+
+```text
+s1ctl identity domains [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--site-id` | stringSlice | - | filter by site ID |
+
+## identity features
+
+List available AD features
+
+```text
+s1ctl identity features [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--site-id` | stringSlice | - | filter by site ID |
+
+## identity onboard
+
+Show AD service onboarding status
+
+```text
+s1ctl identity onboard [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--site-id` | stringSlice | - | filter by site ID |
+
+## identity skip-exposures
+
+Skip or unskip ISPM exposures
+
+```text
+s1ctl identity skip-exposures [flags]
+```
+
+Set exposures as skipped (accepted risk) or unskip previously skipped exposures.
+Requires --detection and --domain. Dry-run by default — pass --yes to apply.
+Use --unskip to reverse a previous skip.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--detection` | stringSlice | - | detection name(s) (required) |
+| `--domain` | stringSlice | - | domain name(s) (required) |
+| `--reason` | string | - | reason for skipping |
+| `--site-id` | stringSlice | - | filter by site ID |
+| `--unskip` | bool | false | reverse a previous skip |
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
+## identity timezones
+
+List available timezones for AD configuration
+
+```text
+s1ctl identity timezones [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--site-id` | stringSlice | - | filter by site ID |
 
 ---
 
@@ -7904,6 +8956,19 @@ List settings categories
 s1ctl settings list
 ```
 
+## settings overrides
+
+Manage agent config overrides
+
+```text
+s1ctl settings overrides
+```
+
+Manage configuration overrides that change agent behavior.
+
+Config overrides are powerful: they override the agent's configuration at
+the selected scope (tenant, account, site, or group). Use with care.
+
 ## settings sso-cert
 
 Show or download the SSO service-provider signing certificate
@@ -8297,6 +9362,51 @@ s1ctl tag-rules list [flags]
 | `--name` | string | - | filter by rule name |
 | `--site-id` | stringSlice | - | filter by site ID |
 | `--status` | string | - | filter by status (enabled, disabled) |
+
+## tag-rules pull
+
+Pull dynamic tag rules to local YAML files
+
+```text
+s1ctl tag-rules pull [flags]
+```
+
+Fetch all dynamic tag rules and write them as YAML files.
+
+Each rule produces one file named by its sanitized name. Server-only metadata
+(ID, scope IDs, audit fields, timestamps) is omitted so the files contain only
+the declarative definition: name, status, conditions, scopes, tags, and excluded
+assets.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--out` | string | tag-rules | output directory |
+| `--site-id` | stringSlice | - | filter by site ID |
+
+## tag-rules push
+
+Push dynamic tag rules from local YAML files
+
+```text
+s1ctl tag-rules push [flags]
+```
+
+Read tag rule YAML files from a directory and sync them to SentinelOne.
+
+Rules are matched by name: existing rules are updated, new ones are created, and
+unchanged ones are skipped. Dry-run by default — pass --yes to apply changes.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--dir` | string | tag-rules | directory containing tag rule YAML files |
+| `--site-id` | stringSlice | - | filter by site ID |
+| `--yes` | bool | false | apply changes (default: dry-run) |
 
 ## tag-rules test
 
@@ -8853,6 +9963,20 @@ s1ctl unified-exclusions list [flags]
 
 Manage agent update packages
 
+## updates deploy
+
+Manage Sentinel Deploy credential groups
+
+```text
+s1ctl updates deploy
+```
+
+Manage credential groups used by Sentinel Deploy (Ranger auto-deploy)
+to install agents on unprotected endpoints.
+
+Credential groups contain encrypted credentials that agents use to
+authenticate when deploying to new endpoints.
+
 ## updates get
 
 Get an update package
@@ -9031,6 +10155,59 @@ when creating an upgrade policy (--file-id).
 | `--query` | string | - | filter by display name (partial match) |
 | `--scope-id` | string | - | scope ID |
 | `--scope-level` | string | - | scope level (account, group, site, tenant) [required] |
+
+## upgrade-policies pull
+
+Pull upgrade policies to local YAML files
+
+```text
+s1ctl upgrade-policies pull [flags]
+```
+
+Fetch upgrade policies and write them as YAML files.
+
+Each policy produces one file named by its sanitized name. Server-only metadata
+(ID, priority, timestamps) is omitted so the files contain only the declarative
+definition.
+
+The API requires --scope-level and --os-type to list policies. Pull fetches the
+specified partition; use multiple invocations for different OS types or scopes.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--os-type` | string | - | OS type (linux, macos, windows) [required] |
+| `--out` | string | upgrade-policies | output directory |
+| `--scope-id` | stringSlice | - | scope ID (site/account/group ID) |
+| `--scope-level` | string | - | scope level (account, group, site, tenant) [required] |
+
+## upgrade-policies push
+
+Push upgrade policies from local YAML files
+
+```text
+s1ctl upgrade-policies push [flags]
+```
+
+Read upgrade policy YAML files from a directory and sync them to SentinelOne.
+
+Policies are matched by name: existing policies are updated, new ones are
+created, and unchanged ones are skipped. Dry-run by default — pass --yes to
+apply changes.
+
+The API requires --scope-level and --os-type to list live policies for matching.
+These must match the scope and OS in the local files.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--dir` | string | upgrade-policies | directory containing upgrade policy YAML files |
+| `--os-type` | string | - | OS type (linux, macos, windows) [required] |
+| `--scope-id` | stringSlice | - | scope ID (site/account/group ID) |
+| `--scope-level` | string | - | scope level (account, group, site, tenant) [required] |
+| `--yes` | bool | false | apply changes (default: dry-run) |
 
 ## upgrade-policies update
 
@@ -9537,6 +10714,11 @@ committed files, lists the live objects, and plans the reconcile: creates
 (live, not committed) and unchanged. Surfaces without a local directory are
 skipped — drift checks only what is committed.
 
+Surfaces whose Build requires flags not available in drift (e.g.
+upgrade-policies, which needs --scope-level and --os-type) are reported as
+SKIPPED with a reason in the summary rather than aborting the run. Use
+upgrade-policies pull/push directly for those surfaces.
+
 The command is read-only: it lists, plans, and reports, and has no apply path.
 Exit code is 0 when every checked surface is clean and 1 when any surface has
 drift, so a CI job can fail on a non-zero exit.
@@ -9842,6 +11024,7 @@ engine (see [Reconcile engine](reconcile.md)):
 | tag-rules | rule name | Create or update |
 | upgrade-policies | policy name | Create or update |
 | cloud-policies | policy ID | Update only (no create) |
+| applications rules | rule name | Create or update |
 
 Protection policies (`policies pull/push/diff/revert`) have their own lane
 outside the engine: they are scope-singletons, not per-object collections.

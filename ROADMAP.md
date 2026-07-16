@@ -129,12 +129,31 @@ groups and enrichment of existing surfaces.
   delete); pull/push reconcile was planned but review found the round-trip
   unsafe due to permission-tree normalization
 
+## Wave 12 — Cloud, config-as-code, identity, and automation (complete)
+
+New command groups and config-as-code expansion across cloud, identity,
+data lake, and automation surfaces.
+
+- **Cloud onboarding (GraphQL)** — list/get/onboard/delete cloud entities
+  (AWS, GCP, Azure, OCI, Alibaba)
+- **Application control + config-as-code** — rules CRUD + pull/push, settings,
+  management settings, labels
+- **Config overrides + Sentinel Deploy** — settings overrides CRUD,
+  updates deploy credential groups/details
+- **Config-as-code expansion** — upgrade-policies (scope-partitioned pull/push),
+  filters, tag-rules; maintenance evaluated and excluded as singleton config
+- **SDL parsers + notebooks** — datalake parsers and notebooks subgroups
+  (list/get/delete)
+- **Identity AD Service + ISPM** — config, connector, onboard, domains,
+  features, timezones, skip-exposures, ack-exposures
+- **Automation (Hyperautomation)** — list/get/versions/export/create/run/
+  activate/deactivate/executions
+- **Deferred:** Unified Incidents and Unified Tags (endpoints inaccessible on
+  the console)
+
 ## Backlog
 
 Surfaces scoped but not yet built:
 
-- **Cloud onboarding** — list/get/onboard/delete cloud accounts
-- **Automation** — list/get/create/run automation rules
 - **Marketplace** — list/get/install integrations
 - **Inventory** — unified asset inventory across all types (the `assets` overview surface covers a first slice)
-- **Identity** — identity posture list/get/configure

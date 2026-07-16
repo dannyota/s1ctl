@@ -52,6 +52,51 @@ s1ctl filters list [flags]
 | `--query` | string | - | free text search on filter name |
 | `--site-id` | stringSlice | - | filter by site ID |
 
+## filters pull
+
+Pull saved filters to local YAML files
+
+```text
+s1ctl filters pull [flags]
+```
+
+Fetch all saved filters and write them as YAML files.
+
+Each filter produces one file named by its sanitized name. Server-only metadata
+(ID, scope, timestamps) is omitted so the files contain only the declarative
+definition: the filter name and its filterFields criteria set.
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | filter by account ID |
+| `--out` | string | filters | output directory |
+| `--site-id` | stringSlice | - | filter by site ID |
+
+## filters push
+
+Push saved filters from local YAML files
+
+```text
+s1ctl filters push [flags]
+```
+
+Read filter YAML files from a directory and sync them to SentinelOne.
+
+Filters are matched by name: existing filters are updated, new ones are created,
+and unchanged ones are skipped. Dry-run by default — pass --yes to apply changes.
+New filters are created at the scope given by --site-id (default: global/tenant).
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--account-id` | stringSlice | - | scope for new filters |
+| `--dir` | string | filters | directory containing filter YAML files |
+| `--site-id` | stringSlice | - | scope for new filters (default: global/tenant) |
+| `--yes` | bool | false | apply changes (default: dry-run) |
+
 ## filters update
 
 Update a saved filter from a JSON file
