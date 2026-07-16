@@ -9915,7 +9915,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | cloud policies | list, get (GraphQL) | enable, disable, delete | pull/push | built |
 | cloud rules (CNS) | list, get, types (GraphQL) | create, update, enable, disable, delete, evaluate | -- | built |
 | dlp | rules list, rules get, classifications list, classifications get, settings (GraphQL) | rules enable, rules disable, rules delete, classifications delete | -- | built |
-| cloud onboarding | list, get | onboard, delete | -- | designed |
+| cloud onboarding | list, get (GraphQL) | onboard, delete | -- | built |
 | cloud compliance | -- | -- | -- | blocked |
 
 ## Data lake
