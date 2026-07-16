@@ -58,8 +58,9 @@ SKIPPED with a reason in the summary rather than aborting the run. Use
 upgrade-policies pull/push directly for those surfaces.
 
 The command is read-only: it lists, plans, and reports, and has no apply path.
-Exit code is 0 when every checked surface is clean and 1 when any surface has
-drift, so a CI job can fail on a non-zero exit.`,
+Exit code is 0 when every committed surface was checked and is clean. Exit 1
+when any surface has drift or when any surface could not be checked (SKIPPED),
+so a CI job fails on incomplete checks as well as actual drift.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			specs, err := selectDriftSpecs(surfaces)
@@ -213,14 +214,20 @@ func reportDrift(cmd *cobra.Command, results []driftResult) error {
 		printTable(headers, rows)
 	}
 
-	drifted := 0
+	var drifted, skipped int
 	for _, r := range results {
 		if r.drifted() {
 			drifted++
 		}
+		if r.skipped() {
+			skipped++
+		}
 	}
 	if drifted > 0 {
 		return fmt.Errorf("drift detected in %s", pluralize(drifted, "surface"))
+	}
+	if skipped > 0 {
+		return fmt.Errorf("%s could not be checked", pluralize(skipped, "surface"))
 	}
 	return nil
 }

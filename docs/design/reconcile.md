@@ -157,16 +157,17 @@ firewall       0       2       1          14
 sites          0       0       0          3
 ```
 
-Exit code 0 means every checked surface is clean (no creates, no updates, no
-live-only objects); 1 means drift. Surfaces without a local directory are
-skipped — drift checks only what is committed. The command is read-only by
-construction: it lists, plans, and reports, and has no apply path.
+Exit code 0 means every committed surface was checked and is clean (no creates,
+no updates, no live-only objects). Exit 1 means drift was detected **or** a
+surface could not be checked (SKIPPED). Surfaces without a local directory are
+skipped silently — drift checks only what is committed. The command is
+read-only by construction: it lists, plans, and reports, and has no apply path.
 
 Surfaces whose Build requires flags the drift command cannot supply (e.g.
 upgrade-policies, which needs `--scope-level` and `--os-type` on every API
 call) are reported as **SKIPPED** with a reason in the summary rather than
-aborting the run. Use the surface's pull/push commands directly to check
-those surfaces.
+aborting the run. The run still exits non-zero so CI catches incomplete
+checks. Use the surface's pull/push commands directly to check those surfaces.
 
 Typical CI use: check out the config repo, run `s1ctl drift`, fail the job on
 a non-zero exit.

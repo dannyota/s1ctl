@@ -63,10 +63,15 @@ func TestDriftSkipsUpgradePolicies(t *testing.T) {
 
 	t.Run("skip only", func(t *testing.T) {
 		// Only upgrade-policies dir, scoped to that surface. Build fails,
-		// surface is marked SKIPPED, run completes with exit 0.
+		// surface is marked SKIPPED. The run now exits non-zero: a
+		// skipped surface means the committed config could not be fully
+		// checked, so CI must not pass silently.
 		out, err := runCLI(t, "drift", "--dir-root", root, "--surface", "upgrade-policies")
-		if err != nil {
-			t.Fatalf("drift should not error on skipped surface, got: %v", err)
+		if err == nil {
+			t.Fatal("drift with a skipped surface must return a non-zero exit error")
+		}
+		if !strings.Contains(err.Error(), "could not be checked") {
+			t.Fatalf("drift error should say 'could not be checked', got: %v", err)
 		}
 		// The warning (captured via SetErr) names the surface and reason.
 		if !strings.Contains(out, "upgrade-policies") {
@@ -78,8 +83,8 @@ func TestDriftSkipsUpgradePolicies(t *testing.T) {
 		// --json shows the SKIPPED result with skipReason in the captured output.
 		jsonOut, jErr := runCLI(t, "drift", "--dir-root", root,
 			"--surface", "upgrade-policies", "--json")
-		if jErr != nil {
-			t.Fatalf("drift --json should not error on skipped surface, got: %v", jErr)
+		if jErr == nil {
+			t.Fatal("drift --json with a skipped surface must return a non-zero exit error")
 		}
 		if !strings.Contains(jsonOut, `"skipReason"`) {
 			t.Fatalf("drift --json should contain skipReason field, got: %q", jsonOut)
@@ -92,25 +97,25 @@ func TestDriftSkipsUpgradePolicies(t *testing.T) {
 	t.Run("continues past skip", func(t *testing.T) {
 		// Create a blocklist/ dir alongside. Drift should process
 		// upgrade-policies (SKIPPED) then attempt blocklist. Blocklist Build
-		// succeeds, LoadDir succeeds (empty dir → no files), but List needs
-		// API credentials and fails. The key assertion: the error is from
-		// blocklist (not upgrade-policies), proving drift continued past the
-		// skip.
+		// succeeds, LoadDir succeeds (empty dir → no files), and List runs.
+		// The key assertion: the run does not abort on the upgrade-policies
+		// Build error — it continues to blocklist.
 		blDir := filepath.Join(root, "blocklist")
 		if err := os.Mkdir(blDir, 0o755); err != nil {
-			t.Fatal(err)
+			if !os.IsExist(err) {
+				t.Fatal(err)
+			}
 		}
 
 		_, err := runCLI(t, "drift", "--dir-root", root,
 			"--surface", "upgrade-policies,blocklist")
-		// Blocklist will fail on List (no API credentials), and that's fine.
-		// What matters: the error mentions blocklist (not upgrade-policies),
-		// proving drift continued past the skip.
+		// The run must return an error (at minimum for the skipped surface,
+		// possibly also from blocklist's List requiring credentials).
 		if err == nil {
-			// If it somehow succeeds (shouldn't without credentials), check
-			// that SKIPPED appears for upgrade-policies.
-			return
+			t.Fatal("drift must return non-zero with a skipped surface")
 		}
+		// The error must NOT be from upgrade-policies' Build — that would
+		// mean drift aborted instead of skipping.
 		if strings.Contains(err.Error(), "--scope-level is required") {
 			t.Fatalf("drift aborted on upgrade-policies Build error instead of skipping: %v", err)
 		}
