@@ -9,6 +9,7 @@
 ## Getting started
 
 - [MCP server](https://s1.danny.vn/#/guides/mcp): Use...
+- [MCP workflows](https://s1.danny.vn/#/guides/mcp-workflows): Agent-oriented cheat sheet for working with s1ctl as an MCP server. 
 - [Install](https://s1.danny.vn/#/guides/install): Install s1ctl via go install, from source, or with a pre-built binary for Linux, macOS, or Windows (amd64 and arm64). 
 - [Configure](https://s1.danny.vn/#/guides/configure): s1ctl needs two things: your console URL and an API token. 
 - [Quickstart](https://s1.danny.vn/#/guides/quickstart): Get...

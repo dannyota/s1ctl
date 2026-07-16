@@ -388,8 +388,161 @@ func TestToolCallErrorIncludesMessage(t *testing.T) {
 		t.Fatal("expected content")
 	}
 	text, _ := content[0].(map[string]any)["text"].(string)
-	if !strings.Contains(text, "connection refused") {
-		t.Errorf("error text = %q, want it to contain the actual error message", text)
+
+	var env struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(text), &env); err != nil {
+		t.Fatalf("error text is not JSON envelope: %v\n%s", err, text)
+	}
+	if !strings.Contains(env.Error.Message, "connection refused") {
+		t.Errorf("error.message = %q, want it to contain the actual error message", env.Error.Message)
+	}
+}
+
+func TestReadOnlyModeFiltersMutations(t *testing.T) {
+	root := testCobraTree()
+	srv := NewDynamicServer("test-ro", "1.0.0", root, nil, WithReadOnly(true))
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	tools, _ := result["tools"].([]any)
+	for _, tt := range tools {
+		tool, _ := tt.(map[string]any)
+		name, _ := tool["name"].(string)
+		if name == "agents_isolate" {
+			t.Error("read-only server should not expose mutation tool agents_isolate")
+		}
+	}
+}
+
+func TestReadOnlyModeFocusFiltersMutations(t *testing.T) {
+	root := testCobraTree()
+	srv := NewDynamicServer("test-ro", "1.0.0", root, nil, WithReadOnly(true))
+	roundTripMulti(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"focus","arguments":{"group":"agents"}}}`)
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	tools, _ := result["tools"].([]any)
+	for _, tt := range tools {
+		tool, _ := tt.(map[string]any)
+		name, _ := tool["name"].(string)
+		if name == "agents_isolate" {
+			t.Error("read-only server should not expose mutation tool agents_isolate after focus")
+		}
+	}
+	// agents_list should still be present.
+	hasAgentsList := false
+	for _, tt := range tools {
+		tool, _ := tt.(map[string]any)
+		if tool["name"] == "agents_list" {
+			hasAgentsList = true
+		}
+	}
+	if !hasAgentsList {
+		t.Error("agents_list should be present after focus in read-only mode")
+	}
+}
+
+func TestReadOnlyInstructions(t *testing.T) {
+	root := testCobraTree()
+	srv := NewDynamicServer("test-ro", "1.0.0", root, nil, WithReadOnly(true))
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	instructions, _ := result["instructions"].(string)
+	if !strings.Contains(instructions, "Read-only mode") {
+		t.Error("read-only server instructions should mention read-only mode")
+	}
+}
+
+func TestReadOnlyRunToolDescription(t *testing.T) {
+	root := testCobraTree()
+	srv := NewDynamicServer("test-ro", "1.0.0", root, nil, WithReadOnly(true))
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	tools, _ := result["tools"].([]any)
+	for _, tt := range tools {
+		tool, _ := tt.(map[string]any)
+		if tool["name"] == "run" {
+			desc, _ := tool["description"].(string)
+			if !strings.Contains(desc, "read-only mode") {
+				t.Errorf("run tool description in read-only mode = %q, want read-only mention", desc)
+			}
+			return
+		}
+	}
+	t.Error("run tool not found")
+}
+
+func TestToolAnnotations(t *testing.T) {
+	root := testCobraTree()
+	srv := NewDynamicServer("test-ann", "1.0.0", root, nil)
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	tools, _ := result["tools"].([]any)
+	for _, tt := range tools {
+		tool, _ := tt.(map[string]any)
+		name, _ := tool["name"].(string)
+		ann, _ := tool["annotations"].(map[string]any)
+		switch name {
+		case "help", "usage", "focus", "unfocus":
+			if ann == nil {
+				t.Errorf("%s: expected annotations", name)
+				continue
+			}
+			if ann["readOnlyHint"] != true {
+				t.Errorf("%s: readOnlyHint = %v, want true", name, ann["readOnlyHint"])
+			}
+			if ann["destructiveHint"] != false {
+				t.Errorf("%s: destructiveHint = %v, want false", name, ann["destructiveHint"])
+			}
+		case "run":
+			if ann != nil {
+				t.Errorf("run: should have no annotations in normal mode, got %v", ann)
+			}
+		}
+	}
+}
+
+func TestToolAnnotationsOnFocusedTools(t *testing.T) {
+	root := testCobraTree()
+	srv := NewDynamicServer("test-ann", "1.0.0", root, nil)
+	roundTripMulti(t, srv, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"focus","arguments":{"group":"agents"}}}`)
+	resp := roundTrip(t, srv, `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`)
+
+	result, _ := resp["result"].(map[string]any)
+	tools, _ := result["tools"].([]any)
+	for _, tt := range tools {
+		tool, _ := tt.(map[string]any)
+		name, _ := tool["name"].(string)
+		ann, _ := tool["annotations"].(map[string]any)
+		switch name {
+		case "agents_list":
+			if ann == nil {
+				t.Fatal("agents_list: expected annotations")
+			}
+			if ann["readOnlyHint"] != true {
+				t.Errorf("agents_list: readOnlyHint = %v, want true", ann["readOnlyHint"])
+			}
+			if ann["destructiveHint"] != false {
+				t.Errorf("agents_list: destructiveHint = %v, want false", ann["destructiveHint"])
+			}
+		case "agents_isolate":
+			if ann == nil {
+				t.Fatal("agents_isolate: expected annotations")
+			}
+			if ann["readOnlyHint"] != false {
+				t.Errorf("agents_isolate: readOnlyHint = %v, want false", ann["readOnlyHint"])
+			}
+			if ann["destructiveHint"] != true {
+				t.Errorf("agents_isolate: destructiveHint = %v, want true", ann["destructiveHint"])
+			}
+		}
 	}
 }
 
@@ -413,10 +566,19 @@ func TestToolCallErrorKeepsOutputAndCause(t *testing.T) {
 	}
 	content, _ := result["content"].([]any)
 	text, _ := content[0].(map[string]any)["text"].(string)
-	if !strings.Contains(text, "could not parse query") {
-		t.Errorf("error text = %q, want partial output included", text)
+
+	var env struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
 	}
-	if !strings.Contains(text, "exit status 1") {
-		t.Errorf("error text = %q, want the error cause included", text)
+	if err := json.Unmarshal([]byte(text), &env); err != nil {
+		t.Fatalf("error text is not JSON envelope: %v\n%s", err, text)
+	}
+	if !strings.Contains(env.Error.Message, "could not parse query") {
+		t.Errorf("error.message = %q, want partial output included", env.Error.Message)
+	}
+	if !strings.Contains(env.Error.Message, "exit status 1") {
+		t.Errorf("error.message = %q, want the error cause included", env.Error.Message)
 	}
 }

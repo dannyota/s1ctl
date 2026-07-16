@@ -18,7 +18,11 @@ func (s *Server) execCommand(parts []string) (string, error) {
 	cliArgs := make([]string, 0, len(parts)+2)
 	cliArgs = append(cliArgs, parts...)
 	cliArgs = append(cliArgs, "--json", "--no-progress")
-	return execSubprocess(cliArgs)
+	var extraEnv []string
+	if s.readOnly {
+		extraEnv = append(extraEnv, "S1_READONLY=1")
+	}
+	return execSubprocess(cliArgs, extraEnv)
 }
 
 const (
@@ -27,7 +31,7 @@ const (
 	subprocessTimeout = 5 * time.Minute
 )
 
-func execSubprocess(args []string) (string, error) {
+func execSubprocess(args, extraEnv []string) (string, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("find executable: %w", err)
@@ -37,7 +41,7 @@ func execSubprocess(args []string) (string, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, self, args...) //nolint:gosec // self is os.Executable, args from tool schema
-	cmd.Env = os.Environ()
+	cmd.Env = append(os.Environ(), extraEnv...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -106,6 +110,20 @@ func spillDir() string {
 	return filepath.Join(os.TempDir(), "s1ctl-mcp")
 }
 
+const previewBytes = 2048
+
+// runePrefix returns the first n bytes of s, cut on a rune boundary.
+func runePrefix(s []byte, n int) string {
+	if len(s) <= n {
+		return string(s)
+	}
+	cut := n
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return string(s[:cut])
+}
+
 // spillOutput writes oversized output to a spill file and returns a JSON
 // pointer to it instead of the raw bytes.
 func spillOutput(out []byte) (string, error) {
@@ -127,8 +145,9 @@ func spillOutput(out []byte) (string, error) {
 		return "", spillError(len(out), err)
 	}
 	result, _ := json.Marshal(map[string]any{
-		"file":  f.Name(),
-		"bytes": len(out),
+		"file":    f.Name(),
+		"bytes":   len(out),
+		"preview": runePrefix(out, previewBytes),
 		"message": fmt.Sprintf(
 			"Output exceeded %d MiB limit. Results saved to a temporary file (removed after %dh). Read the file to analyze, or use --max-results or narrower filters to reduce output.",
 			maxOutputBytes>>20, int(spillMaxAge.Hours())),

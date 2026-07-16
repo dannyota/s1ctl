@@ -70,6 +70,7 @@ func TestSpillOutputRoundTripAndSweep(t *testing.T) {
 	var meta struct {
 		File    string `json:"file"`
 		Bytes   int    `json:"bytes"`
+		Preview string `json:"preview"`
 		Message string `json:"message"`
 	}
 	if err := json.Unmarshal([]byte(res), &meta); err != nil {
@@ -77,6 +78,12 @@ func TestSpillOutputRoundTripAndSweep(t *testing.T) {
 	}
 	if meta.Bytes != len(payload) {
 		t.Errorf("bytes = %d, want %d", meta.Bytes, len(payload))
+	}
+	if len(meta.Preview) != previewBytes {
+		t.Errorf("preview len = %d, want %d", len(meta.Preview), previewBytes)
+	}
+	if meta.Preview != strings.Repeat("x", previewBytes) {
+		t.Error("preview content mismatch")
 	}
 	data, err := os.ReadFile(meta.File)
 	if err != nil {
@@ -103,5 +110,42 @@ func TestSpillOutputRoundTripAndSweep(t *testing.T) {
 	}
 	if _, err := os.Stat(meta.File); err != nil {
 		t.Errorf("fresh spill file should remain: %v", err)
+	}
+}
+
+func TestSpillPreviewRuneSafe(t *testing.T) {
+	t.Setenv("TMPDIR", t.TempDir())
+
+	// Build payload where byte 2048 falls in the middle of a multi-byte rune.
+	// U+00E9 (e-acute) is 2 bytes in UTF-8.
+	payload := make([]byte, 0, maxOutputBytes+1)
+	chunk := []byte("e\xc3\xa9") // "e" + "e-acute" = 3 bytes
+	for len(payload) < maxOutputBytes+1 {
+		payload = append(payload, chunk...)
+	}
+
+	res, err := spillOutput(payload)
+	if err != nil {
+		t.Fatalf("spillOutput: %v", err)
+	}
+
+	var meta struct {
+		Preview string `json:"preview"`
+	}
+	if err := json.Unmarshal([]byte(res), &meta); err != nil {
+		t.Fatalf("result is not JSON: %v", err)
+	}
+	if !utf8.ValidString(meta.Preview) {
+		t.Error("preview is not valid UTF-8")
+	}
+	if len(meta.Preview) > previewBytes {
+		t.Errorf("preview len = %d, exceeds %d", len(meta.Preview), previewBytes)
+	}
+}
+
+func TestRunePrefixShortInput(t *testing.T) {
+	got := runePrefix([]byte("short"), 2048)
+	if got != "short" {
+		t.Errorf("runePrefix = %q, want %q", got, "short")
 	}
 }

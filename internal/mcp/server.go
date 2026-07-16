@@ -29,8 +29,18 @@ type Server struct {
 	metaTools    []Tool
 	focused      map[string][]Tool
 	toolsVersion uint64
+	readOnly     bool
 
 	mu sync.Mutex // guards w, focused, tools, toolIndex, toolsVersion
+}
+
+// ServerOption configures a Server at construction time.
+type ServerOption func(*Server)
+
+// WithReadOnly creates a server that exposes only read-only tools and blocks
+// mutations via S1_READONLY=1 in subprocess calls.
+func WithReadOnly(ro bool) ServerOption {
+	return func(s *Server) { s.readOnly = ro }
 }
 
 type Resource struct {
@@ -57,25 +67,28 @@ func NewServer(name, version string, tools []Tool, resources []Resource) *Server
 	}
 }
 
-func NewDynamicServer(name, version string, root *cobra.Command, resources []Resource) *Server {
+func NewDynamicServer(name, version string, root *cobra.Command, resources []Resource, opts ...ServerOption) *Server {
 	ri := make(map[string]Resource, len(resources))
 	for _, r := range resources {
 		ri[r.URI] = r
+	}
+	s := &Server{
+		name:      name,
+		version:   version,
+		resources: resources,
+		resIndex:  ri,
+		root:      root,
+		focused:   make(map[string][]Tool),
+	}
+	for _, o := range opts {
+		o(s)
 	}
 	allTools := ToolsFromCobra(root)
 	ati := make(map[string]Tool, len(allTools))
 	for _, t := range allTools {
 		ati[t.Name] = t
 	}
-	s := &Server{
-		name:         name,
-		version:      version,
-		resources:    resources,
-		resIndex:     ri,
-		root:         root,
-		allToolIndex: ati,
-		focused:      make(map[string][]Tool),
-	}
+	s.allToolIndex = ati
 	s.metaTools = s.buildMetaTools()
 	s.rebuildToolList()
 	return s
@@ -88,12 +101,29 @@ func (s *Server) rebuildToolList() {
 	for _, gt := range s.focused {
 		all = append(all, gt...)
 	}
+	if s.readOnly {
+		all = filterReadOnly(all)
+	}
 	s.tools = all
 	s.toolIndex = make(map[string]Tool, len(all))
 	for _, t := range all {
 		s.toolIndex[t.Name] = t
 	}
 	s.toolsVersion++
+}
+
+// filterReadOnly returns only tools whose annotations indicate they are
+// read-only (or have no annotations, like the "run" meta-tool which carries
+// its own defense-in-depth via S1_READONLY).
+func filterReadOnly(tools []Tool) []Tool {
+	out := make([]Tool, 0, len(tools))
+	for _, t := range tools {
+		if t.Annotations != nil && t.Annotations.ReadOnlyHint != nil && !*t.Annotations.ReadOnlyHint {
+			continue
+		}
+		out = append(out, t)
+	}
+	return out
 }
 
 func (s *Server) notifyToolsChanged() {
@@ -166,13 +196,17 @@ func (s *Server) dispatch(msg *jsonrpcMessage) {
 		if s.root != nil {
 			tc.ListChanged = true
 		}
+		instructions := serverInstructions
+		if s.readOnly {
+			instructions += "\n\nRead-only mode is active. Mutation tools are hidden and run blocks mutations."
+		}
 		result := initializeResult{
 			ProtocolVersion: protocolVersion,
 			Capabilities: capabilities{
 				Tools: tc,
 			},
 			ServerInfo:   serverInfo{Name: s.name, Version: s.version},
-			Instructions: serverInstructions,
+			Instructions: instructions,
 		}
 		if len(s.resources) > 0 {
 			result.Capabilities.Resources = &resourceCapability{}
@@ -189,6 +223,7 @@ func (s *Server) dispatch(msg *jsonrpcMessage) {
 				Name:        t.Name,
 				Description: t.Description,
 				InputSchema: t.InputSchema,
+				Annotations: t.Annotations,
 			}
 		}
 		s.mu.Unlock()
@@ -243,8 +278,15 @@ func (s *Server) handleToolCall(msg *jsonrpcMessage) {
 		if output != "" {
 			errText = output + "\n" + errText
 		}
+		envelope, _ := json.Marshal(struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}{Error: struct {
+			Message string `json:"message"`
+		}{Message: errText}})
 		s.writeResult(msg.ID, toolCallResult{
-			Content: []content{{Type: "text", Text: fmt.Sprintf("error: %s", errText)}},
+			Content: []content{{Type: "text", Text: string(envelope)}},
 			IsError: true,
 		})
 		return
@@ -360,10 +402,16 @@ type serverInfo struct {
 	Version string `json:"version"`
 }
 
+type toolAnnotations struct {
+	ReadOnlyHint    *bool `json:"readOnlyHint,omitempty"`
+	DestructiveHint *bool `json:"destructiveHint,omitempty"`
+}
+
 type toolDef struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	InputSchema any    `json:"inputSchema"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	InputSchema any              `json:"inputSchema"`
+	Annotations *toolAnnotations `json:"annotations,omitempty"`
 }
 
 type toolListResult struct {

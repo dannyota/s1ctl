@@ -2,6 +2,7 @@
 
 - **Getting started**
   - [MCP server](guides/mcp.md)
+  - [MCP workflows](guides/mcp-workflows.md)
   - [Install](guides/install.md)
   - [Configure](guides/configure.md)
   - [Quickstart](guides/quickstart.md)

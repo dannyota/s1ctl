@@ -19,7 +19,7 @@ Idempotent — updates the entry if it already exists.
 Start the MCP server on stdio
 
 ```text
-s1ctl mcp serve
+s1ctl mcp serve [flags]
 ```
 
 Start a Model Context Protocol (MCP) server that exposes every s1ctl
@@ -28,6 +28,14 @@ command as an MCP tool and every docs guide as an MCP resource.
 Tools are auto-generated from the command tree — adding a command
 automatically creates a tool. Resources are embedded from docs/guides/.
 
+Use --read-only to hide mutation tools and block mutations via run.
+
 Configure Claude Code to use this server:
 
   s1ctl mcp install
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--read-only` | bool | false | expose only read-only tools and block mutations |

@@ -15,6 +15,7 @@ type Tool struct {
 	Name        string
 	Description string
 	InputSchema map[string]any
+	Annotations *toolAnnotations
 	Run         func(args map[string]any) (string, error)
 }
 
@@ -57,8 +58,9 @@ var skipFlags = map[string]bool{
 func buildTool(cmd *cobra.Command, path []string) Tool {
 	name := strings.ReplaceAll(strings.Join(path, "_"), "-", "_")
 
+	mutation := hasMutationFlag(cmd)
 	desc := cmd.Short
-	if hasMutationFlag(cmd) {
+	if mutation {
 		desc += " [mutation: requires --yes to apply, dry-run by default]"
 	}
 	if hasJSONAnnotation(cmd) {
@@ -67,10 +69,13 @@ func buildTool(cmd *cobra.Command, path []string) Tool {
 
 	schema := buildInputSchema(cmd)
 
+	roHint := !mutation
+	destHint := mutation
 	return Tool{
 		Name:        name,
 		Description: desc,
 		InputSchema: schema,
+		Annotations: &toolAnnotations{ReadOnlyHint: &roHint, DestructiveHint: &destHint},
 		Run:         makeRunner(cmd, path),
 	}
 }
@@ -194,7 +199,7 @@ func makeRunner(cmd *cobra.Command, path []string) func(map[string]any) (string,
 			}
 		}
 
-		return execSubprocess(cliArgs)
+		return execSubprocess(cliArgs, nil)
 	}
 }
 
@@ -235,9 +240,17 @@ func (s *Server) buildMetaTools() []Tool {
 }
 
 func (s *Server) buildRunTool() Tool {
+	desc := "Run any s1ctl command. Pass the full command (e.g. 'agents list --site-id 123'). For filter expressions use shell quoting: --filter 'event.type = \"Login\"'. Prefer focus + typed tools for complex filters."
+	var ann *toolAnnotations
+	if s.readOnly {
+		desc += " [read-only mode: mutations are blocked]"
+		ro := true
+		ann = &toolAnnotations{ReadOnlyHint: &ro}
+	}
 	return Tool{
 		Name:        "run",
-		Description: "Run any s1ctl command. Pass the full command (e.g. 'agents list --site-id 123'). For filter expressions use shell quoting: --filter 'event.type = \"Login\"'. Prefer focus + typed tools for complex filters.",
+		Description: desc,
+		Annotations: ann,
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -258,10 +271,16 @@ func (s *Server) buildRunTool() Tool {
 	}
 }
 
+func readOnlyAnnotation() *toolAnnotations {
+	ro, dest := true, false
+	return &toolAnnotations{ReadOnlyHint: &ro, DestructiveHint: &dest}
+}
+
 func (s *Server) buildHelpTool() Tool {
 	return Tool{
 		Name:        "help",
 		Description: "List command groups, or subcommands within a group.",
+		Annotations: readOnlyAnnotation(),
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -282,6 +301,7 @@ func (s *Server) buildFocusTool() Tool {
 	return Tool{
 		Name:        "focus",
 		Description: "Load typed tools for a command group (enables full schemas). Call help first to see groups.",
+		Annotations: readOnlyAnnotation(),
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -320,6 +340,7 @@ func (s *Server) buildUnfocusTool() Tool {
 	return Tool{
 		Name:        "unfocus",
 		Description: "Unload a command group's tools to free context space. Omit group to unload all.",
+		Annotations: readOnlyAnnotation(),
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
@@ -356,6 +377,7 @@ func (s *Server) buildUsageTool() Tool {
 	return Tool{
 		Name:        "usage",
 		Description: "Show flags, args, and description for one command. Use before run to learn a command's interface.",
+		Annotations: readOnlyAnnotation(),
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{

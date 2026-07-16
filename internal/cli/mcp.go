@@ -26,7 +26,8 @@ func newMCPCmd() *cobra.Command {
 }
 
 func newMCPServeCmd() *cobra.Command {
-	return &cobra.Command{
+	var serveReadOnly bool
+	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Start the MCP server on stdio",
 		Long: `Start a Model Context Protocol (MCP) server that exposes every s1ctl
@@ -34,6 +35,8 @@ command as an MCP tool and every docs guide as an MCP resource.
 
 Tools are auto-generated from the command tree — adding a command
 automatically creates a tool. Resources are embedded from docs/guides/.
+
+Use --read-only to hide mutation tools and block mutations via run.
 
 Configure Claude Code to use this server:
 
@@ -43,7 +46,8 @@ Configure Claude Code to use this server:
 			bi := resolveBuildInfo()
 
 			resources := mcp.ResourcesFromFS(guides.FS, "guide")
-			srv := mcp.NewDynamicServer("s1ctl", bi.Version, cmd.Root(), resources)
+			srv := mcp.NewDynamicServer("s1ctl", bi.Version, cmd.Root(), resources,
+				mcp.WithReadOnly(serveReadOnly))
 
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer stop()
@@ -51,6 +55,8 @@ Configure Claude Code to use this server:
 			return srv.Serve(ctx)
 		},
 	}
+	cmd.Flags().BoolVar(&serveReadOnly, "read-only", false, "expose only read-only tools and block mutations")
+	return cmd
 }
 
 func newMCPInstallCmd() *cobra.Command {

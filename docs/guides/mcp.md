@@ -112,14 +112,67 @@ The server exposes:
 All tool output is JSON. Mutations are dry-run by default — the agent must
 pass `--yes` to apply, same as the CLI.
 
+### Tool annotations
+
+Every tool carries MCP `annotations` that classify it for safety:
+
+- **Read-only commands**: `readOnlyHint: true`, `destructiveHint: false`
+- **Mutation commands**: `readOnlyHint: false`, `destructiveHint: true`
+- **Meta-tools** (help, usage, focus, unfocus): `readOnlyHint: true`
+- **run**: no annotations in normal mode (it can invoke either kind)
+
+Clients that support annotations can use these to gate or warn before
+executing destructive tools.
+
+### Structured errors
+
+When a tool call fails, the content text is a JSON envelope:
+
+```json
+{"error":{"message":"<error details>"}}
+```
+
+Parse `error.message` for the cause. Partial output (e.g. API error bodies)
+is included in the message string.
+
 ### Large output and concurrency
 
 Each tool call runs in its own subprocess, so calls execute concurrently and
 one slow query never blocks the rest. A single result is capped at 4 MiB:
 larger output is written to a temporary file and the tool returns a JSON
-pointer (`file`, `bytes`, `message`) instead. The agent can read the file or
-narrow the query with `--max-results` or filters. Spill files are removed
-after 24 hours.
+pointer with `file`, `bytes`, `preview`, and `message`. The `preview` field
+contains the first 2 KiB (rune-safe) for quick inspection without reading the
+full file. Spill files are removed after 24 hours.
+
+### Read-only mode
+
+Start the server with `--read-only` to restrict it to read-only operations:
+
+```bash
+s1ctl mcp serve --read-only
+```
+
+Or in your MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "s1ctl": {
+      "command": "s1ctl",
+      "args": ["mcp", "serve", "--read-only"]
+    }
+  }
+}
+```
+
+When read-only mode is active:
+
+- Mutation tools are hidden from `tools/list`
+- Focused groups load only read-only tools
+- The `run` meta-tool sets `S1_READONLY=1` so mutations are blocked
+- Server instructions note the mode
+
+This is useful for monitoring agents that should observe but never modify.
 
 ## Security
 
@@ -127,4 +180,5 @@ after 24 hours.
   least-privilege token scoped to what the agent needs.
 - All mutations require `--yes` — the agent cannot accidentally modify your
   environment without explicit confirmation.
+- Use `--read-only` for agents that should only observe.
 - The server runs locally on stdio. No network listener is opened.
