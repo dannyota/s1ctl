@@ -73,7 +73,9 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 func checkMGMT(ctx context.Context, consoleURL, token string) checkResult {
 	c := mgmt.NewClient(consoleURL, token)
 	start := time.Now()
-	_, err := c.SystemStatus(ctx)
+	// SystemInfo requires authentication; SystemStatus does not, which
+	// would report "ok" even with an invalid token.
+	_, err := c.SystemInfo(ctx)
 	elapsed := time.Since(start).Round(time.Millisecond)
 	r := checkResult{Surface: "REST MGMT", Latency: elapsed.String()}
 	if err != nil {
