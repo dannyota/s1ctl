@@ -28,10 +28,12 @@ Credentials are redacted in the output.
 ### Add a configuration
 
 ```bash
-s1ctl identity config add --from-file ad-config.json --yes
+s1ctl identity config add --dc-fqdn dc01.corp.example.com --domain corp.example.com \
+  --user "svc-scanner" --password "secret" --feature RANGER_AD --yes
 ```
 
-The add command is **dry-run by default**; pass `--yes` to apply.
+The add command is **dry-run by default**; pass `--yes` to apply. Credentials
+(`--user`, `--password`) are sent to the API but never echoed in output.
 
 ### Delete a configuration
 
@@ -50,10 +52,10 @@ s1ctl identity connector get
 s1ctl identity connector agents
 ```
 
-Replace the connector with a different agent:
+Replace the connector with a different agent (positional UUID):
 
 ```bash
-s1ctl identity connector replace --agent-id 000000 --yes
+s1ctl identity connector replace 000000 --yes
 ```
 
 ## Onboarding status
@@ -82,14 +84,20 @@ s1ctl identity domains
 ## ISPM exposure management
 
 Skip or acknowledge ISPM exposures to manage your identity posture backlog.
-These commands work with exposure IDs from `ranger-ad exposures`.
+Both commands require `--detection` (detection name) and `--domain` (AD domain).
 
 ### Skip exposures
 
 Mark exposures as skipped (accepted risk):
 
 ```bash
-s1ctl identity skip-exposures --ids 000000,000001 --yes
+s1ctl identity skip-exposures --detection "Kerberoasting" --domain "corp.example.com" --yes
+```
+
+Use `--unskip` to reverse a previous skip:
+
+```bash
+s1ctl identity skip-exposures --detection "Kerberoasting" --domain "corp.example.com" --unskip --yes
 ```
 
 ### Acknowledge exposures
@@ -97,17 +105,24 @@ s1ctl identity skip-exposures --ids 000000,000001 --yes
 Mark exposures as acknowledged:
 
 ```bash
-s1ctl identity ack-exposures --ids 000000,000001 --yes
+s1ctl identity ack-exposures --detection "Kerberoasting" --domain "corp.example.com" --yes
+```
+
+Use `--unack` to reverse:
+
+```bash
+s1ctl identity ack-exposures --detection "Kerberoasting" --domain "corp.example.com" --unack --yes
 ```
 
 Both skip and acknowledge are **dry-run by default**; pass `--yes` to apply.
+Scope with `--site-id` or `--account-id` as needed.
 
 ## Workflows
 
 ### Set up identity posture scanning
 
 1. Check onboarding status: `s1ctl identity onboard`
-2. Add AD configuration: `s1ctl identity config add --from-file ad.json --yes`
+2. Add AD configuration: `s1ctl identity config add --dc-fqdn dc01.corp.example.com --domain corp.example.com --user "svc" --password "secret" --yes`
 3. Verify connectors: `s1ctl identity connector list`
 4. Run an assessment: `s1ctl ranger-ad assess --site-id 000000 --yes`
 5. Review exposures: `s1ctl ranger-ad exposures --site-id 000000`
@@ -119,10 +134,10 @@ Both skip and acknowledge are **dry-run by default**; pass `--yes` to apply.
 s1ctl ranger-ad exposures --site-id 000000
 
 # Skip known-safe exposures
-s1ctl identity skip-exposures --ids 000000 --yes
+s1ctl identity skip-exposures --detection "Kerberoasting" --domain "corp.example.com" --yes
 
 # Acknowledge reviewed exposures
-s1ctl identity ack-exposures --ids 000000 --yes
+s1ctl identity ack-exposures --detection "Kerberoasting" --domain "corp.example.com" --yes
 ```
 
 ## See also

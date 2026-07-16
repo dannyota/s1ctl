@@ -2461,8 +2461,8 @@ s1ctl applications rules get 000000
 ### Create and update
 
 ```bash
-s1ctl applications rules create --from-file rule.json --site-id 000000 --yes
-s1ctl applications rules update 000000 --from-file rule.json --yes
+s1ctl applications rules create --name "My Rule" --behavior allow --scope-type site --scope-id 000000 --yes
+s1ctl applications rules update 000000 --behavior block --yes
 ```
 
 ### Delete
@@ -2477,10 +2477,10 @@ Pull application control rules to local YAML files, review changes in git,
 then push back:
 
 ```bash
-s1ctl applications rules pull --site-id 000000
-# review and edit files in applications-rules/
-s1ctl applications rules push --site-id 000000          # dry-run
-s1ctl applications rules push --site-id 000000 --yes    # apply
+s1ctl applications rules pull --scope-id 000000
+# review and edit files in appcontrol-rules/
+s1ctl applications rules push --scope-id 000000          # dry-run
+s1ctl applications rules push --scope-id 000000 --yes    # apply
 ```
 
 Rules are matched by name. New rules create, changed rules update. See
@@ -2491,8 +2491,8 @@ Rules are matched by name. New rules create, changed rules update. See
 Read and update the application control settings (enable/disable, mode):
 
 ```bash
-s1ctl applications settings get --site-id 000000
-s1ctl applications settings update --from-file settings.json --site-id 000000 --yes
+s1ctl applications settings get
+s1ctl applications settings update --scope-type site --scope-id 000000 --enable true --yes
 ```
 
 ## Management settings
@@ -2501,7 +2501,7 @@ Manage application management settings (scan schedule, extensive scan):
 
 ```bash
 s1ctl applications mgmt-settings get --site-id 000000
-s1ctl applications mgmt-settings update --from-file mgmt.json --site-id 000000 --yes
+s1ctl applications mgmt-settings update --site-id 000000 --extensive-scan true --yes
 ```
 
 ## Labels
@@ -2509,7 +2509,7 @@ s1ctl applications mgmt-settings update --from-file mgmt.json --site-id 000000 -
 List application control labels:
 
 ```bash
-s1ctl applications labels list --site-id 000000
+s1ctl applications labels list
 ```
 
 ## Workflows
@@ -2526,9 +2526,9 @@ s1ctl applications rules list --site-id 000000 --json > app-rules.json
 Pull from one site and push to another:
 
 ```bash
-s1ctl applications rules pull --site-id 111111
-s1ctl applications rules push --site-id 222222          # dry-run
-s1ctl applications rules push --site-id 222222 --yes    # apply
+s1ctl applications rules pull --scope-id 111111
+s1ctl applications rules push --scope-id 222222          # dry-run
+s1ctl applications rules push --scope-id 222222 --yes    # apply
 ```
 
 ## See also
@@ -2648,10 +2648,12 @@ Credentials are redacted in the output.
 ### Add a configuration
 
 ```bash
-s1ctl identity config add --from-file ad-config.json --yes
+s1ctl identity config add --dc-fqdn dc01.corp.example.com --domain corp.example.com \
+  --user "svc-scanner" --password "secret" --feature RANGER_AD --yes
 ```
 
-The add command is **dry-run by default**; pass `--yes` to apply.
+The add command is **dry-run by default**; pass `--yes` to apply. Credentials
+(`--user`, `--password`) are sent to the API but never echoed in output.
 
 ### Delete a configuration
 
@@ -2670,10 +2672,10 @@ s1ctl identity connector get
 s1ctl identity connector agents
 ```
 
-Replace the connector with a different agent:
+Replace the connector with a different agent (positional UUID):
 
 ```bash
-s1ctl identity connector replace --agent-id 000000 --yes
+s1ctl identity connector replace 000000 --yes
 ```
 
 ## Onboarding status
@@ -2702,14 +2704,20 @@ s1ctl identity domains
 ## ISPM exposure management
 
 Skip or acknowledge ISPM exposures to manage your identity posture backlog.
-These commands work with exposure IDs from `ranger-ad exposures`.
+Both commands require `--detection` (detection name) and `--domain` (AD domain).
 
 ### Skip exposures
 
 Mark exposures as skipped (accepted risk):
 
 ```bash
-s1ctl identity skip-exposures --ids 000000,000001 --yes
+s1ctl identity skip-exposures --detection "Kerberoasting" --domain "corp.example.com" --yes
+```
+
+Use `--unskip` to reverse a previous skip:
+
+```bash
+s1ctl identity skip-exposures --detection "Kerberoasting" --domain "corp.example.com" --unskip --yes
 ```
 
 ### Acknowledge exposures
@@ -2717,17 +2725,24 @@ s1ctl identity skip-exposures --ids 000000,000001 --yes
 Mark exposures as acknowledged:
 
 ```bash
-s1ctl identity ack-exposures --ids 000000,000001 --yes
+s1ctl identity ack-exposures --detection "Kerberoasting" --domain "corp.example.com" --yes
+```
+
+Use `--unack` to reverse:
+
+```bash
+s1ctl identity ack-exposures --detection "Kerberoasting" --domain "corp.example.com" --unack --yes
 ```
 
 Both skip and acknowledge are **dry-run by default**; pass `--yes` to apply.
+Scope with `--site-id` or `--account-id` as needed.
 
 ## Workflows
 
 ### Set up identity posture scanning
 
 1. Check onboarding status: `s1ctl identity onboard`
-2. Add AD configuration: `s1ctl identity config add --from-file ad.json --yes`
+2. Add AD configuration: `s1ctl identity config add --dc-fqdn dc01.corp.example.com --domain corp.example.com --user "svc" --password "secret" --yes`
 3. Verify connectors: `s1ctl identity connector list`
 4. Run an assessment: `s1ctl ranger-ad assess --site-id 000000 --yes`
 5. Review exposures: `s1ctl ranger-ad exposures --site-id 000000`
@@ -2739,10 +2754,10 @@ Both skip and acknowledge are **dry-run by default**; pass `--yes` to apply.
 s1ctl ranger-ad exposures --site-id 000000
 
 # Skip known-safe exposures
-s1ctl identity skip-exposures --ids 000000 --yes
+s1ctl identity skip-exposures --detection "Kerberoasting" --domain "corp.example.com" --yes
 
 # Acknowledge reviewed exposures
-s1ctl identity ack-exposures --ids 000000 --yes
+s1ctl identity ack-exposures --detection "Kerberoasting" --domain "corp.example.com" --yes
 ```
 
 ## See also
@@ -2777,11 +2792,12 @@ s1ctl automation list --json
 ## Get a workflow version
 
 ```bash
-s1ctl automation get 000000
-s1ctl automation get 000000 --json
+s1ctl automation get 000000 000001
+s1ctl automation get 000000 000001 --json
 ```
 
-Returns the workflow in export format (suitable for re-import).
+Takes two positional arguments: `<workflow-id> <version-id>`. Returns the
+workflow version in export format (suitable for re-import).
 
 ## Versions
 
@@ -2794,10 +2810,10 @@ s1ctl automation versions 000000
 ## Export and import
 
 Export a workflow version as JSON for backup or promotion to another
-environment:
+environment. Takes two positional arguments: `<workflow-id> <version-id>`.
 
 ```bash
-s1ctl automation export 000000 > workflow.json
+s1ctl automation export 000000 000001 > workflow.json
 ```
 
 Import (create) a workflow from an exported JSON file:
@@ -2811,10 +2827,11 @@ The create command is **dry-run by default**; pass `--yes` to apply.
 
 ## Lifecycle
 
-Activate or deactivate a workflow version:
+Activate a specific version (`<workflow-id> <version-id>`) or deactivate a
+workflow's active version (`<workflow-id>`):
 
 ```bash
-s1ctl automation activate 000000 --yes
+s1ctl automation activate 000000 000001 --yes
 s1ctl automation deactivate 000000 --yes
 ```
 
@@ -2822,10 +2839,10 @@ Both are **dry-run by default**; pass `--yes` to apply.
 
 ## Run a workflow
 
-Trigger a manual workflow execution:
+Trigger a manual workflow execution (`<workflow-id> <version-id>`):
 
 ```bash
-s1ctl automation run 000000 --yes
+s1ctl automation run 000000 000001 --yes
 ```
 
 The run command is **dry-run by default**; pass `--yes` to apply.
@@ -2835,15 +2852,16 @@ The run command is **dry-run by default**; pass `--yes` to apply.
 List workflow executions and inspect results:
 
 ```bash
-s1ctl automation executions 000000
+s1ctl automation executions --workflow-id 000000
 s1ctl automation execution-get 000000
 s1ctl automation execution-output 000000
 ```
 
-`executions` lists all runs for a workflow. `execution-get` returns details
-for a specific execution. `execution-output` shows the output payload.
+`executions` lists runs (filter with `--workflow-id`). `execution-get` returns
+details for a specific execution by ID. `execution-output` shows the output
+payload of an execution by ID.
 
-## Workflows (patterns)
+## Common patterns
 
 ### Promote a workflow between environments
 
@@ -2851,7 +2869,7 @@ Export from one console, import to another:
 
 ```bash
 # On source console
-s1ctl automation export 000000 > workflow.json
+s1ctl automation export 000000 000001 > workflow.json
 
 # On target console (different S1_CONSOLE_URL / S1_TOKEN)
 s1ctl automation create --from-file workflow.json --yes
@@ -2868,7 +2886,7 @@ s1ctl automation list --json > workflows.json
 ### Monitor execution results
 
 ```bash
-s1ctl automation executions 000000 --json
+s1ctl automation executions --workflow-id 000000 --json
 s1ctl automation execution-output 000000 --json
 ```
 
@@ -3116,27 +3134,29 @@ since policies cannot be created through this surface.
 ## Upgrade policies
 
 Pull auto-upgrade policies to local YAML files, review changes in git, then
-push back:
+push back. The API requires `--scope-level` and `--os-type` on every pull and
+push:
 
 ```bash
-s1ctl upgrade-policies pull --site-id 000000
+s1ctl upgrade-policies pull --scope-level site --scope-id 000000 --os-type linux
 # edit files in upgrade-policies/
-s1ctl upgrade-policies push --site-id 000000          # dry-run
-s1ctl upgrade-policies push --site-id 000000 --yes    # apply
+s1ctl upgrade-policies push --scope-level site --scope-id 000000 --os-type linux          # dry-run
+s1ctl upgrade-policies push --scope-level site --scope-id 000000 --os-type linux --yes    # apply
 ```
 
-Policies are scope-partitioned: each site has its own set. Pull scopes to one
-site at a time.
+Policies are scope-partitioned by level (tenant/account/site/group) and OS
+type (linux/macos/windows). Pull one partition at a time; use multiple
+invocations for different OS types or scopes.
 
 ## Application control rules
 
 Pull and push application control rules through the reconcile engine:
 
 ```bash
-s1ctl applications rules pull --site-id 000000
-# edit files in applications-rules/
-s1ctl applications rules push --site-id 000000          # dry-run
-s1ctl applications rules push --site-id 000000 --yes    # apply
+s1ctl applications rules pull --scope-id 000000
+# edit files in appcontrol-rules/
+s1ctl applications rules push --scope-id 000000          # dry-run
+s1ctl applications rules push --scope-id 000000 --yes    # apply
 ```
 
 Rules are matched by name. See the [Applications](applications.md) guide for
@@ -3372,13 +3392,14 @@ s1ctl settings overrides get 000000
 ### Create
 
 ```bash
-s1ctl settings overrides create --from-file override.json --yes
+s1ctl settings overrides create --name "Custom override" --scope site --scope-id 000000 \
+  --os-type linux --config '{"agent.maxLogSize": 100}' --yes
 ```
 
 ### Update
 
 ```bash
-s1ctl settings overrides update 000000 --from-file override.json --yes
+s1ctl settings overrides update 000000 --config '{"agent.maxLogSize": 200}' --yes
 ```
 
 ### Delete
@@ -3398,21 +3419,23 @@ install agents on unprotected endpoints. Accessed via `updates deploy`.
 
 ```bash
 s1ctl updates deploy list-groups
-s1ctl updates deploy list-details --group-id 000000
+s1ctl updates deploy list-details --cred-group-id 000000
 ```
 
 ### Create and delete groups
 
 ```bash
-s1ctl updates deploy create-group --from-file group.json --yes
+s1ctl updates deploy create-group --group-name "Deploy creds" --scope-id 000000 \
+  --target-os windows --yes
 s1ctl updates deploy delete-group 000000 --yes
 ```
 
 ### Manage credential details
 
 ```bash
-s1ctl updates deploy add-detail --group-id 000000 --from-file detail.json --yes
-s1ctl updates deploy update-detail 000000 --from-file detail.json --yes
+s1ctl updates deploy add-detail --cred-group-id 000000 --title "Admin" \
+  --cred-type "User/Password" --yes
+s1ctl updates deploy update-detail 000000 --title "Updated Admin" --yes
 s1ctl updates deploy delete-detail 000000 --yes
 ```
 

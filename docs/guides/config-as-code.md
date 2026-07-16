@@ -235,27 +235,29 @@ since policies cannot be created through this surface.
 ## Upgrade policies
 
 Pull auto-upgrade policies to local YAML files, review changes in git, then
-push back:
+push back. The API requires `--scope-level` and `--os-type` on every pull and
+push:
 
 ```bash
-s1ctl upgrade-policies pull --site-id 000000
+s1ctl upgrade-policies pull --scope-level site --scope-id 000000 --os-type linux
 # edit files in upgrade-policies/
-s1ctl upgrade-policies push --site-id 000000          # dry-run
-s1ctl upgrade-policies push --site-id 000000 --yes    # apply
+s1ctl upgrade-policies push --scope-level site --scope-id 000000 --os-type linux          # dry-run
+s1ctl upgrade-policies push --scope-level site --scope-id 000000 --os-type linux --yes    # apply
 ```
 
-Policies are scope-partitioned: each site has its own set. Pull scopes to one
-site at a time.
+Policies are scope-partitioned by level (tenant/account/site/group) and OS
+type (linux/macos/windows). Pull one partition at a time; use multiple
+invocations for different OS types or scopes.
 
 ## Application control rules
 
 Pull and push application control rules through the reconcile engine:
 
 ```bash
-s1ctl applications rules pull --site-id 000000
-# edit files in applications-rules/
-s1ctl applications rules push --site-id 000000          # dry-run
-s1ctl applications rules push --site-id 000000 --yes    # apply
+s1ctl applications rules pull --scope-id 000000
+# edit files in appcontrol-rules/
+s1ctl applications rules push --scope-id 000000          # dry-run
+s1ctl applications rules push --scope-id 000000 --yes    # apply
 ```
 
 Rules are matched by name. See the [Applications](applications.md) guide for

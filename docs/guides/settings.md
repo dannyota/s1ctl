@@ -157,13 +157,14 @@ s1ctl settings overrides get 000000
 ### Create
 
 ```bash
-s1ctl settings overrides create --from-file override.json --yes
+s1ctl settings overrides create --name "Custom override" --scope site --scope-id 000000 \
+  --os-type linux --config '{"agent.maxLogSize": 100}' --yes
 ```
 
 ### Update
 
 ```bash
-s1ctl settings overrides update 000000 --from-file override.json --yes
+s1ctl settings overrides update 000000 --config '{"agent.maxLogSize": 200}' --yes
 ```
 
 ### Delete
@@ -183,21 +184,23 @@ install agents on unprotected endpoints. Accessed via `updates deploy`.
 
 ```bash
 s1ctl updates deploy list-groups
-s1ctl updates deploy list-details --group-id 000000
+s1ctl updates deploy list-details --cred-group-id 000000
 ```
 
 ### Create and delete groups
 
 ```bash
-s1ctl updates deploy create-group --from-file group.json --yes
+s1ctl updates deploy create-group --group-name "Deploy creds" --scope-id 000000 \
+  --target-os windows --yes
 s1ctl updates deploy delete-group 000000 --yes
 ```
 
 ### Manage credential details
 
 ```bash
-s1ctl updates deploy add-detail --group-id 000000 --from-file detail.json --yes
-s1ctl updates deploy update-detail 000000 --from-file detail.json --yes
+s1ctl updates deploy add-detail --cred-group-id 000000 --title "Admin" \
+  --cred-type "User/Password" --yes
+s1ctl updates deploy update-detail 000000 --title "Updated Admin" --yes
 s1ctl updates deploy delete-detail 000000 --yes
 ```
 

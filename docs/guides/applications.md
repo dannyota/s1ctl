@@ -48,8 +48,8 @@ s1ctl applications rules get 000000
 ### Create and update
 
 ```bash
-s1ctl applications rules create --from-file rule.json --site-id 000000 --yes
-s1ctl applications rules update 000000 --from-file rule.json --yes
+s1ctl applications rules create --name "My Rule" --behavior allow --scope-type site --scope-id 000000 --yes
+s1ctl applications rules update 000000 --behavior block --yes
 ```
 
 ### Delete
@@ -64,10 +64,10 @@ Pull application control rules to local YAML files, review changes in git,
 then push back:
 
 ```bash
-s1ctl applications rules pull --site-id 000000
-# review and edit files in applications-rules/
-s1ctl applications rules push --site-id 000000          # dry-run
-s1ctl applications rules push --site-id 000000 --yes    # apply
+s1ctl applications rules pull --scope-id 000000
+# review and edit files in appcontrol-rules/
+s1ctl applications rules push --scope-id 000000          # dry-run
+s1ctl applications rules push --scope-id 000000 --yes    # apply
 ```
 
 Rules are matched by name. New rules create, changed rules update. See
@@ -78,8 +78,8 @@ Rules are matched by name. New rules create, changed rules update. See
 Read and update the application control settings (enable/disable, mode):
 
 ```bash
-s1ctl applications settings get --site-id 000000
-s1ctl applications settings update --from-file settings.json --site-id 000000 --yes
+s1ctl applications settings get
+s1ctl applications settings update --scope-type site --scope-id 000000 --enable true --yes
 ```
 
 ## Management settings
@@ -88,7 +88,7 @@ Manage application management settings (scan schedule, extensive scan):
 
 ```bash
 s1ctl applications mgmt-settings get --site-id 000000
-s1ctl applications mgmt-settings update --from-file mgmt.json --site-id 000000 --yes
+s1ctl applications mgmt-settings update --site-id 000000 --extensive-scan true --yes
 ```
 
 ## Labels
@@ -96,7 +96,7 @@ s1ctl applications mgmt-settings update --from-file mgmt.json --site-id 000000 -
 List application control labels:
 
 ```bash
-s1ctl applications labels list --site-id 000000
+s1ctl applications labels list
 ```
 
 ## Workflows
@@ -113,9 +113,9 @@ s1ctl applications rules list --site-id 000000 --json > app-rules.json
 Pull from one site and push to another:
 
 ```bash
-s1ctl applications rules pull --site-id 111111
-s1ctl applications rules push --site-id 222222          # dry-run
-s1ctl applications rules push --site-id 222222 --yes    # apply
+s1ctl applications rules pull --scope-id 111111
+s1ctl applications rules push --scope-id 222222          # dry-run
+s1ctl applications rules push --scope-id 222222 --yes    # apply
 ```
 
 ## See also
