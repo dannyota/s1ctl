@@ -2,6 +2,21 @@
 
 Manage xSPM misconfigurations
 
+## misconfigurations add-note
+
+Add an investigation note to a misconfiguration
+
+```text
+s1ctl misconfigurations add-note <id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## misconfigurations assign
 
 Assign a misconfiguration to a user
@@ -15,6 +30,20 @@ s1ctl misconfigurations assign <id> --user-id <user-id> [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--user-id` | string | - | assignee user ID (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## misconfigurations delete-note
+
+Delete a misconfiguration note
+
+```text
+s1ctl misconfigurations delete-note <note-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## misconfigurations export
@@ -73,50 +102,6 @@ s1ctl misconfigurations list [flags]
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
 | `--status` | stringSlice | - | filter by status |
 
-## misconfigurations note-add
-
-Add an investigation note to a misconfiguration
-
-```text
-s1ctl misconfigurations note-add <id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## misconfigurations note-delete
-
-Delete a misconfiguration note
-
-```text
-s1ctl misconfigurations note-delete <note-id> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## misconfigurations note-update
-
-Update the text of a misconfiguration note
-
-```text
-s1ctl misconfigurations note-update <note-id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | new note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
 ## misconfigurations notes
 
 List investigation notes on a misconfiguration
@@ -147,9 +132,24 @@ s1ctl misconfigurations status <id> <status> [flags]
 |------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
+## misconfigurations update-note
+
+Update the text of a misconfiguration note
+
+```text
+s1ctl misconfigurations update-note <note-id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | new note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## misconfigurations verdict
 
-Update misconfiguration analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)
+Update misconfiguration analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE)
 
 ```text
 s1ctl misconfigurations verdict <id> <verdict> [flags]

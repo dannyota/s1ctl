@@ -1,6 +1,6 @@
 # firewall
 
-Firewall control rules
+Manage firewall control rules
 
 ## firewall copy
 

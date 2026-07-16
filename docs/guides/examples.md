@@ -82,7 +82,7 @@ s1ctl agents versions
 Trigger upgrade on outdated agents in a site:
 
 ```bash
-s1ctl agents upgrade --site-id 000000 --yes
+s1ctl agents upgrade --package-id 000000 --site-id 000000 --yes
 ```
 
 ## Environment health
@@ -194,7 +194,7 @@ s1ctl datalake powerquery --query "src.process.name = 'sshd'" \
 List saved queries from the console:
 
 ```bash
-s1ctl datalake saved-queries
+s1ctl datalake saved-queries list
 ```
 
 ## Group management

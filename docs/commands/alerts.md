@@ -30,7 +30,7 @@ s1ctl alerts count [flags]
 |------|------|---------|-------------|
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
 | `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
-| `--verdict` | stringSlice | - | filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED) |
+| `--verdict` | stringSlice | - | filter by analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE; see 'enums' cmd) |
 
 ## alerts counts
 
@@ -56,6 +56,20 @@ instead; for grouped alert volume prefer "alerts stats" (alertGroups).
 | `--scope-level` | string | - | scope level (account, site, group) |
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
 | `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
+
+## alerts delete-note
+
+Delete an alert note
+
+```text
+s1ctl alerts delete-note <note-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## alerts export
 
@@ -125,36 +139,7 @@ s1ctl alerts list [flags]
 | `--sort-order` | string | - | sort direction (ASC, DESC) |
 | `--source` | stringSlice | - | filter by detection source (STAR, EDR, CWS) |
 | `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
-| `--verdict` | stringSlice | - | filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED) |
-
-## alerts note-delete
-
-Delete an alert note
-
-```text
-s1ctl alerts note-delete <note-id> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## alerts note-update
-
-Update the text of an alert note
-
-```text
-s1ctl alerts note-update <note-id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | new note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
+| `--verdict` | stringSlice | - | filter by analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE; see 'enums' cmd) |
 
 ## alerts notes
 
@@ -239,9 +224,24 @@ asset operations, mitigation actions, and related alerts, newest first.
 | `--all` | bool | false | fetch all pages |
 | `--limit` | int | 0 | max results per page (default 50) |
 
+## alerts update-note
+
+Update the text of an alert note
+
+```text
+s1ctl alerts update-note <note-id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | new note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## alerts verdict
 
-Update alert analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)
+Update alert analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE)
 
 ```text
 s1ctl alerts verdict <id> <verdict> [flags]

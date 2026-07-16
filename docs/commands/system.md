@@ -1,6 +1,6 @@
 # system
 
-Console system information
+Show console system information
 
 ## system info
 

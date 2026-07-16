@@ -34,14 +34,14 @@ All mutations are dry-run by default. Pass `--yes` to apply.
 Isolate an agent:
 
 ```bash
-s1ctl agents isolate --id 000000          # dry-run
-s1ctl agents isolate --id 000000 --yes    # apply
+s1ctl agents isolate 000000          # dry-run
+s1ctl agents isolate 000000 --yes    # apply
 ```
 
 Mitigate a threat:
 
 ```bash
-s1ctl threats mitigate --id 000000 --action kill --yes
+s1ctl threats mitigate 000000 --action kill --yes
 ```
 
 ## Config-as-code

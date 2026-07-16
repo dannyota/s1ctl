@@ -37,7 +37,7 @@ within context limits while covering every command.
 ```bash
 go install danny.vn/s1/cmd/s1ctl@latest
 
-s1ctl config          # one-screen wizard
+s1ctl config init     # one-screen wizard
 s1ctl doctor          # verify auth + API reach
 
 s1ctl agents list --limit 10

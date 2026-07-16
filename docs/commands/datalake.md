@@ -12,7 +12,7 @@ s1ctl datalake dashboards
 
 ## datalake facet
 
-Aggregate the most common values of a field (SDL REST)
+Aggregate the most common values of a field (SDL REST) [supports --json output]
 
 ```text
 s1ctl datalake facet [flags]
@@ -74,7 +74,7 @@ granularity and users with limited query permissions.
 
 ## datalake powerquery
 
-Execute a PowerQuery
+Execute a PowerQuery (filter, group, sort, columns) [supports --json, --csv output]
 
 ```text
 s1ctl datalake powerquery [flags]

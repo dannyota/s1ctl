@@ -113,8 +113,8 @@ s1ctl alerts notes 000000 --json
 Update the text of an existing note by its note ID:
 
 ```bash
-s1ctl alerts note-update 000000 --text "Updated investigation findings"        # dry-run
-s1ctl alerts note-update 000000 --text "Updated investigation findings" --yes   # apply
+s1ctl alerts update-note 000000 --text "Updated investigation findings"        # dry-run
+s1ctl alerts update-note 000000 --text "Updated investigation findings" --yes   # apply
 ```
 
 ### Delete a note
@@ -122,8 +122,8 @@ s1ctl alerts note-update 000000 --text "Updated investigation findings" --yes   
 Delete a note by its note ID:
 
 ```bash
-s1ctl alerts note-delete 000000        # dry-run
-s1ctl alerts note-delete 000000 --yes   # apply
+s1ctl alerts delete-note 000000        # dry-run
+s1ctl alerts delete-note 000000 --yes   # apply
 ```
 
 To add a new note, use `s1ctl alerts add-note`.

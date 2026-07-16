@@ -5,7 +5,7 @@ to give AI agents — Claude Code, Claude Desktop, Cursor, Windsurf, or any MCP
 client — direct access to your SentinelOne console.
 
 The server uses **dynamic tool loading**: instead of exposing all 370+ commands
-upfront, it starts with 4 meta-tools and loads group-specific typed tools on
+upfront, it starts with 5 meta-tools and loads group-specific typed tools on
 demand. This keeps the agent's context window small while covering every
 command.
 
@@ -27,7 +27,7 @@ export S1_CONSOLE_URL=https://your-console.sentinelone.net
 export S1_TOKEN=your-api-token
 ```
 
-Or run `s1ctl config` to write `~/.s1ctl/config.yaml`. See
+Or run `s1ctl config init` to write `~/.s1ctl/config.yaml`. See
 [Configure](guides/configure.md) for details.
 
 Verify connectivity:
@@ -83,7 +83,7 @@ Pass `S1_CONSOLE_URL` and `S1_TOKEN` as environment variables, or ensure
 
 The server exposes:
 
-- **Meta-tools** — `help`, `run`, `focus`, `unfocus` (always loaded)
+- **Meta-tools** — `help`, `run`, `usage`, `focus`, `unfocus` (always loaded)
 - **Group tools** — loaded on demand via `focus` (e.g. `focus group="agents"`)
 - **Resources** — one per guide (`guide://{name}`)
 
@@ -91,17 +91,18 @@ The server exposes:
 
 1. Call `help` to discover available command groups
 2. Call `help group="agents"` to list subcommands in a group
-3. Call `focus group="agents"` to load typed tools (`agents_list`, `agents_get`, etc.)
-4. Use the typed tools with full parameter schemas
-5. Call `unfocus group="agents"` when done to free context
-6. Use `run` anytime for quick one-off commands without focusing
+3. Call `usage command="agents list"` to see one command's flags and args
+4. Call `focus group="agents"` to load typed tools (`agents_list`, `agents_get`, etc.)
+5. Use the typed tools with full parameter schemas
+6. Call `unfocus group="agents"` when done to free context
+7. Use `run` anytime for quick one-off commands without focusing
 
 ### Example conversation
 
-> **You:** How many Windows agents are online?
+> **You:** Which Windows agents are online right now?
 >
-> The agent calls `run command="agents count --query windows --status active"`
-> and returns the count.
+> The agent calls `run command="agents list --os-type windows --active"`
+> and summarizes the results.
 
 > **You:** Show me unresolved threats from the last 24 hours.
 >
@@ -110,6 +111,15 @@ The server exposes:
 
 All tool output is JSON. Mutations are dry-run by default — the agent must
 pass `--yes` to apply, same as the CLI.
+
+### Large output and concurrency
+
+Each tool call runs in its own subprocess, so calls execute concurrently and
+one slow query never blocks the rest. A single result is capped at 4 MiB:
+larger output is written to a temporary file and the tool returns a JSON
+pointer (`file`, `bytes`, `message`) instead. The agent can read the file or
+narrow the query with `--max-results` or filters. Spill files are removed
+after 24 hours.
 
 ## Security
 

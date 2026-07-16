@@ -2,6 +2,21 @@
 
 Manage xSPM vulnerabilities
 
+## vulnerabilities add-note
+
+Add an investigation note to a vulnerability
+
+```text
+s1ctl vulnerabilities add-note <id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## vulnerabilities assign
 
 Assign a vulnerability to a user
@@ -48,6 +63,20 @@ filter the full result set rather than a single page.
 | `--all` | bool | false | fetch all pages |
 | `--limit` | int | 0 | max results per page (default 50) |
 | `--min-cvss` | float64 | 0 | only show CVEs with NVD base score >= this value (client-side) |
+
+## vulnerabilities delete-note
+
+Delete a vulnerability note
+
+```text
+s1ctl vulnerabilities delete-note <note-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## vulnerabilities export
 
@@ -116,50 +145,6 @@ s1ctl vulnerabilities list [flags]
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
 | `--status` | stringSlice | - | filter by status |
 
-## vulnerabilities note-add
-
-Add an investigation note to a vulnerability
-
-```text
-s1ctl vulnerabilities note-add <id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## vulnerabilities note-delete
-
-Delete a vulnerability note
-
-```text
-s1ctl vulnerabilities note-delete <note-id> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## vulnerabilities note-update
-
-Update the text of a vulnerability note
-
-```text
-s1ctl vulnerabilities note-update <note-id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | new note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
 ## vulnerabilities notes
 
 List investigation notes on a vulnerability
@@ -213,9 +198,24 @@ s1ctl vulnerabilities status <id> <status> [flags]
 |------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
+## vulnerabilities update-note
+
+Update the text of a vulnerability note
+
+```text
+s1ctl vulnerabilities update-note <note-id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | new note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## vulnerabilities verdict
 
-Update vulnerability analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)
+Update vulnerability analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE)
 
 ```text
 s1ctl vulnerabilities verdict <id> <verdict> [flags]

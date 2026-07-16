@@ -4,7 +4,7 @@ Manage s1ctl configuration
 
 ## config init
 
-Interactive configuration wizard
+Configure s1ctl interactively
 
 ```text
 s1ctl config init

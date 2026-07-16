@@ -1,6 +1,6 @@
 # policies
 
-View endpoint policies
+Manage endpoint policies
 
 ## policies diff
 

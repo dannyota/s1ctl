@@ -1,6 +1,6 @@
 # visibility
 
-Deep Visibility threat hunting
+Run Deep Visibility queries
 
 ## visibility query
 

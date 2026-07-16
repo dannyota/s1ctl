@@ -55,11 +55,11 @@ is here when a doc or `--help` string uses a word you don't recognize.
 
 | Term | What it means for you |
 |------|----------------------|
-| **isolation** | Disconnects an agent from the network (keeps the console tunnel). `s1ctl agents isolate --id 000000 --yes`. Reversed with `connect`. |
+| **isolation** | Disconnects an agent from the network (keeps the console tunnel). `s1ctl agents isolate 000000 --yes`. Reversed with `reconnect`. |
 | **mitigation** | An action taken on a threat. Four actions: **kill** (terminate the process), **quarantine** (isolate the malicious file), **remediate** (undo changes made by the threat), **rollback** (restore to a pre-threat VSS snapshot). |
 | **verdict** | The analyst's classification: true positive, false positive, suspicious, or undefined. Applies to threats and alerts. |
 | **incident status** | The workflow state of a threat: unresolved, in-progress, or resolved. |
-| **scan** | A full disk scan triggered on an agent. `s1ctl agents scan --id 000000 --yes`. |
+| **scan** | A full disk scan triggered on an agent. `s1ctl agents scan 000000 --yes`. |
 | **decommission** | Permanently removes an agent from the console. Irreversible — use with care. |
 
 ## Cloud and vulnerability management

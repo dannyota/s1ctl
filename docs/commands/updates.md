@@ -1,6 +1,6 @@
 # updates
 
-Agent update packages
+Manage agent update packages
 
 ## updates get
 

@@ -1,6 +1,6 @@
 # applications
 
-Application inventory and risk management
+Manage application inventory and risk
 
 ## applications cves
 

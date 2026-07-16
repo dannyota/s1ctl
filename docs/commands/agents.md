@@ -205,7 +205,7 @@ decommissioned, or infected. Helps identify endpoints that need attention.
 
 ## agents isolate
 
-Network-isolate agents
+Isolate agents from the network
 
 ```text
 s1ctl agents isolate [agent-id...] [flags]

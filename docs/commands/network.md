@@ -1,6 +1,6 @@
 # network
 
-Network quarantine control rules
+Manage network quarantine rules
 
 ## network configuration
 

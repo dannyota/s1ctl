@@ -8,7 +8,7 @@ review surface.
 flowchart LR
   console[("SentinelOne<br/>console")] -- "pull · read-only" --> files[("local files<br/>under git")]
   files -- "git diff" --> review["review the change"]
-  review -- "push --dry-run &rarr; --yes" --> console
+  review -- "push (dry-run) &rarr; push --yes" --> console
 ```
 
 Prerequisite: a resolved config and working auth — see
@@ -97,7 +97,7 @@ dry-run by default; pass `--yes` to apply.
 
 | Action | Surface | What it does |
 |--------|---------|--------------|
-| `isolate` / `connect` | agents | Network isolation / reconnect |
+| `isolate` / `reconnect` | agents | Network isolation / reconnect |
 | `scan` | agents | Trigger a full disk scan |
 | `decommission` | agents | Remove agent from console |
 | `mitigate` | threats | Kill, quarantine, remediate, or rollback |
@@ -105,10 +105,10 @@ dry-run by default; pass `--yes` to apply.
 | `status` | threats, alerts | Update incident status |
 
 ```bash
-s1ctl agents isolate --id 000000          # dry-run
-s1ctl agents isolate --id 000000 --yes    # apply
+s1ctl agents isolate 000000          # dry-run
+s1ctl agents isolate 000000 --yes    # apply
 
-s1ctl threats mitigate --id 000000 --action kill --yes
+s1ctl threats mitigate 000000 --action kill --yes
 ```
 
 ## Connectivity check

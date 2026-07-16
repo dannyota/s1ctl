@@ -1,6 +1,6 @@
 # remoteops
 
-Remote operations and scripts
+Manage remote operations and scripts
 
 ## remoteops content
 

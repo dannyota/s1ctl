@@ -5,7 +5,7 @@ s1ctl needs two things: your console URL and an API token.
 ## Quick start
 
 ```bash
-s1ctl config
+s1ctl config init
 ```
 
 The interactive wizard walks through setup and writes `~/.s1ctl/config.yaml`.

@@ -15,7 +15,7 @@ to give AI agents — Claude Code, Claude Desktop, Cursor, Windsurf, or any MCP
 client — direct access to your SentinelOne console.
 
 The server uses **dynamic tool loading**: instead of exposing all 370+ commands
-upfront, it starts with 4 meta-tools and loads group-specific typed tools on
+upfront, it starts with 5 meta-tools and loads group-specific typed tools on
 demand. This keeps the agent's context window small while covering every
 command.
 
@@ -37,7 +37,7 @@ export S1_CONSOLE_URL=https://your-console.sentinelone.net
 export S1_TOKEN=your-api-token
 ```
 
-Or run `s1ctl config` to write `~/.s1ctl/config.yaml`. See
+Or run `s1ctl config init` to write `~/.s1ctl/config.yaml`. See
 [Configure](guides/configure.md) for details.
 
 Verify connectivity:
@@ -93,7 +93,7 @@ Pass `S1_CONSOLE_URL` and `S1_TOKEN` as environment variables, or ensure
 
 The server exposes:
 
-- **Meta-tools** — `help`, `run`, `focus`, `unfocus` (always loaded)
+- **Meta-tools** — `help`, `run`, `usage`, `focus`, `unfocus` (always loaded)
 - **Group tools** — loaded on demand via `focus` (e.g. `focus group="agents"`)
 - **Resources** — one per guide (`guide://{name}`)
 
@@ -101,17 +101,18 @@ The server exposes:
 
 1. Call `help` to discover available command groups
 2. Call `help group="agents"` to list subcommands in a group
-3. Call `focus group="agents"` to load typed tools (`agents_list`, `agents_get`, etc.)
-4. Use the typed tools with full parameter schemas
-5. Call `unfocus group="agents"` when done to free context
-6. Use `run` anytime for quick one-off commands without focusing
+3. Call `usage command="agents list"` to see one command's flags and args
+4. Call `focus group="agents"` to load typed tools (`agents_list`, `agents_get`, etc.)
+5. Use the typed tools with full parameter schemas
+6. Call `unfocus group="agents"` when done to free context
+7. Use `run` anytime for quick one-off commands without focusing
 
 ### Example conversation
 
-> **You:** How many Windows agents are online?
+> **You:** Which Windows agents are online right now?
 >
-> The agent calls `run command="agents count --query windows --status active"`
-> and returns the count.
+> The agent calls `run command="agents list --os-type windows --active"`
+> and summarizes the results.
 
 > **You:** Show me unresolved threats from the last 24 hours.
 >
@@ -120,6 +121,15 @@ The server exposes:
 
 All tool output is JSON. Mutations are dry-run by default — the agent must
 pass `--yes` to apply, same as the CLI.
+
+### Large output and concurrency
+
+Each tool call runs in its own subprocess, so calls execute concurrently and
+one slow query never blocks the rest. A single result is capped at 4 MiB:
+larger output is written to a temporary file and the tool returns a JSON
+pointer (`file`, `bytes`, `message`) instead. The agent can read the file or
+narrow the query with `--max-results` or filters. Spill files are removed
+after 24 hours.
 
 ## Security
 
@@ -192,7 +202,7 @@ s1ctl needs two things: your console URL and an API token.
 ## Quick start
 
 ```bash
-s1ctl config
+s1ctl config init
 ```
 
 The interactive wizard walks through setup and writes `~/.s1ctl/config.yaml`.
@@ -299,14 +309,14 @@ All mutations are dry-run by default. Pass `--yes` to apply.
 Isolate an agent:
 
 ```bash
-s1ctl agents isolate --id 000000          # dry-run
-s1ctl agents isolate --id 000000 --yes    # apply
+s1ctl agents isolate 000000          # dry-run
+s1ctl agents isolate 000000 --yes    # apply
 ```
 
 Mitigate a threat:
 
 ```bash
-s1ctl threats mitigate --id 000000 --action kill --yes
+s1ctl threats mitigate 000000 --action kill --yes
 ```
 
 ## Config-as-code
@@ -395,7 +405,7 @@ review surface.
 flowchart LR
   console[("SentinelOne<br/>console")] -- "pull · read-only" --> files[("local files<br/>under git")]
   files -- "git diff" --> review["review the change"]
-  review -- "push --dry-run &rarr; --yes" --> console
+  review -- "push (dry-run) &rarr; push --yes" --> console
 ```
 
 Prerequisite: a resolved config and working auth — see
@@ -484,7 +494,7 @@ dry-run by default; pass `--yes` to apply.
 
 | Action | Surface | What it does |
 |--------|---------|--------------|
-| `isolate` / `connect` | agents | Network isolation / reconnect |
+| `isolate` / `reconnect` | agents | Network isolation / reconnect |
 | `scan` | agents | Trigger a full disk scan |
 | `decommission` | agents | Remove agent from console |
 | `mitigate` | threats | Kill, quarantine, remediate, or rollback |
@@ -492,10 +502,10 @@ dry-run by default; pass `--yes` to apply.
 | `status` | threats, alerts | Update incident status |
 
 ```bash
-s1ctl agents isolate --id 000000          # dry-run
-s1ctl agents isolate --id 000000 --yes    # apply
+s1ctl agents isolate 000000          # dry-run
+s1ctl agents isolate 000000 --yes    # apply
 
-s1ctl threats mitigate --id 000000 --action kill --yes
+s1ctl threats mitigate 000000 --action kill --yes
 ```
 
 ## Connectivity check
@@ -1883,8 +1893,8 @@ s1ctl alerts notes 000000 --json
 Update the text of an existing note by its note ID:
 
 ```bash
-s1ctl alerts note-update 000000 --text "Updated investigation findings"        # dry-run
-s1ctl alerts note-update 000000 --text "Updated investigation findings" --yes   # apply
+s1ctl alerts update-note 000000 --text "Updated investigation findings"        # dry-run
+s1ctl alerts update-note 000000 --text "Updated investigation findings" --yes   # apply
 ```
 
 ### Delete a note
@@ -1892,8 +1902,8 @@ s1ctl alerts note-update 000000 --text "Updated investigation findings" --yes   
 Delete a note by its note ID:
 
 ```bash
-s1ctl alerts note-delete 000000        # dry-run
-s1ctl alerts note-delete 000000 --yes   # apply
+s1ctl alerts delete-note 000000        # dry-run
+s1ctl alerts delete-note 000000 --yes   # apply
 ```
 
 To add a new note, use `s1ctl alerts add-note`.
@@ -2920,7 +2930,7 @@ s1ctl agents versions
 Trigger upgrade on outdated agents in a site:
 
 ```bash
-s1ctl agents upgrade --site-id 000000 --yes
+s1ctl agents upgrade --package-id 000000 --site-id 000000 --yes
 ```
 
 ## Environment health
@@ -3032,7 +3042,7 @@ s1ctl datalake powerquery --query "src.process.name = 'sshd'" \
 List saved queries from the console:
 
 ```bash
-s1ctl datalake saved-queries
+s1ctl datalake saved-queries list
 ```
 
 ## Group management
@@ -3368,9 +3378,9 @@ Auto-generated from the command tree. Run `s1ctl docs generate` to update.
 | [accounts](accounts.md) | count, expire, get, list, reactivate, uninstall-password | Manage accounts |
 | [activities](activities.md) | count, export, list, types | View activity log |
 | [agents](agents.md) | abort-scan, approve-uninstall, broadcast, count, decommission, disable, enable, fetch-files, fetch-firewall-rules, fetch-installed-apps, fetch-logs, firewall-logging, get, health, isolate, list, local-upgrade, local-upgrade-status, mark-up-to-date, move, move-to-site, outdated, passphrases, randomize-uuid, ranger, reconnect, reject-uninstall, reset-config, reset-passphrase, restart, scan, set-external-id, shutdown, uninstall, upgrade, versions | Manage endpoint agents |
-| [alerts](alerts.md) | add-note, count, counts, export, get, history, list, note-delete, note-update, notes, resolve, stats, status, timeline, verdict | Manage unified alerts (GraphQL UAM) |
-| [applications](applications.md) | cves, list, risks | Application inventory and risk management |
-| [assets](assets.md) | categories, overview | XDR asset inventory |
+| [alerts](alerts.md) | add-note, count, counts, delete-note, export, get, history, list, notes, resolve, stats, status, timeline, update-note, verdict | Manage unified alerts (GraphQL UAM) |
+| [applications](applications.md) | cves, list, risks | Manage application inventory and risk |
+| [assets](assets.md) | categories, overview | Manage XDR asset inventory |
 | [audit](audit.md) | list | View mutation audit log |
 | [blocklist](blocklist.md) | create, delete, export, list, pull, push, update, validate | Manage the blocklist (blocked file hashes) |
 | [cloud-policies](cloud-policies.md) | delete, disable, enable, get, list, pull, push | Manage cloud security policies (CNS rules) |
@@ -3378,22 +3388,22 @@ Auto-generated from the command tree. Run `s1ctl docs generate` to update.
 | [config](config.md) | init, show | Manage s1ctl configuration |
 | [datalake](datalake.md) | dashboards, facet, files, ingest, numeric, powerquery, query, saved-queries, timeseries | Query Singularity Data Lake (SDL) |
 | [detection-library](detection-library.md) | data-sources, disable, enable, list, surfaces | Manage platform detection rules (detection library) |
-| [devicecontrol](devicecontrol.md) | copy, delete, disable, enable, events, get, list, pull, push, reorder | Device control rules |
+| [devicecontrol](devicecontrol.md) | copy, delete, disable, enable, events, get, list, pull, push, reorder | Manage device control rules |
 | [dlp](dlp.md) | classifications, rules, settings | Manage Data Loss Prevention (DLP) rules and classifications |
 | [exclusions](exclusions.md) | create, delete, get, list, pull, push, update | Manage exclusions and blocklist |
 | [filters](filters.md) | create, delete, list, update | Manage saved endpoint filters |
-| [firewall](firewall.md) | copy, delete, disable, enable, export, get, import, list, protocols, pull, push, reorder | Firewall control rules |
+| [firewall](firewall.md) | copy, delete, disable, enable, export, get, import, list, protocols, pull, push, reorder | Manage firewall control rules |
 | [global](global.md) | commands, completion, doctor, drift, help, version | Top-level commands |
 | [groups](groups.md) | count, create, delete, get, list, pull, push, update | Manage groups |
 | [iocs](iocs.md) | config, create, delete, list | Manage threat intelligence IOCs |
 | [locations](locations.md) | create, delete, list, pull, push, update | Manage firewall locations |
 | [maintenance](maintenance.md) | export, get, get-flexible, set, set-flexible | Manage task maintenance-window configuration |
-| [mcp](mcp.md) | install, serve | Model Context Protocol server for AI agent integration |
-| [misconfigurations](misconfigurations.md) | assign, export, get, history, list, note-add, note-delete, note-update, notes, related-assets, status, verdict | Manage xSPM misconfigurations |
-| [network](network.md) | configuration, copy, delete, disable, enable, export, get, import, list, move, protocols, pull, push, reorder, set-location, tags | Network quarantine control rules |
-| [policies](policies.md) | diff, get, list, pull, push, revert | View endpoint policies |
-| [ranger-ad](ranger-ad.md) | affected-objects, assess, exposures, status | Ranger AD exposure assessment (ISPM) |
-| [remoteops](remoteops.md) | content, get, guardrails, list, pending, results, run, update, upload-limits | Remote operations and scripts |
+| [mcp](mcp.md) | install, serve | Run Model Context Protocol server |
+| [misconfigurations](misconfigurations.md) | add-note, assign, delete-note, export, get, history, list, notes, related-assets, status, update-note, verdict | Manage xSPM misconfigurations |
+| [network](network.md) | configuration, copy, delete, disable, enable, export, get, import, list, move, protocols, pull, push, reorder, set-location, tags | Manage network quarantine rules |
+| [policies](policies.md) | diff, get, list, pull, push, revert | Manage endpoint policies |
+| [ranger-ad](ranger-ad.md) | affected-objects, assess, exposures, status | Manage Ranger AD exposure assessments (ISPM) |
+| [remoteops](remoteops.md) | content, get, guardrails, list, pending, results, run, update, upload-limits | Manage remote operations and scripts |
 | [reports](reports.md) | create, download, list, tasks, types | Manage reports and report tasks |
 | [roles](roles.md) | create, delete, get, list, template, update | Manage RBAC roles |
 | [rules](rules.md) | detections, diff, disable, enable, get, health, list, pull, push, trends, validate | Manage custom detection rules (STAR) |
@@ -3401,16 +3411,16 @@ Auto-generated from the command tree. Run `s1ctl docs generate` to update.
 | [settings](settings.md) | cancel-pending-emails, delete-recipient, get, list, sso-cert, test, update | Manage platform settings |
 | [sites](sites.md) | count, create, delete, duplicate, expire, get, licenses, list, pull, push, reactivate, regenerate-key, token, update | Manage sites |
 | [status](status.md) | capabilities, enums, surfaces | Show environment health summary |
-| [system](system.md) | info | Console system information |
+| [system](system.md) | info | Show console system information |
 | [tag-rules](tag-rules.md) | create, delete, list, test, update | Manage dynamic asset tag rules |
 | [tags](tags.md) | create, delete, get, list, pull, push, update | Manage tags |
 | [threats](threats.md) | add-note, add-to-exclusions, blacklist, count, exclusion-options, export, fetch-file, get, list, mitigate, mitigate-alerts, notes, quarantined-files, resolve, set-ticket, status, timeline, verdict | Manage threats |
 | [unified-exclusions](unified-exclusions.md) | create, export, list | Manage unified exclusions |
-| [updates](updates.md) | get, list | Agent update packages |
-| [upgrade-policies](upgrade-policies.md) | activate, create, deactivate, delete, get, list, packages, update | Agent auto-upgrade policies |
+| [updates](updates.md) | get, list | Manage agent update packages |
+| [upgrade-policies](upgrade-policies.md) | activate, create, deactivate, delete, get, list, packages, update | Manage agent auto-upgrade policies |
 | [users](users.md) | 2fa, delete, generate-token, get, list, revoke-token, token-details, update | Manage users |
-| [visibility](visibility.md) | query | Deep Visibility threat hunting |
-| [vulnerabilities](vulnerabilities.md) | assign, cve, cves, export, get, health, history, list, note-add, note-delete, note-update, notes, related-assets, stats, status, verdict | Manage xSPM vulnerabilities |
+| [visibility](visibility.md) | query | Run Deep Visibility queries |
+| [vulnerabilities](vulnerabilities.md) | add-note, assign, cve, cves, delete-note, export, get, health, history, list, notes, related-assets, stats, status, update-note, verdict | Manage xSPM vulnerabilities |
 
 ---
 
@@ -3775,7 +3785,7 @@ decommissioned, or infected. Helps identify endpoints that need attention.
 
 ## agents isolate
 
-Network-isolate agents
+Isolate agents from the network
 
 ```text
 s1ctl agents isolate [agent-id...] [flags]
@@ -4180,7 +4190,7 @@ s1ctl alerts count [flags]
 |------|------|---------|-------------|
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
 | `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
-| `--verdict` | stringSlice | - | filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED) |
+| `--verdict` | stringSlice | - | filter by analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE; see 'enums' cmd) |
 
 ## alerts counts
 
@@ -4206,6 +4216,20 @@ instead; for grouped alert volume prefer "alerts stats" (alertGroups).
 | `--scope-level` | string | - | scope level (account, site, group) |
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
 | `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
+
+## alerts delete-note
+
+Delete an alert note
+
+```text
+s1ctl alerts delete-note <note-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## alerts export
 
@@ -4275,36 +4299,7 @@ s1ctl alerts list [flags]
 | `--sort-order` | string | - | sort direction (ASC, DESC) |
 | `--source` | stringSlice | - | filter by detection source (STAR, EDR, CWS) |
 | `--status` | stringSlice | - | filter by status (NEW, IN_PROGRESS, RESOLVED) |
-| `--verdict` | stringSlice | - | filter by analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED) |
-
-## alerts note-delete
-
-Delete an alert note
-
-```text
-s1ctl alerts note-delete <note-id> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## alerts note-update
-
-Update the text of an alert note
-
-```text
-s1ctl alerts note-update <note-id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | new note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
+| `--verdict` | stringSlice | - | filter by analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE; see 'enums' cmd) |
 
 ## alerts notes
 
@@ -4389,9 +4384,24 @@ asset operations, mitigation actions, and related alerts, newest first.
 | `--all` | bool | false | fetch all pages |
 | `--limit` | int | 0 | max results per page (default 50) |
 
+## alerts update-note
+
+Update the text of an alert note
+
+```text
+s1ctl alerts update-note <note-id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | new note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## alerts verdict
 
-Update alert analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)
+Update alert analyst verdict (e.g. FALSE_POSITIVE_BENIGN, TRUE_POSITIVE_MALWARE)
 
 ```text
 s1ctl alerts verdict <id> <verdict> [flags]
@@ -4407,7 +4417,7 @@ s1ctl alerts verdict <id> <verdict> [flags]
 
 # applications
 
-Application inventory and risk management
+Manage application inventory and risk
 
 ## applications cves
 
@@ -4480,7 +4490,7 @@ s1ctl applications risks [flags]
 
 # assets
 
-XDR asset inventory
+Manage XDR asset inventory
 
 ## assets categories
 
@@ -5003,7 +5013,7 @@ Manage s1ctl configuration
 
 ## config init
 
-Interactive configuration wizard
+Configure s1ctl interactively
 
 ```text
 s1ctl config init
@@ -5033,7 +5043,7 @@ s1ctl datalake dashboards
 
 ## datalake facet
 
-Aggregate the most common values of a field (SDL REST)
+Aggregate the most common values of a field (SDL REST) [supports --json output]
 
 ```text
 s1ctl datalake facet [flags]
@@ -5095,7 +5105,7 @@ granularity and users with limited query permissions.
 
 ## datalake powerquery
 
-Execute a PowerQuery
+Execute a PowerQuery (filter, group, sort, columns) [supports --json, --csv output]
 
 ```text
 s1ctl datalake powerquery [flags]
@@ -5275,7 +5285,7 @@ s1ctl detection-library surfaces
 
 # devicecontrol
 
-Device control rules
+Manage device control rules
 
 ## devicecontrol copy
 
@@ -5736,7 +5746,7 @@ s1ctl filters update <filter-id> --from-file <filter.json> [flags]
 
 # firewall
 
-Firewall control rules
+Manage firewall control rules
 
 ## firewall copy
 
@@ -6416,63 +6426,58 @@ with the task type and scope. The body is sent verbatim.
 
 # mcp
 
-Model Context Protocol server for AI agent integration.
-
-The server uses **dynamic tool loading** to stay within context limits.
-Instead of exposing all 300+ commands upfront, it starts with 4 meta-tools
-and loads group-specific tools on demand via MCP `listChanged`.
-
-## mcp serve
-
-Start the MCP server on stdio.
-
-```text
-s1ctl mcp serve
-```
-
-The server exposes:
-
-- **Meta-tools** — `run`, `help`, `focus`, `unfocus` (always loaded)
-- **Group tools** — loaded on demand via `focus` (e.g. `focus group="agents"`)
-- **Resources** — one per `docs/guides/*.md` file (`guide://{name}`)
-
-### Meta-tools
-
-| Tool | Purpose |
-|------|---------|
-| `run` | Run any s1ctl command by string (universal, always works) |
-| `help` | List groups or subcommands within a group |
-| `focus` | Load typed tools for a group (triggers `listChanged`) |
-| `unfocus` | Unload a group's tools to free context |
-
-### Workflow
-
-1. Call `help` to discover available command groups
-2. Call `focus group="agents"` to load typed tools for agents
-3. Use the loaded `agents_list`, `agents_get`, etc. with full schemas
-4. Call `unfocus group="agents"` when done to free context
-5. Use `run` anytime for quick one-off commands without focusing
-
-All tool output is JSON. Mutations are dry-run by default (the agent must
-pass `--yes` to apply, same as the CLI).
+Run Model Context Protocol server
 
 ## mcp install
 
-Register s1ctl in the project `.mcp.json`.
+Register s1ctl in the project .mcp.json
 
 ```text
 s1ctl mcp install
 ```
 
-Writes to `.mcp.json` in the current directory, merging with any existing
-entries. Idempotent — updates the entry if it already exists. Restart
-Claude Code to pick up the new server.
+Add s1ctl as an MCP server in the project-level .mcp.json so every
+Claude Code session in this directory gets s1ctl tools automatically.
+Idempotent — updates the entry if it already exists.
+
+## mcp serve
+
+Start the MCP server on stdio
+
+```text
+s1ctl mcp serve
+```
+
+Start a Model Context Protocol (MCP) server that exposes every s1ctl
+command as an MCP tool and every docs guide as an MCP resource.
+
+Tools are auto-generated from the command tree — adding a command
+automatically creates a tool. Resources are embedded from docs/guides/.
+
+Configure Claude Code to use this server:
+
+  s1ctl mcp install
 
 ---
 
 # misconfigurations
 
 Manage xSPM misconfigurations
+
+## misconfigurations add-note
+
+Add an investigation note to a misconfiguration
+
+```text
+s1ctl misconfigurations add-note <id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## misconfigurations assign
 
@@ -6487,6 +6492,20 @@ s1ctl misconfigurations assign <id> --user-id <user-id> [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--user-id` | string | - | assignee user ID (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
+## misconfigurations delete-note
+
+Delete a misconfiguration note
+
+```text
+s1ctl misconfigurations delete-note <note-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## misconfigurations export
@@ -6545,50 +6564,6 @@ s1ctl misconfigurations list [flags]
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
 | `--status` | stringSlice | - | filter by status |
 
-## misconfigurations note-add
-
-Add an investigation note to a misconfiguration
-
-```text
-s1ctl misconfigurations note-add <id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## misconfigurations note-delete
-
-Delete a misconfiguration note
-
-```text
-s1ctl misconfigurations note-delete <note-id> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## misconfigurations note-update
-
-Update the text of a misconfiguration note
-
-```text
-s1ctl misconfigurations note-update <note-id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | new note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
 ## misconfigurations notes
 
 List investigation notes on a misconfiguration
@@ -6619,9 +6594,24 @@ s1ctl misconfigurations status <id> <status> [flags]
 |------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
+## misconfigurations update-note
+
+Update the text of a misconfiguration note
+
+```text
+s1ctl misconfigurations update-note <note-id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | new note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## misconfigurations verdict
 
-Update misconfiguration analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)
+Update misconfiguration analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE)
 
 ```text
 s1ctl misconfigurations verdict <id> <verdict> [flags]
@@ -6637,7 +6627,7 @@ s1ctl misconfigurations verdict <id> <verdict> [flags]
 
 # network
 
-Network quarantine control rules
+Manage network quarantine rules
 
 ## network configuration
 
@@ -6922,7 +6912,7 @@ s1ctl network tags
 
 # policies
 
-View endpoint policies
+Manage endpoint policies
 
 ## policies diff
 
@@ -7054,7 +7044,7 @@ Dry-run by default — pass --yes to apply.
 
 # ranger-ad
 
-Ranger AD exposure assessment (ISPM)
+Manage Ranger AD exposure assessments (ISPM)
 
 ## ranger-ad affected-objects
 
@@ -7143,7 +7133,7 @@ s1ctl ranger-ad status [flags]
 
 # remoteops
 
-Remote operations and scripts
+Manage remote operations and scripts
 
 ## remoteops content
 
@@ -8243,7 +8233,7 @@ s1ctl status surfaces
 
 # system
 
-Console system information
+Show console system information
 
 ## system info
 
@@ -8861,7 +8851,7 @@ s1ctl unified-exclusions list [flags]
 
 # updates
 
-Agent update packages
+Manage agent update packages
 
 ## updates get
 
@@ -8893,7 +8883,7 @@ s1ctl updates list [flags]
 
 # upgrade-policies
 
-Agent auto-upgrade policies
+Manage agent auto-upgrade policies
 
 ## upgrade-policies activate
 
@@ -9198,7 +9188,7 @@ s1ctl users update <user-id> [flags]
 
 # visibility
 
-Deep Visibility threat hunting
+Run Deep Visibility queries
 
 ## visibility query
 
@@ -9237,6 +9227,21 @@ Examples:
 # vulnerabilities
 
 Manage xSPM vulnerabilities
+
+## vulnerabilities add-note
+
+Add an investigation note to a vulnerability
+
+```text
+s1ctl vulnerabilities add-note <id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## vulnerabilities assign
 
@@ -9284,6 +9289,20 @@ filter the full result set rather than a single page.
 | `--all` | bool | false | fetch all pages |
 | `--limit` | int | 0 | max results per page (default 50) |
 | `--min-cvss` | float64 | 0 | only show CVEs with NVD base score >= this value (client-side) |
+
+## vulnerabilities delete-note
+
+Delete a vulnerability note
+
+```text
+s1ctl vulnerabilities delete-note <note-id> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--yes` | bool | false | apply the action (default: dry-run) |
 
 ## vulnerabilities export
 
@@ -9352,50 +9371,6 @@ s1ctl vulnerabilities list [flags]
 | `--severity` | stringSlice | - | filter by severity (HIGH, CRITICAL, etc.) |
 | `--status` | stringSlice | - | filter by status |
 
-## vulnerabilities note-add
-
-Add an investigation note to a vulnerability
-
-```text
-s1ctl vulnerabilities note-add <id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## vulnerabilities note-delete
-
-Delete a vulnerability note
-
-```text
-s1ctl vulnerabilities note-delete <note-id> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
-## vulnerabilities note-update
-
-Update the text of a vulnerability note
-
-```text
-s1ctl vulnerabilities note-update <note-id> --text <text> [flags]
-```
-
-**Flags**
-
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--text` | string | - | new note text (required) |
-| `--yes` | bool | false | apply the action (default: dry-run) |
-
 ## vulnerabilities notes
 
 List investigation notes on a vulnerability
@@ -9449,9 +9424,24 @@ s1ctl vulnerabilities status <id> <status> [flags]
 |------|------|---------|-------------|
 | `--yes` | bool | false | apply the action (default: dry-run) |
 
+## vulnerabilities update-note
+
+Update the text of a vulnerability note
+
+```text
+s1ctl vulnerabilities update-note <note-id> --text <text> [flags]
+```
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--text` | string | - | new note text (required) |
+| `--yes` | bool | false | apply the action (default: dry-run) |
+
 ## vulnerabilities verdict
 
-Update vulnerability analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE, SUSPICIOUS, UNDEFINED)
+Update vulnerability analyst verdict (TRUE_POSITIVE, FALSE_POSITIVE)
 
 ```text
 s1ctl vulnerabilities verdict <id> <verdict> [flags]
@@ -9471,11 +9461,24 @@ Top-level commands
 
 ## commands
 
-List all available commands
+List command groups, subcommands, or flag detail
 
 ```text
-s1ctl commands
+s1ctl commands [group] [command] [flags]
 ```
+
+List available commands in a compact, progressive format.
+
+  commands              List all command groups with counts
+  commands agents       List subcommands in the agents group
+  commands agents list  Show full flag detail for agents list
+  commands --all        Flat list of every command (JSON only)
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--all` | bool | false | list every command (flat, JSON-only) |
 
 ## completion
 
@@ -9558,7 +9561,7 @@ Simply type s1ctl help [path to command] for full details.
 
 ## version
 
-Print version information
+Print version, commit, and build info
 
 ```text
 s1ctl version
@@ -10489,11 +10492,11 @@ is here when a doc or `--help` string uses a word you don't recognize.
 
 | Term | What it means for you |
 |------|----------------------|
-| **isolation** | Disconnects an agent from the network (keeps the console tunnel). `s1ctl agents isolate --id 000000 --yes`. Reversed with `connect`. |
+| **isolation** | Disconnects an agent from the network (keeps the console tunnel). `s1ctl agents isolate 000000 --yes`. Reversed with `reconnect`. |
 | **mitigation** | An action taken on a threat. Four actions: **kill** (terminate the process), **quarantine** (isolate the malicious file), **remediate** (undo changes made by the threat), **rollback** (restore to a pre-threat VSS snapshot). |
 | **verdict** | The analyst's classification: true positive, false positive, suspicious, or undefined. Applies to threats and alerts. |
 | **incident status** | The workflow state of a threat: unresolved, in-progress, or resolved. |
-| **scan** | A full disk scan triggered on an agent. `s1ctl agents scan --id 000000 --yes`. |
+| **scan** | A full disk scan triggered on an agent. `s1ctl agents scan 000000 --yes`. |
 | **decommission** | Permanently removes an agent from the console. Irreversible — use with care. |
 
 ## Cloud and vulnerability management

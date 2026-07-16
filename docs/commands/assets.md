@@ -1,6 +1,6 @@
 # assets
 
-XDR asset inventory
+Manage XDR asset inventory
 
 ## assets categories
 

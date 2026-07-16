@@ -1,6 +1,6 @@
 # upgrade-policies
 
-Agent auto-upgrade policies
+Manage agent auto-upgrade policies
 
 ## upgrade-policies activate
 

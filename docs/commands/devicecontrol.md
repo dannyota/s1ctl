@@ -1,6 +1,6 @@
 # devicecontrol
 
-Device control rules
+Manage device control rules
 
 ## devicecontrol copy
 

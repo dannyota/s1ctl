@@ -4,11 +4,24 @@ Top-level commands
 
 ## commands
 
-List all available commands
+List command groups, subcommands, or flag detail
 
 ```text
-s1ctl commands
+s1ctl commands [group] [command] [flags]
 ```
+
+List available commands in a compact, progressive format.
+
+  commands              List all command groups with counts
+  commands agents       List subcommands in the agents group
+  commands agents list  Show full flag detail for agents list
+  commands --all        Flat list of every command (JSON only)
+
+**Flags**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--all` | bool | false | list every command (flat, JSON-only) |
 
 ## completion
 
@@ -91,7 +104,7 @@ Simply type s1ctl help [path to command] for full details.
 
 ## version
 
-Print version information
+Print version, commit, and build info
 
 ```text
 s1ctl version

@@ -1,6 +1,6 @@
 # ranger-ad
 
-Ranger AD exposure assessment (ISPM)
+Manage Ranger AD exposure assessments (ISPM)
 
 ## ranger-ad affected-objects
 
