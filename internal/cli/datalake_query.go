@@ -23,6 +23,8 @@ func newDatalakeCmd() *cobra.Command {
 	cmd.AddCommand(newDatalakeIngestCmd())
 	cmd.AddCommand(newDatalakeFilesCmd())
 	cmd.AddCommand(newDatalakeDashboardsCmd())
+	cmd.AddCommand(newDatalakeParsersCmd())
+	cmd.AddCommand(newDatalakeNotebooksCmd())
 	return cmd
 }
 
