@@ -98,10 +98,16 @@ These groups run locally and call no API surface (except `doctor` and
 | `commands`, `completion`, `version` | Catalog, shell completion, version |
 | `docs` | Command-reference generation (hidden) |
 
+### Automation and integration
+
+| CLI group | API tags | Protocol | Plane |
+|-----------|----------|----------|-------|
+| `automation` | Hyperautomation | REST | Operational |
+
 ### Planned groups
 
-Scoped in the roadmap backlog, not yet built: `automation` (Hyperautomation),
-`marketplace`, `inventory` (Inventory suite).
+Scoped in the roadmap backlog, not yet built: `marketplace`,
+`inventory` (Inventory suite).
 
 ## Protocol routing
 
