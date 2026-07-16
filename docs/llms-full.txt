@@ -9760,6 +9760,7 @@ the mapping from SentinelOne's official API taxonomy to s1ctl's command tree.
 | `assets` | XDR assets | REST | Operational |
 | `tag-rules` | Dynamic tag rules | REST | Control |
 | `ranger-ad` | Ranger AD (`/ranger-ad`) | REST | Operational |
+| `identity` | Identity AD Service - Configuration/Connector/Onboarding, ISPM | REST | Control |
 
 ### Platform administration
 
@@ -9797,8 +9798,7 @@ These groups run locally and call no API surface (except `doctor` and
 ### Planned groups
 
 Scoped in the roadmap backlog, not yet built: `automation` (Hyperautomation),
-`marketplace`, `inventory` (Inventory suite), `identity` (Identity AD
-Service, ISPM).
+`marketplace`, `inventory` (Inventory suite).
 
 ## Protocol routing
 
@@ -9968,8 +9968,8 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| ranger-ad | status, exposures, affected-objects | assess | -- | built |
-| identity | list, get | configure | -- | designed |
+| ranger-ad | status, exposures, affected-objects | assess, skip-exposures, ack-exposures | -- | built |
+| identity | onboard, config get, connector list/get, domains, features, timezones | config add/delete, connector replace, skip-exposures, ack-exposures | -- | built |
 
 ---
 

@@ -121,5 +121,5 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| ranger-ad | status, exposures, affected-objects | assess | -- | built |
-| identity | list, get | configure | -- | designed |
+| ranger-ad | status, exposures, affected-objects | assess, skip-exposures, ack-exposures | -- | built |
+| identity | onboard, config get, connector list/get, domains, features, timezones | config add/delete, connector replace, skip-exposures, ack-exposures | -- | built |

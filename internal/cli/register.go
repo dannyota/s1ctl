@@ -55,8 +55,9 @@ func registerCommands(root *cobra.Command) {
 	root.AddCommand(newDetectionLibraryCmd())
 	root.AddCommand(newRangerADCmd())
 
-	// Asset inventory
+	// Asset inventory and identity
 	root.AddCommand(newAssetsCmd())
+	root.AddCommand(newIdentityCmd())
 
 	// System
 	root.AddCommand(newSystemCmd())

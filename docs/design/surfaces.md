@@ -63,6 +63,7 @@ the mapping from SentinelOne's official API taxonomy to s1ctl's command tree.
 | `assets` | XDR assets | REST | Operational |
 | `tag-rules` | Dynamic tag rules | REST | Control |
 | `ranger-ad` | Ranger AD (`/ranger-ad`) | REST | Operational |
+| `identity` | Identity AD Service - Configuration/Connector/Onboarding, ISPM | REST | Control |
 
 ### Platform administration
 
@@ -100,8 +101,7 @@ These groups run locally and call no API surface (except `doctor` and
 ### Planned groups
 
 Scoped in the roadmap backlog, not yet built: `automation` (Hyperautomation),
-`marketplace`, `inventory` (Inventory suite), `identity` (Identity AD
-Service, ISPM).
+`marketplace`, `inventory` (Inventory suite).
 
 ## Protocol routing
 

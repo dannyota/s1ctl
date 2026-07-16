@@ -423,3 +423,85 @@ func TestRangerADTriggerAssessmentError(t *testing.T) {
 		t.Fatalf("expected 400, got %d", ae.Status)
 	}
 }
+
+func TestRangerADSetSkippedExposures(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("expected POST, got %s", r.Method)
+		}
+		if !strings.HasPrefix(r.URL.Path, "/ranger-ad/set-skipped-exposures") {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var body struct {
+			Filter ADSkipExposuresFilter `json:"filter"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		if !body.Filter.Skip {
+			t.Fatal("expected skip=true")
+		}
+		if len(body.Filter.DetectionName) != 1 || body.Filter.DetectionName[0] != "Kerberoasting" {
+			t.Fatalf("unexpected detectionName: %v", body.Filter.DetectionName)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"success": true, "message": "Exposures skipped"},
+		})
+	})
+	c := testClient(t, handler)
+	ok, msg, err := c.RangerADSetSkippedExposures(context.Background(), &ADSkipExposuresParams{
+		SiteIDs: "100",
+		Filter: ADSkipExposuresFilter{
+			DetectionName: []string{"Kerberoasting"},
+			DomainName:    []string{"corp.example.com"},
+			Skip:          true,
+			SkipReason:    "accepted risk",
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected success=true")
+	}
+	if msg != "Exposures skipped" {
+		t.Fatalf("unexpected message: %s", msg)
+	}
+}
+
+func TestRangerADSetAckStatus(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("expected POST, got %s", r.Method)
+		}
+		if !strings.HasPrefix(r.URL.Path, "/ranger-ad/set-ack-status") {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		var body struct {
+			Filter ADAckExposuresFilter `json:"filter"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		if !body.Filter.Acknowledged {
+			t.Fatal("expected acknowledged=true")
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"success": true, "message": "Status updated"},
+		})
+	})
+	c := testClient(t, handler)
+	ok, msg, err := c.RangerADSetAckStatus(context.Background(), &ADAckExposuresParams{
+		SiteIDs: "100",
+		Filter: ADAckExposuresFilter{
+			DetectionName: []string{"Kerberoasting"},
+			DomainName:    []string{"corp.example.com"},
+			Acknowledged:  true,
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected success=true")
+	}
+	if msg != "Status updated" {
+		t.Fatalf("unexpected message: %s", msg)
+	}
+}

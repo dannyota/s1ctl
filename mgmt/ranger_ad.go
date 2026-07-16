@@ -358,3 +358,92 @@ func (c *Client) RangerADTriggerAssessment(ctx context.Context, params *ADTrigge
 	}
 	return resp.Data.Success, resp.Data.Message, nil
 }
+
+// ADSkipExposuresFilter is the filter for setting skipped exposures.
+type ADSkipExposuresFilter struct {
+	DetectionName []string `json:"detectionName"`
+	DomainName    []string `json:"domainName"`
+	Skip          bool     `json:"skip"`
+	SkipReason    string   `json:"skipReason,omitempty"`
+}
+
+// ADSkipExposuresParams are parameters for setting skipped exposures.
+type ADSkipExposuresParams struct {
+	SiteIDs    string
+	AccountIDs string
+	Filter     ADSkipExposuresFilter
+}
+
+func (p *ADSkipExposuresParams) values() url.Values {
+	v := url.Values{}
+	if p == nil {
+		return v
+	}
+	addString(v, "siteIds", p.SiteIDs)
+	addString(v, "accountIds", p.AccountIDs)
+	return v
+}
+
+// RangerADSetSkippedExposures sets exposures as skipped or unskipped.
+func (c *Client) RangerADSetSkippedExposures(ctx context.Context, params *ADSkipExposuresParams) (bool, string, error) {
+	if params == nil {
+		params = &ADSkipExposuresParams{}
+	}
+	body := struct {
+		Filter ADSkipExposuresFilter `json:"filter"`
+	}{Filter: params.Filter}
+	var resp successResponse
+	qv := params.values()
+	u := "/ranger-ad/set-skipped-exposures"
+	if len(qv) > 0 {
+		u += "?" + qv.Encode()
+	}
+	if err := c.post(ctx, u, body, &resp); err != nil {
+		return false, "", err
+	}
+	return resp.Data.Success, resp.Data.Message, nil
+}
+
+// ADAckExposuresFilter is the filter for setting acknowledged status on exposures.
+type ADAckExposuresFilter struct {
+	DetectionName []string `json:"detectionName"`
+	DomainName    []string `json:"domainName"`
+	Acknowledged  bool     `json:"acknowledged"`
+}
+
+// ADAckExposuresParams are parameters for setting acknowledged status.
+type ADAckExposuresParams struct {
+	SiteIDs    string
+	AccountIDs string
+	Filter     ADAckExposuresFilter
+}
+
+func (p *ADAckExposuresParams) values() url.Values {
+	v := url.Values{}
+	if p == nil {
+		return v
+	}
+	addString(v, "siteIds", p.SiteIDs)
+	addString(v, "accountIds", p.AccountIDs)
+	return v
+}
+
+// RangerADSetAckStatus sets the acknowledged status on exposures.
+func (c *Client) RangerADSetAckStatus(ctx context.Context, params *ADAckExposuresParams) (bool, string, error) {
+	if params == nil {
+		params = &ADAckExposuresParams{}
+	}
+	body := struct {
+		Filter ADAckExposuresFilter `json:"filter"`
+	}{Filter: params.Filter}
+	var resp successResponse
+	qv := params.values()
+	u := "/ranger-ad/set-ack-status"
+	if len(qv) > 0 {
+		u += "?" + qv.Encode()
+	}
+	if err := c.post(ctx, u, body, &resp); err != nil {
+		return false, "", err
+	}
+	return resp.Data.Success, resp.Data.Message, nil
+}
