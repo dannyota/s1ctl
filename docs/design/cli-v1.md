@@ -1,11 +1,11 @@
 # CLI v1 — read, export, page, sort, progress, errors
 
-First usable release of the CLI. Every read command gets consistent output
-formats, pagination, sorting, progress feedback, and actionable error messages.
+Output, pagination, sorting, progress, and error conventions shared by every
+read command. Designed in the v1 wave; all of it is implemented.
 
 ## Output formats
 
-A global `--output` flag replaces the current `--json` boolean:
+A global `--output` flag selects the format:
 
 | Format | Description |
 |--------|-------------|
@@ -87,7 +87,7 @@ do not support sort parameters.
 
 ## Progress indicators
 
-A TTY-aware spinner using bubbletea (already a dependency):
+A TTY-aware spinner (charmbracelet):
 
 | Operation | Display |
 |-----------|---------|
@@ -145,26 +145,16 @@ error when reporting issues.
 For non-API errors (network timeouts, config issues, etc.), `--verbose` shows
 the full Go error chain. Default shows only the leaf message.
 
-## Implementation scope
+## Implementation map
 
-### New files
-
-| File | Purpose |
-|------|---------|
+| File | Role |
+|------|------|
 | `internal/cli/paging.go` | `listAll()` auto-paginator with progress |
-| `internal/cli/progress.go` | TTY-aware spinner wrapping bubbletea |
+| `internal/cli/progress.go` | TTY-aware spinner |
+| `internal/cli/root.go` | `--verbose`, `--output` flags; error formatting in `Execute()` |
+| `internal/cli/output.go` | `printCSV()`, error formatting, `--output` handling |
+| `internal/cli/*_list.go` | `--all`, `--cursor`/`--after`, `--sort-by`, `--sort-order` where applicable |
 
-### Modified files
-
-| File | Changes |
-|------|---------|
-| `root.go` | Add `--verbose`, `--output` flags; update error formatting in `Execute()` |
-| `output.go` | Add `printCSV()`, `formatError()`, respect `--output` flag |
-| All `*_list.go` | Add `--all`, `--cursor`/`--after`, `--sort-by`, `--sort-order` where applicable; update footer |
-| `datalake_query.go` | Add spinner to powerquery poll loop |
-
-### Not in scope
-
-- Mutation commands (create, update, delete) — separate wave
-- Config-as-code (pull/push) — separate wave
-- New resource commands — only enhancing existing ones
+Mutations, config-as-code, and the wider command surface were added in later
+waves — see the [Roadmap](https://github.com/dannyota/s1ctl/blob/master/ROADMAP.md)
+and [Catalog](catalog.md).

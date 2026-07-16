@@ -10,11 +10,11 @@ terminology — never invented abstractions.
 2. **Verbs nest under nouns**: `s1ctl agents list`, `s1ctl agents isolate`.
 3. **Protocol is invisible** — users never type `graphql` or `rest`. The CLI
    routes to the right API.
-4. **Multi-word names are hyphenated**: `remote-ops`, `cloud-policies` (if
-   needed as subcommands).
+4. **Multi-word names are hyphenated**: `cloud-policies`, `service-users`,
+   `tag-rules`.
 5. **No aliases** — one surface, one runnable name.
-6. **`pull`/`push` are top-level** with surface targets as args:
-   `s1ctl pull exclusions`, `s1ctl push rules`.
+6. **`pull`/`push` nest under each surface**: `s1ctl exclusions pull`,
+   `s1ctl rules push`.
 7. **`commands --json`** is the machine-readable command catalog.
 
 ## Standard verbs
@@ -24,7 +24,7 @@ terminology — never invented abstractions.
 | `list` | Paginated listing with filters | `s1ctl agents list --os windows` |
 | `get` | Single resource by ID | `s1ctl threats get <id>` |
 | `count` | Count matching resources | `s1ctl agents count --infected true` |
-| `query` | Rich query (GraphQL/SDL) | `s1ctl alerts query --severity high` |
+| `query` | Rich query (SDL/Deep Visibility) | `s1ctl visibility query --query ...` |
 | `create` | Create a resource | `s1ctl exclusions create --type path ...` |
 | `update` | Update a resource | `s1ctl exclusions update <id> ...` |
 | `delete` | Delete a resource | `s1ctl exclusions delete <id>` |
@@ -58,11 +58,11 @@ See [Reconcile engine](reconcile.md) for the full semantics.
 s1ctl agents list --os linux --json
 s1ctl agents isolate abc123 --yes
 s1ctl threats list --status active --limit 50
-s1ctl alerts query --severity high --json
+s1ctl alerts list --severity HIGH --json
 s1ctl vulnerabilities list --limit 100
 s1ctl datalake powerquery --query "EventType = 'Process Creation'"
-s1ctl pull exclusions --site-id 000000
-s1ctl push exclusions --yes
-s1ctl config
+s1ctl exclusions pull --site-id 000000
+s1ctl exclusions push --yes
+s1ctl config init
 s1ctl doctor
 ```

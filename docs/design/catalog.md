@@ -24,6 +24,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | config | init wizard, show | built |
 | commands | list all commands | built |
 | completion | shell completions | built |
+| docs | generate (command reference; hidden) | built |
 | mcp | serve (stdio MCP server), install (Claude Code config) | built |
 
 ## Endpoint security
@@ -58,7 +59,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | applications | list, cves, risks | -- | -- | built |
 | devicecontrol | list, get, events | create, update, delete, enable, disable, reorder, copy | pull/push | built |
 | firewall | list, get, protocols, export | create, update, delete, enable, disable, reorder, copy, import | pull/push | built |
-| network | list, get, protocols, configuration, export | create, update, delete, enable, disable, reorder, copy, import, set-location, move, tags | pull/push | built |
+| network | list, get, protocols, configuration get, export | create, update, delete, enable, disable, reorder, copy, import, set-location, move, tags, configuration set | pull/push | built |
 | locations | list | create, update, delete | pull/push | built |
 
 ## Cloud and vulnerability management
@@ -103,8 +104,8 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| automation | list, get | create, run | -- | -- |
-| marketplace | list, get | install | -- | -- |
+| automation | list, get | create, run | -- | designed |
+| marketplace | list, get | install | -- | designed |
 
 ## Asset inventory
 
@@ -112,11 +113,11 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 |---------|------|-------|----------------|--------|
 | assets (XDR) | overview, categories | -- | -- | built |
 | tag-rules | list, test | create, update, delete | -- | built |
-| inventory | list, get (all types) | tags, actions | -- | -- |
+| inventory | list, get (all types) | tags, actions | -- | designed |
 
 ## Identity
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | ranger-ad | status, exposures, affected-objects | assess | -- | built |
-| identity | list, get | configure | -- | -- |
+| identity | list, get | configure | -- | designed |

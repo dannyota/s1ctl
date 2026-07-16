@@ -9574,9 +9574,9 @@ is a thin consumer. Both ship together.
 ## SDK packages
 
 ```text
-danny.vn/s1/mgmt      REST MGMT client (72 methods across 15 resources)
-danny.vn/s1/sdl       SDL Data Lake client (13 methods: REST + GraphQL)
-danny.vn/s1/graphql   GraphQL client (15 methods across 4 domains)
+danny.vn/s1/mgmt      REST MGMT client (297 methods across 40+ resources)
+danny.vn/s1/sdl       SDL Data Lake client (19 methods: REST + GraphQL)
+danny.vn/s1/graphql   GraphQL client (74 methods across 6 domains)
 danny.vn/s1/auth      Token management (shared by all three)
 danny.vn/s1/config    Instance config resolution
 ```
@@ -9603,9 +9603,9 @@ flowchart LR
   CLI["s1ctl CLI"]
 
   subgraph SDK["Go SDK packages"]
-    MGMT["mgmt/<br/>REST MGMT v2.1<br/>72 methods"]
-    SDL["sdl/<br/>Singularity Data Lake<br/>13 methods"]
-    GQL["graphql/<br/>GraphQL<br/>15 methods"]
+    MGMT["mgmt/<br/>REST MGMT v2.1<br/>297 methods"]
+    SDL["sdl/<br/>Singularity Data Lake<br/>19 methods"]
+    GQL["graphql/<br/>GraphQL<br/>74 methods"]
   end
 
   subgraph S1["SentinelOne Console"]
@@ -9640,7 +9640,7 @@ Each command's `--help` documents which protocol is the default and why.
 
 | Plane | Loop | Source of truth | Surfaces |
 |-------|------|-----------------|----------|
-| **Control** | pull &rarr; `git diff` &rarr; push | Git | Exclusions, custom rules, policies, cloud policies |
+| **Control** | pull &rarr; `git diff` &rarr; push | Git | Exclusions, custom rules, policies, firewall, device control, network quarantine, sites, groups, tags, blocklist, locations, cloud policies |
 | **Operational** | query &rarr; review &rarr; act | Live instance | Agents, threats, alerts, vulns, misconfigs, data lake, remote ops, inventory |
 
 Control plane is narrow — most of SentinelOne is operational. Config-as-code
@@ -9650,14 +9650,14 @@ default, `--yes` to apply.
 
 ## SDK strategy
 
-The SDK is hand-written, covering 100 public methods across 3 packages. Each
+The SDK is hand-written, covering ~390 public methods across 3 packages. Each
 method is crafted against the API reference specs under `references/`.
 
 | Surface | Package | Methods | Reference |
 |---------|---------|---------|-----------|
-| REST MGMT | `mgmt/` | 72 | `references/rest/swagger_2_1.json` |
-| GraphQL | `graphql/` | 15 | `references/graphql/*.graphql` |
-| SDL | `sdl/` | 13 | `references/sdl/*.md` |
+| REST MGMT | `mgmt/` | 297 | `references/rest/swagger_2_1.json` |
+| GraphQL | `graphql/` | 74 | `references/graphql/*.graphql` |
+| SDL | `sdl/` | 19 | `references/sdl/*.md` |
 
 ## CLI structure
 
@@ -9667,10 +9667,10 @@ level, verbs nested underneath.
 ```text
 s1ctl agents list|get|isolate|scan|...
 s1ctl threats list|get|mitigate|...
-s1ctl alerts query|get|...
+s1ctl alerts list|get|...
 s1ctl exclusions list|get|pull|push|...
 s1ctl datalake query|powerquery|...
-s1ctl config
+s1ctl config init|show
 s1ctl doctor
 s1ctl mcp serve|install
 ```
@@ -9679,10 +9679,11 @@ s1ctl mcp serve|install
 
 | Flag | Scope | Default |
 |------|-------|---------|
-| `--json` | All read commands | false (table output) |
+| `--output` | All read commands | `table` (also `json`, `csv`; `--json` is shorthand) |
 | `--yes` | All mutations | false (dry-run) |
 | `--site-id` | Most commands | from config |
-| `--limit` | List commands | API default |
+| `--limit`, `--all` | List commands | API default |
+| `--no-progress`, `--verbose` | All | false |
 | `--config` | All | `~/.s1ctl/config.yaml` |
 
 Full command naming conventions in [CLI naming](cli-naming.md). Domain-to-API
@@ -9703,19 +9704,23 @@ the mapping from SentinelOne's official API taxonomy to s1ctl's command tree.
 | CLI group | API tags | Protocol | Plane |
 |-----------|----------|----------|-------|
 | `agents` | Agents, Agent Actions | REST | Operational |
-| `threats` | Threats, Threat Notes, Threat Intelligence | REST | Operational |
-| `alerts` | alerts (REST) + UAM (GraphQL) | REST + GraphQL | Operational |
+| `threats` | Threats, Threat Notes | REST | Operational |
+| `alerts` | UAM unified alerts | GraphQL | Operational |
 | `sites` | Sites | REST | Operational |
 | `groups` | Groups | REST | Operational |
 | `accounts` | Accounts | REST | Operational |
 | `policies` | Policies | REST | Control |
-| `exclusions` | Exclusions and Blocklist, Exclusions v2.1 | REST | Control |
+| `exclusions` | Exclusions and Blocklist | REST | Control |
+| `unified-exclusions` | Exclusions v2.1 | REST | Control |
+| `blocklist` | Exclusions and Blocklist (restrictions) | REST | Control |
 
 ### Detection and response
 
 | CLI group | API tags | Protocol | Plane |
 |-----------|----------|----------|-------|
-| `rules` | Custom Detection Rule, Platform Detection Rules | REST | Control |
+| `rules` | Custom Detection Rule | REST | Control |
+| `detection-library` | Platform Detection Rules | REST | Control |
+| `iocs` | Threat Intelligence | REST | Operational |
 | `visibility` | Deep Visibility | REST | Operational |
 | `remoteops` | RemoteOps Scripts, RemoteOps Forensics, Remote Ops MMS | REST | Operational |
 
@@ -9723,10 +9728,11 @@ the mapping from SentinelOne's official API taxonomy to s1ctl's command tree.
 
 | CLI group | API tags | Protocol | Plane |
 |-----------|----------|----------|-------|
-| `applications` | Application, Application Management, Application Control | REST | Operational |
-| `devices` | Device Control | REST | Operational |
+| `applications` | Application, Application Management, Application Risk | REST | Operational |
+| `devicecontrol` | Device Control | REST | Control |
 | `firewall` | Firewall Control | REST | Control |
-| `network` | Network Quarantine Control, Network Discovery | REST | Operational |
+| `network` | Network Quarantine Control | REST | Control |
+| `locations` | Locations | REST | Control |
 
 ### Cloud and vulnerability management
 
@@ -9734,73 +9740,102 @@ the mapping from SentinelOne's official API taxonomy to s1ctl's command tree.
 |-----------|-----|----------|-------|
 | `vulnerabilities` | xSPM Vulnerabilities | GraphQL | Operational |
 | `misconfigurations` | xSPM Misconfigurations | GraphQL | Operational |
-| `cloud` | Cloud Policies, Cloud Onboarding, Cloud Compliance | GraphQL | Mixed |
+| `cloud-policies` | Cloud Security Policies | GraphQL | Control |
+| `cloud-rules` | CNS Custom Rules | GraphQL | Control |
+| `dlp` | Data Protection Rules, DLP Classifications | GraphQL | Control |
 
 ### Data lake
 
 | CLI group | API | Protocol | Plane |
 |-----------|-----|----------|-------|
-| `datalake` | SDL (query, powerQuery, addEvents, files) | SDL (REST + GraphQL) | Operational |
+| `datalake` | SDL (query, powerQuery, addEvents, files, dashboards) | SDL (REST + GraphQL) | Operational |
+
+### Asset inventory and identity
+
+| CLI group | API tags | Protocol | Plane |
+|-----------|----------|----------|-------|
+| `assets` | XDR assets | REST | Operational |
+| `tag-rules` | Dynamic tag rules | REST | Control |
+| `ranger-ad` | Ranger AD (`/ranger-ad`) | REST | Operational |
 
 ### Platform administration
 
 | CLI group | API tags | Protocol | Plane |
 |-----------|----------|----------|-------|
-| `users` | Users, RBAC, Service Users | REST | Operational |
-| `settings` | Settings, Config Overrides | REST | Control |
-| `updates` | Updates, Auto Upgrade Policy, Sentinel Deploy | REST | Operational |
-| `tags` | Tags, Tag Manager, Dynamic tag rules | REST | Operational |
+| `users` | Users | REST | Operational |
+| `service-users` | Service Users | REST | Operational |
+| `roles` | RBAC | REST | Control |
+| `settings` | Settings | REST | Control |
+| `updates` | Updates | REST | Operational |
+| `upgrade-policies` | Auto Upgrade Policy | REST | Control |
+| `tags` | Tags, Tag Manager | REST | Operational |
+| `filters` | Filters | REST | Control |
+| `maintenance` | Tasks (`/tasks-configuration`) | REST | Control |
 | `activities` | Activities | REST | Operational |
+| `reports` | Default Reports | REST | Operational |
+| `system` | System | REST | Operational |
 
-### Automation and integration
+### Local and meta commands
 
-| CLI group | API tags | Protocol | Plane |
-|-----------|----------|----------|-------|
-| `automation` | Hyperautomation | REST | Operational |
-| `marketplace` | marketplace | REST | Operational |
+These groups run locally and call no API surface (except `doctor` and
+`status`, which probe connectivity):
 
-### Asset inventory
+| CLI group | Purpose |
+|-----------|---------|
+| `status` | Health summary dashboard; capabilities, enums, surfaces |
+| `doctor` | Config and connectivity diagnostics |
+| `config` | Init wizard, show |
+| `drift` | Plan every committed sync surface, exit non-zero on divergence |
+| `audit` | Local mutation log |
+| `mcp` | MCP server (serve, install) |
+| `commands`, `completion`, `version` | Catalog, shell completion, version |
+| `docs` | Command-reference generation (hidden) |
 
-| CLI group | API tags | Protocol | Plane |
-|-----------|----------|----------|-------|
-| `inventory` | Inventory (all subtypes) | REST | Operational |
+### Planned groups
 
-### Identity
-
-| CLI group | API tags | Protocol | Plane |
-|-----------|----------|----------|-------|
-| `identity` | Identity AD Service, ISPM | REST | Operational |
+Scoped in the roadmap backlog, not yet built: `automation` (Hyperautomation),
+`marketplace`, `inventory` (Inventory suite), `identity` (Identity AD
+Service, ISPM).
 
 ## Protocol routing
 
-The CLI defaults to the protocol with the best performance and richest
-filtering. Users can override with `--protocol rest|graphql|sdl` on any
-command that supports multiple protocols.
+When a surface is available via multiple protocols, the CLI defaults to the
+protocol with the best performance and richest filtering, and exposes
+`--protocol` on commands that support more than one.
 
 | Command | Default protocol | Reason | Override available |
 |---------|------------------|--------|--------------------|
 | `s1ctl agents list` | REST | Only available via REST | No |
-| `s1ctl alerts query` | GraphQL UAM | Richer filtering, grouping | Yes (`--protocol rest`) |
-| `s1ctl alerts list` | REST | Simpler, lower latency for basic lists | Yes (`--protocol graphql`) |
+| `s1ctl alerts list` | GraphQL UAM | Richer filtering, grouping | No |
 | `s1ctl vulnerabilities list` | GraphQL xSPM | Only available via GraphQL | No |
 | `s1ctl datalake query` | SDL REST | Only available via SDL REST | No |
 | `s1ctl datalake powerquery` | GraphQL | Lower latency, no separate SDL URL needed | Yes (`--protocol rest`) |
-| `s1ctl cloud policies list` | GraphQL | Only available via GraphQL | No |
+| `s1ctl cloud-policies list` | GraphQL | Only available via GraphQL | No |
 
 ## Config-as-code surfaces
 
-These surfaces support the `pull` / `push` loop:
+These surfaces support the `pull` / `push` loop through the shared reconcile
+engine (see [Reconcile engine](reconcile.md)):
 
 | Surface | Identity key | Reconcile model |
 |---------|-------------|-----------------|
-| Exclusions | Server ID | Full CRUD |
-| Custom rules | Rule ID | Full CRUD |
-| Policies | Policy ID | Update only (policies are site-scoped) |
-| Firewall rules | Rule ID | Full CRUD |
-| Cloud policies | Policy ID | Full CRUD |
-| Settings | Key name | Update only |
+| exclusions | type + OS + value | Create or update |
+| blocklist | type + OS + value | Create or update |
+| rules | rule name | Create or update |
+| firewall | rule name | Create or update |
+| devicecontrol | rule name | Create or update |
+| network | rule name | Create or update |
+| sites | site name | Create or update |
+| groups | site ID + group name | Create or update |
+| tags | tag key | Create or update |
+| locations | location name | Create or update |
+| cloud-policies | policy ID | Update only (no create) |
 
-All mutations are dry-run by default. Pass `--yes` to apply.
+Protection policies (`policies pull/push/diff/revert`) have their own lane
+outside the engine: they are scope-singletons, not per-object collections.
+
+All mutations are dry-run by default. Pass `--yes` to apply. The `drift`
+command plans every surface above and exits non-zero on divergence.
 
 ---
 
@@ -9830,6 +9865,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | config | init wizard, show | built |
 | commands | list all commands | built |
 | completion | shell completions | built |
+| docs | generate (command reference; hidden) | built |
 | mcp | serve (stdio MCP server), install (Claude Code config) | built |
 
 ## Endpoint security
@@ -9864,7 +9900,7 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 | applications | list, cves, risks | -- | -- | built |
 | devicecontrol | list, get, events | create, update, delete, enable, disable, reorder, copy | pull/push | built |
 | firewall | list, get, protocols, export | create, update, delete, enable, disable, reorder, copy, import | pull/push | built |
-| network | list, get, protocols, configuration, export | create, update, delete, enable, disable, reorder, copy, import, set-location, move, tags | pull/push | built |
+| network | list, get, protocols, configuration get, export | create, update, delete, enable, disable, reorder, copy, import, set-location, move, tags, configuration set | pull/push | built |
 | locations | list | create, update, delete | pull/push | built |
 
 ## Cloud and vulnerability management
@@ -9909,8 +9945,8 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
-| automation | list, get | create, run | -- | -- |
-| marketplace | list, get | install | -- | -- |
+| automation | list, get | create, run | -- | designed |
+| marketplace | list, get | install | -- | designed |
 
 ## Asset inventory
 
@@ -9918,14 +9954,14 @@ methods for the surface; config-as-code marks surfaces with `pull`/`push`.
 |---------|------|-------|----------------|--------|
 | assets (XDR) | overview, categories | -- | -- | built |
 | tag-rules | list, test | create, update, delete | -- | built |
-| inventory | list, get (all types) | tags, actions | -- | -- |
+| inventory | list, get (all types) | tags, actions | -- | designed |
 
 ## Identity
 
 | Surface | Read | Write | Config-as-code | Status |
 |---------|------|-------|----------------|--------|
 | ranger-ad | status, exposures, affected-objects | assess | -- | built |
-| identity | list, get | configure | -- | -- |
+| identity | list, get | configure | -- | designed |
 
 ---
 
@@ -9941,11 +9977,11 @@ terminology — never invented abstractions.
 2. **Verbs nest under nouns**: `s1ctl agents list`, `s1ctl agents isolate`.
 3. **Protocol is invisible** — users never type `graphql` or `rest`. The CLI
    routes to the right API.
-4. **Multi-word names are hyphenated**: `remote-ops`, `cloud-policies` (if
-   needed as subcommands).
+4. **Multi-word names are hyphenated**: `cloud-policies`, `service-users`,
+   `tag-rules`.
 5. **No aliases** — one surface, one runnable name.
-6. **`pull`/`push` are top-level** with surface targets as args:
-   `s1ctl pull exclusions`, `s1ctl push rules`.
+6. **`pull`/`push` nest under each surface**: `s1ctl exclusions pull`,
+   `s1ctl rules push`.
 7. **`commands --json`** is the machine-readable command catalog.
 
 ## Standard verbs
@@ -9955,7 +9991,7 @@ terminology — never invented abstractions.
 | `list` | Paginated listing with filters | `s1ctl agents list --os windows` |
 | `get` | Single resource by ID | `s1ctl threats get <id>` |
 | `count` | Count matching resources | `s1ctl agents count --infected true` |
-| `query` | Rich query (GraphQL/SDL) | `s1ctl alerts query --severity high` |
+| `query` | Rich query (SDL/Deep Visibility) | `s1ctl visibility query --query ...` |
 | `create` | Create a resource | `s1ctl exclusions create --type path ...` |
 | `update` | Update a resource | `s1ctl exclusions update <id> ...` |
 | `delete` | Delete a resource | `s1ctl exclusions delete <id>` |
@@ -9989,12 +10025,12 @@ See [Reconcile engine](reconcile.md) for the full semantics.
 s1ctl agents list --os linux --json
 s1ctl agents isolate abc123 --yes
 s1ctl threats list --status active --limit 50
-s1ctl alerts query --severity high --json
+s1ctl alerts list --severity HIGH --json
 s1ctl vulnerabilities list --limit 100
 s1ctl datalake powerquery --query "EventType = 'Process Creation'"
-s1ctl pull exclusions --site-id 000000
-s1ctl push exclusions --yes
-s1ctl config
+s1ctl exclusions pull --site-id 000000
+s1ctl exclusions push --yes
+s1ctl config init
 s1ctl doctor
 ```
 
@@ -10002,12 +10038,12 @@ s1ctl doctor
 
 # CLI v1 — read, export, page, sort, progress, errors
 
-First usable release of the CLI. Every read command gets consistent output
-formats, pagination, sorting, progress feedback, and actionable error messages.
+Output, pagination, sorting, progress, and error conventions shared by every
+read command. Designed in the v1 wave; all of it is implemented.
 
 ## Output formats
 
-A global `--output` flag replaces the current `--json` boolean:
+A global `--output` flag selects the format:
 
 | Format | Description |
 |--------|-------------|
@@ -10089,7 +10125,7 @@ do not support sort parameters.
 
 ## Progress indicators
 
-A TTY-aware spinner using bubbletea (already a dependency):
+A TTY-aware spinner (charmbracelet):
 
 | Operation | Display |
 |-----------|---------|
@@ -10147,29 +10183,19 @@ error when reporting issues.
 For non-API errors (network timeouts, config issues, etc.), `--verbose` shows
 the full Go error chain. Default shows only the leaf message.
 
-## Implementation scope
+## Implementation map
 
-### New files
-
-| File | Purpose |
-|------|---------|
+| File | Role |
+|------|------|
 | `internal/cli/paging.go` | `listAll()` auto-paginator with progress |
-| `internal/cli/progress.go` | TTY-aware spinner wrapping bubbletea |
+| `internal/cli/progress.go` | TTY-aware spinner |
+| `internal/cli/root.go` | `--verbose`, `--output` flags; error formatting in `Execute()` |
+| `internal/cli/output.go` | `printCSV()`, error formatting, `--output` handling |
+| `internal/cli/*_list.go` | `--all`, `--cursor`/`--after`, `--sort-by`, `--sort-order` where applicable |
 
-### Modified files
-
-| File | Changes |
-|------|---------|
-| `root.go` | Add `--verbose`, `--output` flags; update error formatting in `Execute()` |
-| `output.go` | Add `printCSV()`, `formatError()`, respect `--output` flag |
-| All `*_list.go` | Add `--all`, `--cursor`/`--after`, `--sort-by`, `--sort-order` where applicable; update footer |
-| `datalake_query.go` | Add spinner to powerquery poll loop |
-
-### Not in scope
-
-- Mutation commands (create, update, delete) — separate wave
-- Config-as-code (pull/push) — separate wave
-- New resource commands — only enhancing existing ones
+Mutations, config-as-code, and the wider command surface were added in later
+waves — see the [Roadmap](https://github.com/dannyota/s1ctl/blob/master/ROADMAP.md)
+and [Catalog](catalog.md).
 
 ---
 
@@ -10286,11 +10312,14 @@ next push and would re-create the object. Delete stale files before pushing.
 |---------|----------|-----------|------|
 | rules | rule name | STAR rule definition | |
 | firewall | rule name | firewall rule definition | |
+| network | rule name | network quarantine rule definition | |
 | devicecontrol | rule name | device rule definition | |
 | sites | site name | name, account, type, licenses | |
 | groups | site ID + group name | name, site ID, description | |
 | tags | tag key | key, value, description, scope | |
 | exclusions | type + OS + value | type, value, OS, mode | |
+| blocklist | type + OS + value | type, value, OS, hash, description | |
+| locations | location name | name, operator, detection conditions | |
 | cloud-policies | policy ID | id, name, status | NoCreate |
 
 cloud-policies is status-reconcile only: an `update` toggles the policy

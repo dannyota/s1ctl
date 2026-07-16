@@ -6,9 +6,9 @@ is a thin consumer. Both ship together.
 ## SDK packages
 
 ```text
-danny.vn/s1/mgmt      REST MGMT client (72 methods across 15 resources)
-danny.vn/s1/sdl       SDL Data Lake client (13 methods: REST + GraphQL)
-danny.vn/s1/graphql   GraphQL client (15 methods across 4 domains)
+danny.vn/s1/mgmt      REST MGMT client (297 methods across 40+ resources)
+danny.vn/s1/sdl       SDL Data Lake client (19 methods: REST + GraphQL)
+danny.vn/s1/graphql   GraphQL client (74 methods across 6 domains)
 danny.vn/s1/auth      Token management (shared by all three)
 danny.vn/s1/config    Instance config resolution
 ```
@@ -35,9 +35,9 @@ flowchart LR
   CLI["s1ctl CLI"]
 
   subgraph SDK["Go SDK packages"]
-    MGMT["mgmt/<br/>REST MGMT v2.1<br/>72 methods"]
-    SDL["sdl/<br/>Singularity Data Lake<br/>13 methods"]
-    GQL["graphql/<br/>GraphQL<br/>15 methods"]
+    MGMT["mgmt/<br/>REST MGMT v2.1<br/>297 methods"]
+    SDL["sdl/<br/>Singularity Data Lake<br/>19 methods"]
+    GQL["graphql/<br/>GraphQL<br/>74 methods"]
   end
 
   subgraph S1["SentinelOne Console"]
@@ -72,7 +72,7 @@ Each command's `--help` documents which protocol is the default and why.
 
 | Plane | Loop | Source of truth | Surfaces |
 |-------|------|-----------------|----------|
-| **Control** | pull &rarr; `git diff` &rarr; push | Git | Exclusions, custom rules, policies, cloud policies |
+| **Control** | pull &rarr; `git diff` &rarr; push | Git | Exclusions, custom rules, policies, firewall, device control, network quarantine, sites, groups, tags, blocklist, locations, cloud policies |
 | **Operational** | query &rarr; review &rarr; act | Live instance | Agents, threats, alerts, vulns, misconfigs, data lake, remote ops, inventory |
 
 Control plane is narrow — most of SentinelOne is operational. Config-as-code
@@ -82,14 +82,14 @@ default, `--yes` to apply.
 
 ## SDK strategy
 
-The SDK is hand-written, covering 100 public methods across 3 packages. Each
+The SDK is hand-written, covering ~390 public methods across 3 packages. Each
 method is crafted against the API reference specs under `references/`.
 
 | Surface | Package | Methods | Reference |
 |---------|---------|---------|-----------|
-| REST MGMT | `mgmt/` | 72 | `references/rest/swagger_2_1.json` |
-| GraphQL | `graphql/` | 15 | `references/graphql/*.graphql` |
-| SDL | `sdl/` | 13 | `references/sdl/*.md` |
+| REST MGMT | `mgmt/` | 297 | `references/rest/swagger_2_1.json` |
+| GraphQL | `graphql/` | 74 | `references/graphql/*.graphql` |
+| SDL | `sdl/` | 19 | `references/sdl/*.md` |
 
 ## CLI structure
 
@@ -99,10 +99,10 @@ level, verbs nested underneath.
 ```text
 s1ctl agents list|get|isolate|scan|...
 s1ctl threats list|get|mitigate|...
-s1ctl alerts query|get|...
+s1ctl alerts list|get|...
 s1ctl exclusions list|get|pull|push|...
 s1ctl datalake query|powerquery|...
-s1ctl config
+s1ctl config init|show
 s1ctl doctor
 s1ctl mcp serve|install
 ```
@@ -111,10 +111,11 @@ s1ctl mcp serve|install
 
 | Flag | Scope | Default |
 |------|-------|---------|
-| `--json` | All read commands | false (table output) |
+| `--output` | All read commands | `table` (also `json`, `csv`; `--json` is shorthand) |
 | `--yes` | All mutations | false (dry-run) |
 | `--site-id` | Most commands | from config |
-| `--limit` | List commands | API default |
+| `--limit`, `--all` | List commands | API default |
+| `--no-progress`, `--verbose` | All | false |
 | `--config` | All | `~/.s1ctl/config.yaml` |
 
 Full command naming conventions in [CLI naming](cli-naming.md). Domain-to-API

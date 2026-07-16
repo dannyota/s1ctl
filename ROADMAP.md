@@ -8,9 +8,9 @@ Build all three SDK packages as independently importable Go libraries.
 
 | Package | Surface | Methods |
 |---------|---------|---------|
-| `mgmt/` | REST MGMT API v2.1 | 72 (CRUD + actions across 15 resources) |
-| `sdl/` | SDL REST + GraphQL | 13 (query, ingest, files, powerquery, GraphQL ops) |
-| `graphql/` | GraphQL APIs (4 domains) | 15 (alerts, misconfigs, vulns, cloud policies) |
+| `mgmt/` | REST MGMT API v2.1 | 297 (CRUD + actions across 40+ resources) |
+| `sdl/` | SDL REST + GraphQL | 19 (query, ingest, files, powerquery, GraphQL ops) |
+| `graphql/` | GraphQL APIs (6 domains) | 74 (alerts, misconfigs, vulns, cloud policies, CNS rules, DLP) |
 | `auth/` | Token management | 2 credential types |
 | `config/` | Instance config | Load, validate, resolve |
 
@@ -94,13 +94,13 @@ that reports per-surface divergence for CI gating.
   move from single JSON array files to per-object YAML directories; re-pull to
   regenerate local state.
 
-## Wave 10 — Polish and release
+## Wave 10 — Polish and release (in progress)
 
-- Progress indicators (bubbletea spinners for long operations)
-- Rate limiting (x/time/rate)
-- Release automation (goreleaser — Win/Mac/Linux x amd64/arm64)
-- Docs site updates for all new commands
-- **Release v1.0.0**
+- Progress indicators (charmbracelet spinners for long operations) — done
+- Rate limiting (x/time/rate) — done
+- Release automation (goreleaser — Win/Mac/Linux x amd64/arm64) — done
+- Docs site updates for all new commands — done
+- **Release v1.0.0** — remaining
 
 ## Wave 11 — API coverage expansion (complete)
 
@@ -136,5 +136,5 @@ Surfaces scoped but not yet built:
 - **Cloud onboarding** — list/get/onboard/delete cloud accounts
 - **Automation** — list/get/create/run automation rules
 - **Marketplace** — list/get/install integrations
-- **Inventory** — unified asset inventory across all types
+- **Inventory** — unified asset inventory across all types (the `assets` overview surface covers a first slice)
 - **Identity** — identity posture list/get/configure

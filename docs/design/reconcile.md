@@ -111,11 +111,14 @@ next push and would re-create the object. Delete stale files before pushing.
 |---------|----------|-----------|------|
 | rules | rule name | STAR rule definition | |
 | firewall | rule name | firewall rule definition | |
+| network | rule name | network quarantine rule definition | |
 | devicecontrol | rule name | device rule definition | |
 | sites | site name | name, account, type, licenses | |
 | groups | site ID + group name | name, site ID, description | |
 | tags | tag key | key, value, description, scope | |
 | exclusions | type + OS + value | type, value, OS, mode | |
+| blocklist | type + OS + value | type, value, OS, hash, description | |
+| locations | location name | name, operator, detection conditions | |
 | cloud-policies | policy ID | id, name, status | NoCreate |
 
 cloud-policies is status-reconcile only: an `update` toggles the policy
