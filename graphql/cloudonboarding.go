@@ -102,6 +102,7 @@ type CnappOnboardedEntity struct {
 	CreatedBy             string                 `json:"createdBy"`
 	UpdatedBy             string                 `json:"updatedBy"`
 	CloudLogIngestionType string                 `json:"cloudLogIngestionType"`
+	WorkspaceCustomerID   string                 `json:"workspaceCustomerId"`
 
 	Raw json.RawMessage `json:"-"`
 }
@@ -197,7 +198,8 @@ const cnappEntityFields = `
     hasCoverageGaps
     createdBy
     updatedBy
-    cloudLogIngestionType`
+    cloudLogIngestionType
+    workspaceCustomerId`
 
 const cnappEntitiesListQuery = `query CnappOnboardedEntities($first: Int, $after: String, $filters: [CnappFilterInput]!, $scope: CnappScopeSelector, $sort: CnappSort) {
   cnappOnboardedCloudEntitiesV2(first: $first, after: $after, filters: $filters, scope: $scope, sort: $sort) {

@@ -145,11 +145,23 @@ type ConfigOverrideUpdateInput struct {
 
 // ConfigOverrideDeleteFilter is the filter for bulk-deleting config overrides.
 type ConfigOverrideDeleteFilter struct {
-	IDs        []string `json:"ids,omitempty"`
-	SiteIDs    []string `json:"siteIds,omitempty"`
-	AccountIDs []string `json:"accountIds,omitempty"`
-	GroupIDs   []string `json:"groupIds,omitempty"`
-	Tenant     *bool    `json:"tenant,omitempty"`
+	IDs              []string                     `json:"ids,omitempty"`
+	AgentIDs         []string                     `json:"agentIds,omitempty"`
+	SiteIDs          []string                     `json:"siteIds,omitempty"`
+	AccountIDs       []string                     `json:"accountIds,omitempty"`
+	GroupIDs         []string                     `json:"groupIds,omitempty"`
+	OSTypes          []string                     `json:"osTypes,omitempty"`
+	AgentVersions    []string                     `json:"agentVersions,omitempty"`
+	VersionOption    *ConfigOverrideVersionOption `json:"versionOption,omitempty"`
+	NameLike         string                       `json:"name__like,omitempty"`
+	DescriptionLike  string                       `json:"description__like,omitempty"`
+	Query            string                       `json:"query,omitempty"`
+	CreatedAtGt      string                       `json:"createdAt__gt,omitempty"`
+	CreatedAtGte     string                       `json:"createdAt__gte,omitempty"`
+	CreatedAtLt      string                       `json:"createdAt__lt,omitempty"`
+	CreatedAtLte     string                       `json:"createdAt__lte,omitempty"`
+	CreatedAtBetween string                       `json:"createdAt__between,omitempty"`
+	Tenant           *bool                        `json:"tenant,omitempty"`
 }
 
 // ConfigOverrideList returns a paginated list of config overrides.

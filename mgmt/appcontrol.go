@@ -87,7 +87,9 @@ func (c *AppControlConditions) UnmarshalJSON(b []byte) error {
 }
 
 // AppControlConditionsInput is the write model for rule match conditions.
-// Per the spec, applicationVersion is not accepted on writes.
+// Per the spec, applicationVersion is not accepted on writes. This is a
+// write-only input struct; omitempty on plain strings is intentional for
+// partial payloads (zero-value fields are omitted from the JSON body).
 type AppControlConditionsInput struct {
 	Publisher     string `json:"publisher,omitempty"`
 	Path          string `json:"path,omitempty"`
