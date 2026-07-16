@@ -214,21 +214,21 @@ func fetchDVEvents(c *mgmt.Client, cmd *cobra.Command, queryID string, opts visi
 }
 
 func printDVEvents(cmd *cobra.Command, events []mgmt.DVEvent, total int) error {
-	if len(events) == 0 {
-		if outputFormat == "json" {
-			return printJSON(cmd.OutOrStdout(), events)
+	if outputFormat == "json" {
+		// Stable shape: always a bare array; truncation is signalled on
+		// stderr so it never changes what stdout consumers parse.
+		if total > len(events) {
+			fmt.Fprintf(cmd.ErrOrStderr(), "Showing %d of %d events. Use --max-results to fetch more.\n", len(events), total)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "No events found.")
-		return nil
+		if events == nil {
+			events = []mgmt.DVEvent{}
+		}
+		return printJSON(cmd.OutOrStdout(), events)
 	}
 
-	if outputFormat == "json" && total > len(events) {
-		return printJSON(cmd.OutOrStdout(), map[string]any{
-			"data":     events,
-			"returned": len(events),
-			"total":    total,
-			"message":  fmt.Sprintf("Showing %d of %d events. Use --max-results to fetch more. Large results are automatically saved to a file.", len(events), total),
-		})
+	if len(events) == 0 {
+		fmt.Fprintln(cmd.OutOrStdout(), "No events found.")
+		return nil
 	}
 
 	headers := []string{"Timestamp", "EventType", "Process", "Agent", "User", "File/Dst"}
