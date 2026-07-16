@@ -364,28 +364,10 @@ func (c *Client) IdentityDomains(ctx context.Context, params *IdentityParams) ([
 	return resp.Data, nil
 }
 
-// IdentityADDomains returns AD domain information via the getAdDomains endpoint.
-func (c *Client) IdentityADDomains(ctx context.Context, params *IdentityParams) ([]DomainInfo, error) {
-	var resp singleResponse[[]DomainInfo]
-	if err := c.get(ctx, identityBase+"/getAdDomains", params.values(), &resp); err != nil {
-		return nil, err
-	}
-	return resp.Data, nil
-}
-
 // IdentityTimezones returns the list of available timezone pairs.
 func (c *Client) IdentityTimezones(ctx context.Context, params *IdentityParams) ([]TimeZoneInfo, error) {
 	var resp singleResponse[[]TimeZoneInfo]
 	if err := c.get(ctx, identityBase+"/timezones", params.values(), &resp); err != nil {
-		return nil, err
-	}
-	return resp.Data, nil
-}
-
-// IdentityConfigFeatures returns the list of AD configuration feature names.
-func (c *Client) IdentityConfigFeatures(ctx context.Context, params *IdentityParams) ([]string, error) {
-	var resp singleResponse[[]string]
-	if err := c.get(ctx, identityBase+"/adConfigurationFeatures", params.values(), &resp); err != nil {
 		return nil, err
 	}
 	return resp.Data, nil

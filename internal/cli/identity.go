@@ -126,8 +126,8 @@ func newIdentityConfigGetCmd() *cobra.Command {
 				return printJSON(cmd.OutOrStdout(), redacted)
 			}
 			headers := []string{"ID", "Domain", "DC FQDN", "Encryption", "Status", "Connected", "Features"}
-			rows := make([][]string, len(configs))
-			for i, cfg := range configs {
+			rows := make([][]string, len(redacted))
+			for i, cfg := range redacted {
 				rows[i] = []string{
 					strconv.FormatInt(cfg.ID, 10),
 					cfg.DomainName,
@@ -592,12 +592,14 @@ Use --unskip to reverse a previous skip.`,
 			if len(detectionName) == 0 || len(domainName) == 0 {
 				return fmt.Errorf("--detection and --domain are required")
 			}
-			action := "skip"
+			actionVerb := "skip"
+			actionPast := "skipped"
 			if unskip {
-				action = "unskip"
+				actionVerb = "unskip"
+				actionPast = "unskipped"
 			}
 			target := strings.Join(detectionName, ",") + " in " + strings.Join(domainName, ",")
-			return guard(cmd.OutOrStdout(), "identity skip-exposures", action+" exposures", target, yes, func() error {
+			return guard(cmd.OutOrStdout(), "identity skip-exposures", actionVerb+" exposures", target, yes, func() error {
 				c, err := mgmtClient()
 				if err != nil {
 					return err
@@ -622,7 +624,7 @@ Use --unskip to reverse a previous skip.`,
 				if outputFormat == "json" {
 					return printJSON(cmd.OutOrStdout(), map[string]any{"success": true, "message": msg})
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Exposures %sed: %s\n", action, msg)
+				fmt.Fprintf(cmd.OutOrStdout(), "Exposures %s: %s\n", actionPast, msg)
 				return nil
 			})
 		},
@@ -651,12 +653,14 @@ Dry-run by default — pass --yes to apply. Use --unack to reverse.`,
 			if len(detectionName) == 0 || len(domainName) == 0 {
 				return fmt.Errorf("--detection and --domain are required")
 			}
-			action := "acknowledge"
+			actionVerb := "acknowledge"
+			actionPast := "acknowledged"
 			if unack {
-				action = "unacknowledge"
+				actionVerb = "unacknowledge"
+				actionPast = "unacknowledged"
 			}
 			target := strings.Join(detectionName, ",") + " in " + strings.Join(domainName, ",")
-			return guard(cmd.OutOrStdout(), "identity ack-exposures", action+" exposures", target, yes, func() error {
+			return guard(cmd.OutOrStdout(), "identity ack-exposures", actionVerb+" exposures", target, yes, func() error {
 				c, err := mgmtClient()
 				if err != nil {
 					return err
@@ -680,7 +684,7 @@ Dry-run by default — pass --yes to apply. Use --unack to reverse.`,
 				if outputFormat == "json" {
 					return printJSON(cmd.OutOrStdout(), map[string]any{"success": true, "message": msg})
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Exposures %sd: %s\n", action, msg)
+				fmt.Fprintf(cmd.OutOrStdout(), "Exposures %s: %s\n", actionPast, msg)
 				return nil
 			})
 		},

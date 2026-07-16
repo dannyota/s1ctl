@@ -264,28 +264,6 @@ func TestIdentityTimezones(t *testing.T) {
 	}
 }
 
-func TestIdentityConfigFeatures(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			t.Fatalf("expected GET, got %s", r.Method)
-		}
-		json.NewEncoder(w).Encode(map[string]any{
-			"data": []string{"RANGER_AD", "SINGULARITY_IDENTITY"},
-		})
-	})
-	c := testClient(t, handler)
-	features, err := c.IdentityConfigFeatures(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(features) != 2 {
-		t.Fatalf("expected 2 features, got %d", len(features))
-	}
-	if features[0] != "RANGER_AD" {
-		t.Fatalf("unexpected feature: %s", features[0])
-	}
-}
-
 func TestIdentityOnboardingStatus(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
